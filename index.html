@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电缆选型计算系统 v0.1</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F5F7FA;
+  --card:#FFFFFF;
+  --primary:#1E2A3A;
+  --primary-light:#2C3E50;
+  --accent:#3498DB;
+  --accent-light:#EBF5FB;
+  --pass:#2EAC68;
+  --pass-light:#E8F8F0;
+  --warn:#E67E22;
+  --warn-light:#FEF5E7;
+  --fail:#E74C3C;
+  --fail-light:#FDEDEC;
+  --border:#E2E8F0;
+  --text:#1E2A3A;
+  --text-secondary:#5A6B7B;
+  --text-muted:#8899AA;
+  --radius:4px;
+  --shadow:0 1px 3px rgba(30,42,58,0.06),0 1px 2px rgba(30,42,58,0.04);
+  --shadow-md:0 4px 12px rgba(30,42,58,0.08);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-mono:"SF Mono","Cascadia Code","Fira Code",Consolas,monospace;
+  --font-serif:"Georgia","Cambria","Times New Roman",serif;
+}
+body{font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--text);background:var(--bg);min-height:100vh;overflow-x:hidden}
+
+/* ===== Header ===== */
+.app-header{background:var(--primary);color:#fff;padding:0 24px;height:48px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.app-header h1{font-size:14px;font-weight:600;letter-spacing:0.3px}
+.app-header .std-ref{font-size:11px;opacity:0.7;font-weight:400}
+.header-actions{display:flex;gap:8px;align-items:center}
+.header-actions button{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 12px;border-radius:var(--radius);font-size:11px;cursor:pointer;transition:all 0.15s}
+.header-actions button:hover{background:rgba(255,255,255,0.2)}
+
+/* ===== Three Column Layout ===== */
+.app-layout{display:grid;grid-template-columns:minmax(280px,25%) minmax(400px,45%) minmax(260px,30%);gap:16px;padding:16px;max-width:1600px;margin:0 auto;min-height:calc(100vh - 48px)}
+
+/* ===== Card System ===== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:#FAFBFC}
+.card-header h3{font-size:12px;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:0.5px}
+.card-body{padding:16px}
+
+/* ===== Stepper ===== */
+.stepper{display:flex;gap:0;margin-bottom:16px;background:#FAFBFC;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden}
+.step-item{flex:1;padding:10px 8px;text-align:center;font-size:11px;font-weight:500;color:var(--text-muted);position:relative;cursor:pointer;transition:all 0.2s;border-right:1px solid var(--border)}
+.step-item:last-child{border-right:none}
+.step-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+.step-item.completed{background:var(--pass-light);color:var(--pass)}
+.step-item .step-num{display:inline-flex;width:18px;height:18px;border-radius:50%;background:var(--border);color:var(--text-muted);align-items:center;justify-content:center;font-size:10px;margin-right:4px;font-weight:700}
+.step-item.active .step-num{background:var(--accent);color:#fff}
+.step-item.completed .step-num{background:var(--pass);color:#fff}
+
+/* ===== Installation Method Cards ===== */
+.method-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.method-card{position:relative}
+.method-card input{position:absolute;opacity:0;width:0;height:0}
+.method-card label{display:flex;flex-direction:column;align-items:center;padding:12px 8px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all 0.15s;text-align:center;gap:4px;min-height:72px;justify-content:center}
+.method-card label:hover{border-color:var(--accent);background:var(--accent-light)}
+.method-card input:checked+label{border-color:var(--accent);background:var(--accent-light);box-shadow:0 0 0 2px rgba(52,152,219,0.15)}
+.method-card .mc-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.method-card .mc-icon svg{width:28px;height:28px}
+.method-card .mc-code{font-size:11px;font-weight:700;color:var(--primary)}
+.method-card .mc-name{font-size:10px;color:var(--text-secondary);line-height:1.2}
+
+/* ===== Form Controls ===== */
+.form-section{margin-bottom:16px}
+.form-section:last-child{margin-bottom:0}
+.section-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.form-group{margin-bottom:12px}
+.form-group:last-child{margin-bottom:0}
+.form-label{display:flex;align-items:center;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;gap:4px}
+.form-label .unit{color:var(--text-muted);font-weight:400}
+.form-control{width:100%;padding:7px 10px;font-size:13px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;color:var(--text);transition:all 0.15s;font-family:inherit}
+.form-control:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(52,152,219,0.12)}
+.form-control.error{border-color:var(--fail);box-shadow:0 0 0 2px rgba(231,76,60,0.1)}
+.form-control:disabled{background:#F8F9FA;color:var(--text-muted);cursor:not-allowed}
+select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 4l3 3 3-3' fill='none' stroke='%235A6B7B' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form-hint{font-size:10px;color:var(--text-muted);margin-top:3px}
+.form-hint.live-value{color:var(--accent);font-weight:500;font-family:var(--font-mono)}
+.error-msg{font-size:10px;color:var(--fail);margin-top:3px;display:none}
+.form-group.has-error .error-msg{display:block}
+.form-group.has-error .form-control{border-color:var(--fail)}
+
+/* ===== Range Slider ===== */
+.slider-group{display:flex;align-items:center;gap:10px}
+.slider-group input[type=range]{flex:1;height:4px;-webkit-appearance:none;appearance:none;background:var(--border);border-radius:2px;outline:none}
+.slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.slider-value{min-width:48px;text-align:right;font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--primary)}
+.slider-factor{font-family:var(--font-mono);font-size:11px;color:var(--accent);font-weight:500;min-width:60px;text-align:right}
+
+/* ===== Tooltip ===== */
+.tip{display:inline-flex;width:14px;height:14px;border-radius:50%;background:var(--border);color:var(--text-muted);font-size:9px;font-weight:700;align-items:center;justify-content:center;cursor:help;position:relative;flex-shrink:0}
+.tip:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;padding:8px 12px;border-radius:var(--radius);font-size:11px;font-weight:400;white-space:normal;z-index:999;max-width:320px;min-width:180px;line-height:1.5;box-shadow:var(--shadow-md);word-break:break-all}
+
+/* ===== Action Buttons ===== */
+.input-actions{position:sticky;bottom:0;padding:12px 16px;background:#fff;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 16px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all 0.15s;font-family:inherit;background:#fff;color:var(--text)}
+.btn:hover{background:#F8F9FA}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#2980B9}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-export{background:var(--pass);color:#fff;border-color:var(--pass)}
+.btn-export:hover{background:#27A05E}
+.btn-link{background:none;border:none;color:var(--text-muted);font-weight:400;text-decoration:underline;padding:4px}
+
+/* ===== Cost Input ===== */
+.cost-input-row{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px}
+.cost-input-row input{width:60px;padding:3px 6px;font-size:11px;border:1px solid var(--border);border-radius:2px;text-align:right;font-family:var(--font-mono)}
+.cost-input-row input:focus{outline:none;border-color:var(--accent)}
+.cost-input-row button{font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:2px;background:var(--accent-light);color:var(--accent);cursor:pointer}
+.cost-input-row button:hover{background:var(--accent);color:#fff}
+.comparison-table .badge-rec{display:inline-block;padding:1px 6px;font-size:9px;border-radius:8px;font-weight:600}
+.comparison-table .badge-best{background:var(--accent-light);color:var(--accent)}
+.comparison-table .badge-min{background:var(--pass-light);color:var(--pass)}
+.comparison-table .badge-eco{background:var(--warn-light);color:var(--warn)}
+
+/* ===== Result Summary Cards ===== */
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px;text-align:center;transition:all 0.3s;box-shadow:var(--shadow)}
+.summary-card .sc-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px}
+.summary-card .sc-value{font-size:26px;font-weight:700;font-family:var(--font-serif);color:var(--primary);line-height:1.1}
+.summary-card .sc-unit{font-size:11px;color:var(--text-muted);font-family:var(--font-sans);font-weight:400}
+.summary-card.pass{border-left:3px solid var(--pass);background:var(--pass-light)}
+.summary-card.pass .sc-value{color:var(--pass)}
+.summary-card.warn{border-left:3px solid var(--warn);background:var(--warn-light)}
+.summary-card.warn .sc-value{color:var(--warn)}
+.summary-card.fail{border-left:3px solid var(--fail);background:var(--fail-light)}
+.summary-card.fail .sc-value{color:var(--fail)}
+.summary-card.highlight{border-left:3px solid var(--accent);background:var(--accent-light)}
+.summary-card.highlight .sc-value{color:var(--accent)}
+
+/* ===== Calculation Detail Tabs ===== */
+.detail-tabs{display:flex;border-bottom:1px solid var(--border);background:#FAFBFC}
+.detail-tab{padding:9px 14px;font-size:11px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s}
+.detail-tab:hover{color:var(--text)}
+.detail-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.detail-tab .tab-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-left:4px}
+.detail-tab .tab-dot.ok{background:var(--pass)}
+.detail-tab .tab-dot.ng{background:var(--fail)}
+.detail-panel{display:none;padding:16px}
+.detail-panel.active{display:block}
+
+/* ===== Formula Display ===== */
+.formula-block{background:#F8FAFC;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+.formula-title{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px}
+.formula-line{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed #ECF0F3;font-size:13px}
+.formula-line:last-child{border-bottom:none}
+.formula-line .fl-name{min-width:100px;color:var(--text-secondary);font-size:12px}
+.formula-line .fl-value{font-family:var(--font-serif);font-weight:600;color:var(--primary);font-size:15px}
+.formula-line .fl-desc{font-size:10px;color:var(--text-muted);margin-left:auto}
+.formula-line .fl-ref{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--border);color:var(--text-muted);font-size:8px;cursor:help;margin-left:4px;flex-shrink:0}
+.formula-line .fl-ref:hover{background:var(--accent);color:#fff}
+.formula-result{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--accent-light);border-radius:var(--radius);margin-top:8px}
+.formula-result .fr-label{font-size:12px;color:var(--accent);font-weight:500}
+.formula-result .fr-value{font-family:var(--font-serif);font-size:18px;font-weight:700;color:var(--accent)}
+
+/* ===== Warning Card ===== */
+.alert-card{padding:10px 14px;border-radius:var(--radius);margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;font-size:12px;line-height:1.5}
+.alert-card.alert-fail{background:var(--fail-light);border:1px solid rgba(231,76,60,0.2);color:var(--fail)}
+.alert-card.alert-warn{background:var(--warn-light);border:1px solid rgba(230,126,34,0.2);color:var(--warn)}
+.alert-card.alert-pass{background:var(--pass-light);border:1px solid rgba(46,172,104,0.2);color:var(--pass)}
+.alert-card .alert-icon{font-size:14px;flex-shrink:0;margin-top:1px}
+.alert-card strong{font-weight:600}
+
+/* ===== Right Panel: Comparison ===== */
+.comparison-table{width:100%;border-collapse:collapse;font-size:11px}
+.comparison-table th{padding:7px 8px;text-align:center;background:#F8FAFC;color:var(--text-muted);font-weight:600;font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.comparison-table td{padding:7px 8px;text-align:center;border-bottom:1px solid #F0F2F5;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px}
+.comparison-table tr{cursor:pointer;transition:background 0.15s}
+.comparison-table tr:hover{background:#F0F4FA}
+.comparison-table tr.selected{background:var(--accent-light);outline:2px solid var(--accent);outline-offset:-2px}
+.comparison-table tr.selected td{color:var(--accent);font-weight:600}
+.comparison-table .star{color:var(--warn);font-size:12px}
+.comparison-table .status-pip{display:inline-block;width:8px;height:8px;border-radius:50%}
+.comparison-table .status-pip.ok{background:var(--pass)}
+.comparison-table .status-pip.mg{background:var(--warn)}
+.comparison-table .status-pip.ng{background:var(--fail)}
+
+/* ===== Cable Info Card ===== */
+.cable-info{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:#FAFBFC;margin-top:12px}
+.cable-info .ci-title{font-size:11px;font-weight:600;color:var(--primary);margin-bottom:6px}
+.cable-info .ci-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px}
+.cable-info .ci-row .ci-key{color:var(--text-muted)}
+.cable-info .ci-row .ci-val{font-weight:500;color:var(--text);font-family:var(--font-mono)}
+
+/* ===== Param Summary Card ===== */
+.param-summary{padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;margin-bottom:12px}
+.param-summary .ps-title{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.3px}
+.param-summary .ps-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;border-bottom:1px solid #F5F7FA}
+.param-summary .ps-row:last-child{border-bottom:none}
+.param-summary .ps-key{color:var(--text-muted)}
+.param-summary .ps-val{font-weight:500;color:var(--primary)}
+
+/* ===== Toast Notification ===== */
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--primary);color:#fff;padding:10px 20px;border-radius:var(--radius);font-size:12px;box-shadow:var(--shadow-md);z-index:300;opacity:0;transition:all 0.3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.warn-toast{background:var(--warn)}
+.toast.fail-toast{background:var(--fail)}
+
+/* ===== Initial State ===== */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;color:var(--text-muted)}
+.empty-state .es-icon{width:48px;height:48px;background:#F0F2F5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.empty-state .es-icon svg{width:24px;height:24px;stroke:var(--text-muted)}
+.empty-state h4{font-size:13px;color:var(--text-secondary);margin-bottom:4px}
+.empty-state p{font-size:11px;max-width:200px}
+
+/* ===== Responsive ===== */
+@media(max-width:1200px){.app-layout{grid-template-columns:1fr 1fr;}.right-panel{grid-column:1/-1}}
+@media(max-width:768px){.app-layout{grid-template-columns:1fr}.summary-row{grid-template-columns:1fr}}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#F5F7FA}
+::-webkit-scrollbar-thumb{background:#CCD5DE;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#A0ADB8}
+</style>
+</head>
+<body>
+
+<!-- ===== Toast ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== Header ===== -->
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <h1>CableSizer Pro</h1>
+    <span class="std-ref">IEC 60364-5-52 / GB/T 16895.6-2014</span>
+  </div>
+  <div class="header-actions">
+    <button onclick="showReportDrawer()">&#128196; 详细报告</button>
+    <button onclick="exportExcel()">&#8681; 导出Excel</button>
+  </div>
+</header>
+
+<!-- ===== Main Layout ===== -->
+<div class="app-layout">
+
+<!-- ======== LEFT PANEL: Parameter Input ======== -->
+<div class="left-panel">
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="step-item active" data-step="1"><span class="step-num">1</span>基本</div>
+    <div class="step-item" data-step="2"><span class="step-num">2</span>环境</div>
+    <div class="step-item" data-step="3"><span class="step-num">3</span>负载</div>
+    <div class="step-item" data-step="4"><span class="step-num">4</span>保护</div>
+  </div>
+
+  <!-- Template section removed per user request -->
+
+  <div class="card" style="overflow:visible">
+    <div class="card-body" style="padding:12px">
+      <!-- Step 1: 基本参数 -->
+      <div class="step-panel active" id="sp-1">
+        <div class="form-section">
+          <div class="section-label">敷设方式 <span class="tip" data-tip="按IEC 60364-5-52分类，查表方法根据芯数自动匹配">?</span></div>
+          <div style="font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:4px;margin-top:8px">土壤中</div>
+          <div class="method-grid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
+            <div class="method-card">
+              <input type="radio" name="installMethod" id="m-D1" value="D1">
+              <label for="m-D1">
+                <div class="mc-icon"><svg viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#ECF0F3" rx="2"/><line x1="4" y1="10" x2="24" y2="10" stroke="#8B7355" stroke-width="1" stroke-dasharray="3 1"/><circle cx="14" cy="16" r="4" fill="none" stroke="#1E2A3A" stroke-width="1.2"/><circle cx="14" cy="16" r="1.8" fill="#3498DB" opacity="0.8"/></svg></div>
+                <span class="mc-code">D1</span>
+                <span class="mc-name">埋地管道</span>
+              </label>
+            </div>
+            <div class="method-card">
+              <input type="radio" name="installMethod" id="m-D2" value="D2">
+              <label for="m-D2">
+                <div class="mc-icon"><svg viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#ECF0F3" rx="2"/><line x1="4" y1="10" x2="24" y2="10" stroke="#8B7355" stroke-width="1" stroke-dasharray="3 1"/><rect x="9" y="14" width="10" height="5" rx="2.5" fill="#3498DB" opacity="0.8"/></svg></div>
+                <span class="mc-code">D2</span>
+                <span class="mc-name">直埋</span>
+              </label>
+            </div>
+          </div>
+          <div style="font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:4px">空气中</div>
+          <div class="method-grid" style="grid-template-columns:1fr 1fr">
+            <div class="method-card">
+              <input type="radio" name="installMethod" id="m-PT" value="PT" checked>
+              <label for="m-PT">
+                <div class="mc-icon"><svg viewBox="0 0 28 28"><path d="M4 18h20M4 20h20" stroke="#1E2A3A" stroke-width="1.5"/><line x1="6" y1="18" x2="6" y2="20" stroke="#1E2A3A" stroke-width="1"/><line x1="22" y1="18" x2="22" y2="20" stroke="#1E2A3A" stroke-width="1"/><circle cx="9" cy="18" r="0.8" fill="#1E2A3A"/><circle cx="13" cy="18" r="0.8" fill="#1E2A3A"/><circle cx="17" cy="18" r="0.8" fill="#1E2A3A"/><rect x="8" y="12" width="4" height="6" rx="2" fill="#3498DB" opacity="0.7"/><rect x="14" y="12" width="4" height="6" rx="2" fill="#3498DB" opacity="0.7"/></svg></div>
+                <span class="mc-code">有孔托盘</span>
+                <span class="mc-name">穿孔底板</span>
+              </label>
+            </div>
+            <div class="method-card">
+              <input type="radio" name="installMethod" id="m-ST" value="ST">
+              <label for="m-ST">
+                <div class="mc-icon"><svg viewBox="0 0 28 28"><rect x="4" y="17" width="20" height="4" rx="1" fill="none" stroke="#1E2A3A" stroke-width="1.5"/><rect x="8" y="11" width="4" height="6" rx="2" fill="#3498DB" opacity="0.7"/><rect x="14" y="11" width="4" height="6" rx="2" fill="#3498DB" opacity="0.7"/></svg></div>
+                <span class="mc-code">无孔托盘</span>
+                <span class="mc-name">封闭底板</span>
+              </label>
+            </div>
+            <div class="method-card">
+              <input type="radio" name="installMethod" id="m-LD" value="LD">
+              <label for="m-LD">
+                <div class="mc-icon"><svg viewBox="0 0 28 28"><line x1="4" y1="20" x2="24" y2="20" stroke="#1E2A3A" stroke-width="1.5"/><line x1="8" y1="18" x2="8" y2="20" stroke="#1E2A3A" stroke-width="1.5"/><line x1="14" y1="18" x2="14" y2="20" stroke="#1E2A3A" stroke-width="1.5"/><line x1="20" y1="18" x2="20" y2="20" stroke="#1E2A3A" stroke-width="1.5"/><rect x="9" y="12" width="4" height="6" rx="2" fill="#3498DB" opacity="0.7"/><rect x="15" y="12" width="4" height="6" rx="2" fill="#3498DB" opacity="0.7"/></svg></div>
+                <span class="mc-code">梯架</span>
+                <span class="mc-name">开放横档</span>
+              </label>
+            </div>
+            <div class="method-card">
+              <input type="radio" name="installMethod" id="m-TR" value="TR">
+              <label for="m-TR">
+                <div class="mc-icon"><svg viewBox="0 0 28 28"><rect x="6" y="12" width="16" height="12" rx="1" fill="none" stroke="#1E2A3A" stroke-width="1.2"/><line x1="6" y1="12" x2="22" y2="12" stroke="#1E2A3A" stroke-width="1.5"/><rect x="9" y="15" width="4" height="5" rx="2" fill="#3498DB" opacity="0.7"/><rect x="15" y="15" width="4" height="5" rx="2" fill="#3498DB" opacity="0.7"/></svg></div>
+                <span class="mc-code">电缆沟</span>
+                <span class="mc-name">有盖沟道</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-hint" style="margin-top:6px" id="hint-tableRef">查表方法: E (多芯→有孔托盘)</div>
+        </div>
+        <div class="form-section" style="margin-top:14px">
+          <div class="section-label">电缆参数</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">绝缘类型 <span class="tip" data-tip="XLPE最高工作温度90°C，PVC为70°C">?</span></label>
+              <select class="form-control" id="insulation" onchange="autoCalc()">
+                <option value="XLPE">XLPE (交联聚乙烯)</option>
+                <option value="PVC">PVC (聚氯乙烯)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">导体材料</label>
+              <select class="form-control" id="conductor" onchange="autoCalc()">
+                <option value="Cu">铜 (Cu)</option>
+                <option value="Al">铝 (Al)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">电缆芯数 <span class="tip" data-tip="多芯电缆(如3芯/4芯)或单芯电缆。芯数影响查表方法和载流量。">?</span></label>
+            <select class="form-control" id="cableType" onchange="updateUI();autoCalc()">
+              <option value="multi">多芯电缆</option>
+              <option value="single">单芯电缆</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">载流导体数 <span class="tip" data-tip="按标准表B.52.10~B.52.13列定义">?</span></label>
+            <select class="form-control" id="loadedCores" onchange="updateUI();autoCalc()">
+              <option value="3">三根载流导体</option>
+              <option value="2">二根载流导体</option>
+            </select>
+          </div>
+          <div class="form-group" id="grp-singleArrangement" style="display:none">
+            <label class="form-label">单芯排列方式 <span class="tip" data-tip="单芯电缆的排列方式决定查表列号(B.52.10~B.52.13列4~8)">?</span></label>
+            <select class="form-control" id="singleArrangement" onchange="autoCalc()">
+              <option value="touch2">相互接触 — 二根 (列4)</option>
+              <option value="trefoil">三角形排列 — 三根 (列5)</option>
+              <option value="flat-touch">扁平相互接触 — 三根 (列6)</option>
+              <option value="flat-h-spaced">扁平水平有间距 — 三根 (列7)</option>
+              <option value="flat-v-spaced">扁平垂直有间距 — 三根 (列8)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: 环境条件 -->
+      <div class="step-panel" id="sp-2" style="display:none">
+        <div class="form-section">
+          <div class="section-label">温度条件</div>
+          <div class="form-group" id="grp-ambient">
+            <label class="form-label">环境温度 <span class="unit">(°C)</span> <span class="tip" data-tip="空气中参考温度30°C。温度升高则载流量下降。">?</span></label>
+            <div class="slider-group">
+              <input type="range" id="ambientTemp" min="10" max="80" value="30" step="1" oninput="updateTempSlider()">
+              <span class="slider-value" id="ambientTempVal">30°C</span>
+              <span class="slider-factor" id="tempFactorVal">Ct=1.000</span>
+            </div>
+          </div>
+          <div class="form-group" id="grp-soilTemp" style="display:none">
+            <label class="form-label">土壤温度 <span class="unit">(°C)</span></label>
+            <div class="slider-group">
+              <input type="range" id="soilTemp" min="5" max="50" value="20" step="1" oninput="updateSoilTempSlider()">
+              <span class="slider-value" id="soilTempVal">20°C</span>
+              <span class="slider-factor" id="soilTempFactorVal">Ct=1.000</span>
+            </div>
+          </div>
+          <div class="form-group" id="grp-soilRes" style="display:none">
+            <label class="form-label">土壤热阻率 <span class="unit">(K·m/W)</span> <span class="tip" data-tip="参考值2.5。湿粘土≈1.0，干沙≈3.0，岩石≈0.7">?</span></label>
+            <div class="slider-group">
+              <input type="range" id="soilRes" min="0.5" max="7" value="2.5" step="0.1" oninput="updateSoilResSlider()">
+              <span class="slider-value" id="soilResVal">2.5</span>
+              <span class="slider-factor" id="soilResFactorVal">Cs=1.000</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="section-label">并列敷设 <span class="tip" data-tip="多回路并列敷设时需降额。回路越多，降额越严重。">?</span></div>
+          <div class="form-group">
+            <label class="form-label">并列回路数</label>
+            <div class="slider-group">
+              <input type="range" id="circuitCount" min="1" max="12" value="1" step="1" oninput="updateGroupSlider()">
+              <span class="slider-value" id="circuitCountVal">1</span>
+              <span class="slider-factor" id="groupFactorVal">Cg=1.000</span>
+            </div>
+          </div>
+          <div class="form-group" id="grp-arrangement">
+            <label class="form-label">排列方式</label>
+            <select class="form-control" id="arrangement" onchange="autoCalc()">
+              <option value="touching">相互触碰</option>
+              <option value="spaced">有间距(≥1d)</option>
+            </select>
+          </div>
+          <div class="form-group" id="grp-ugSpacing" style="display:none">
+            <label class="form-label">电缆间距</label>
+            <select class="form-control" id="ugSpacing" onchange="autoCalc()">
+              <option value="touching">触碰 (0)</option>
+              <option value="0.25m">0.25m</option>
+              <option value="0.5m">0.5m</option>
+              <option value="1.0m">≥ 1.0m</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: 负载参数 -->
+      <div class="step-panel" id="sp-3" style="display:none">
+        <div class="form-section">
+          <div class="section-label">设计电流</div>
+          <div class="form-group">
+            <label class="form-label">设计电流 IB <span class="unit">(A)</span></label>
+            <input type="number" class="form-control" id="designCurrent" placeholder="输入或由下方换算" min="0.1" step="0.1" oninput="autoCalc()">
+            <div class="form-hint" id="hint-baseAmp"></div>
+            <div class="error-msg" id="err-current">设计电流必须大于0</div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="section-label">功率换算 <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;color:var(--text-muted)">(辅助)</span></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">有功功率 <span class="unit">(kW)</span></label>
+              <input type="number" class="form-control" id="power" min="0" step="0.1" oninput="calcCurrentFromPower()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">电压 <span class="unit">(V)</span></label>
+              <input type="number" class="form-control" id="voltage" value="400" min="1" oninput="calcCurrentFromPower()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">需要系数 Kd <span class="tip" data-tip="考虑同时使用率的需要系数，通常0.6~1.0。单台大电机取1.0，多台混合负载取0.7~0.9">?</span></label>
+              <input type="number" class="form-control" id="demandFactor" value="1.1" min="0.1" max="2.0" step="0.05" oninput="calcCurrentFromPower()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">功率因数 cos&phi; <span class="tip" data-tip="电动机通常0.85，电阻性负载1.0，综合负载0.9~0.95">?</span></label>
+              <input type="number" class="form-control" id="pf" value="0.95" min="0.1" max="1" step="0.01" oninput="calcCurrentFromPower()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">效率 &eta;</label>
+              <input type="number" class="form-control" id="eff" value="1.0" min="0.1" max="1" step="0.01" oninput="calcCurrentFromPower()">
+            </div>
+            <div class="form-group">
+              <label class="form-label">电压波动系数 <span class="tip" data-tip="考虑实际运行电压偏低的裕度系数。电压偏低时电流增大，按0.95即考虑电压可能低5%">?</span></label>
+              <input type="number" class="form-control" id="voltFactor" value="0.95" min="0.8" max="1.0" step="0.01" oninput="calcCurrentFromPower()">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="grid-column:1/-1">
+              <div class="form-hint" id="hint-calcFormula" style="font-size:10px;color:var(--text-muted);padding:4px 0">IB = P × Kd / (√3 × U × Kv × cosφ × η)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: 保护设置 (框架) -->
+      <div class="step-panel" id="sp-4" style="display:none">
+        <div class="form-section">
+          <div class="section-label">保护装置 <span style="font-size:9px;color:var(--warn);font-weight:400;text-transform:none">(v0.2开发中)</span></div>
+          <div class="form-group">
+            <label class="form-label">保护类型</label>
+            <select class="form-control" disabled>
+              <option>微型断路器 (MCB)</option>
+              <option>塑壳断路器 (MCCB)</option>
+              <option>熔断器 (Fuse)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">额定电流 IN <span class="unit">(A)</span></label>
+            <input type="number" class="form-control" placeholder="待开发" disabled>
+          </div>
+          <div class="form-group">
+            <label class="form-label">脱扣特性</label>
+            <select class="form-control" disabled>
+              <option>C型</option><option>B型</option><option>D型</option>
+            </select>
+          </div>
+        </div>
+        <div class="alert-card alert-warn">
+          <span class="alert-icon">&#9888;</span>
+          <span>保护协调模块将在 v0.2 版本中实现，届时支持 IB≤IN≤IZ 和 I2≤1.45×IZ 双重验证。</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fixed Action Bar -->
+    <div class="input-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="calculateAll()" id="btn-calc">计算选型</button>
+      <button class="btn-link" onclick="resetAll()">重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======== CENTER PANEL: Results ======== -->
+<div class="center-panel">
+  <!-- Summary Row -->
+  <div class="summary-row">
+    <div class="summary-card highlight" id="sc-section">
+      <div class="sc-label">推荐截面</div>
+      <div class="sc-value">--<span class="sc-unit"> mm²</span></div>
+    </div>
+    <div class="summary-card" id="sc-margin">
+      <div class="sc-label">载荷率</div>
+      <div class="sc-value">--<span class="sc-unit"> %</span></div>
+    </div>
+    <div class="summary-card" id="sc-vdrop">
+      <div class="sc-label">电压降</div>
+      <div class="sc-value">--<span class="sc-unit"> %</span></div>
+    </div>
+  </div>
+
+  <!-- Detail Card -->
+  <div class="card">
+    <div class="detail-tabs">
+      <div class="detail-tab active" data-dtab="ampacity">载流量<span class="tab-dot" id="dot-amp"></span></div>
+      <div class="detail-tab" data-dtab="vdrop">电压降<span class="tab-dot" id="dot-vd"></span></div>
+      <div class="detail-tab" data-dtab="sc">短路耐量<span class="tab-dot" id="dot-sc"></span></div>
+      <div class="detail-tab" data-dtab="prot">保护协调<span class="tab-dot" id="dot-pr"></span></div>
+    </div>
+
+    <!-- Ampacity Detail -->
+    <div class="detail-panel active" id="dp-ampacity">
+      <div id="amp-alert"></div>
+      <div class="formula-block">
+        <div class="formula-title">载流量分解计算</div>
+        <div class="formula-line">
+          <span class="fl-name">基准载流量 I₀</span>
+          <span class="fl-value" id="f-i0">--</span>
+          <span class="fl-desc">A</span>
+          <span class="fl-ref" title="IEC 60364-5-52 表B.52.2~B.52.14">T</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">温度修正 K<sub>t</sub></span>
+          <span class="fl-value" id="f-kt">--</span>
+          <span class="fl-desc" id="f-kt-desc"></span>
+          <span class="fl-ref" title="IEC 60364-5-52 表B.52.15/B.52.16">T</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">群敷修正 K<sub>g</sub></span>
+          <span class="fl-value" id="f-kg">--</span>
+          <span class="fl-desc" id="f-kg-desc"></span>
+          <span class="fl-ref" title="IEC 60364-5-52 表B.52.17~B.52.21">T</span>
+        </div>
+        <div class="formula-line" id="f-ks-row" style="display:none">
+          <span class="fl-name">土壤修正 K<sub>s</sub></span>
+          <span class="fl-value" id="f-ks">--</span>
+          <span class="fl-desc" id="f-ks-desc"></span>
+          <span class="fl-ref" title="IEC 60364-5-52 表B.52.16">T</span>
+        </div>
+        <div class="formula-result">
+          <span class="fr-label">I<sub>z</sub> = I₀ × K<sub>t</sub> × K<sub>g</sub> × K<sub>s</sub> =</span>
+          <span class="fr-value" id="f-iz">-- A</span>
+        </div>
+      </div>
+      <div class="form-hint" style="margin-top:8px;text-align:center">设计电流 I<sub>B</sub> = <strong id="f-ib">--</strong> A &nbsp;|&nbsp; 需基准载流量 ≥ <strong id="f-req">--</strong> A</div>
+    </div>
+
+    <!-- Voltage Drop Detail -->
+    <div class="detail-panel" id="dp-vdrop">
+      <div id="vd-alert"></div>
+      <div class="formula-block">
+        <div class="formula-title">电压降校验参数</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div class="form-group">
+            <label class="form-label">电缆长度 <span class="unit">(m)</span></label>
+            <input type="number" class="form-control" id="vd-length" placeholder="单程长度" min="1" step="1" value="" oninput="calcVoltageDrop()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">系统电压 <span class="unit">(V)</span></label>
+            <input type="number" class="form-control" id="vd-voltage" value="400" min="100" oninput="calcVoltageDrop()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">负载类型 <span class="tip" data-tip="照明回路限值3%，动力/一般回路限值5%">?</span></label>
+            <select class="form-control" id="vd-loadType" onchange="calcVoltageDrop()">
+              <option value="motor">动力/一般 (限值5%)</option>
+              <option value="lighting">照明 (限值3%)</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">以下参数自动带入：截面=<strong id="vd-section-show">--</strong>mm², 导体=<strong id="vd-cond-show">--</strong>, 设计电流=<strong id="vd-ib-show">--</strong>A, 系统=<strong id="vd-sys-show">三相</strong></div>
+      </div>
+      <div class="formula-block" id="vd-result-block" style="display:none">
+        <div class="formula-title">电压降计算过程</div>
+        <div class="formula-line">
+          <span class="fl-name">导体电阻 R</span>
+          <span class="fl-value" id="vd-r">--</span>
+          <span class="fl-desc">Ω/km @ max温度</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">导体电抗 X</span>
+          <span class="fl-value" id="vd-x">--</span>
+          <span class="fl-desc">Ω/km</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">电阻压降 ΔU<sub>R</sub></span>
+          <span class="fl-value" id="vd-dur">--</span>
+          <span class="fl-desc">V</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">电抗压降 ΔU<sub>X</sub></span>
+          <span class="fl-value" id="vd-dux">--</span>
+          <span class="fl-desc">V</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">总电压降 ΔU</span>
+          <span class="fl-value" id="vd-du">--</span>
+          <span class="fl-desc">V</span>
+        </div>
+        <div class="formula-result">
+          <span class="fr-label">ΔU% =</span>
+          <span class="fr-value" id="vd-pct">-- %</span>
+          <span class="fl-desc" id="vd-limit-show" style="margin-left:12px">限值: --%</span>
+        </div>
+      </div>
+      <div class="form-hint" style="margin-top:8px;text-align:center" id="vd-formula-text">
+        三相: ΔU = √3 × I<sub>B</sub> × L × (R·cosφ + X·sinφ) &nbsp;|&nbsp; 单相: ΔU = 2 × I<sub>B</sub> × L × (R·cosφ + X·sinφ)
+      </div>
+    </div>
+
+    <!-- Short Circuit Detail -->
+    <div class="detail-panel" id="dp-sc">
+      <div id="sc-alert"></div>
+      <div class="formula-block">
+        <div class="formula-title">短路耐量校验参数</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div class="form-group">
+            <label class="form-label">预期短路电流 <span class="unit">(kA)</span> <span class="tip" data-tip="线路末端最大短路电流，由上游供电系统决定">?</span></label>
+            <input type="number" class="form-control" id="sc-fault" placeholder="如 10, 20, 50" min="0.1" step="0.1" oninput="calcShortCircuit()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">保护切断时间 <span class="unit">(s)</span> <span class="tip" data-tip="保护装置从故障发生到完全切断的时间。MCB通常≤0.1s，MCCB≤0.5s，后备保护≤5s">?</span></label>
+            <input type="number" class="form-control" id="sc-time" placeholder="如 0.1, 0.5, 1" min="0.01" max="5" step="0.01" oninput="calcShortCircuit()">
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">自动带入：截面=<strong id="sc-section-show">--</strong>mm², 导体=<strong id="sc-cond-show">--</strong>, 绝缘=<strong id="sc-ins-show">--</strong></div>
+      </div>
+      <div class="formula-block" id="sc-result-block" style="display:none">
+        <div class="formula-title">热稳定性验算 (IEC 434条)</div>
+        <div class="formula-line">
+          <span class="fl-name">K 系数</span>
+          <span class="fl-value" id="sc-k">--</span>
+          <span class="fl-desc" id="sc-k-desc"></span>
+          <span class="fl-ref" title="IEC 60364-5-54 表54.2/54.3">T</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">K²S²</span>
+          <span class="fl-value" id="sc-k2s2">--</span>
+          <span class="fl-desc">A²·s (电缆热容量)</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">I²t</span>
+          <span class="fl-value" id="sc-i2t">--</span>
+          <span class="fl-desc">A²·s (短路能量)</span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">最小截面 S<sub>min</sub></span>
+          <span class="fl-value" id="sc-smin">--</span>
+          <span class="fl-desc">mm²</span>
+        </div>
+        <div class="formula-result">
+          <span class="fr-label">K²S² ≥ I²t ?</span>
+          <span class="fr-value" id="sc-verdict">--</span>
+        </div>
+      </div>
+      <div class="form-hint" style="margin-top:8px;text-align:center">
+        公式: S<sub>min</sub> = √(I²t) / K = I<sub>sc</sub> × √t / K &nbsp;|&nbsp; 条件: K²S² ≥ I²t
+      </div>
+    </div>
+
+    <!-- Protection Detail -->
+    <div class="detail-panel" id="dp-prot">
+      <div id="prot-alert"></div>
+      <div class="formula-block">
+        <div class="formula-title">保护协调校验参数</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div class="form-group">
+            <label class="form-label">保护装置额定电流 IN <span class="unit">(A)</span></label>
+            <input type="number" class="form-control" id="prot-in" placeholder="如 160, 250, 400" min="1" step="1" oninput="calcProtection()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">保护类型</label>
+            <select class="form-control" id="prot-type" onchange="calcProtection()">
+              <option value="MCB">微型断路器 MCB</option>
+              <option value="MCCB">塑壳断路器 MCCB</option>
+              <option value="fuse">熔断器 gG</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">自动带入：设计电流 IB=<strong id="prot-ib-show">--</strong>A, 载流量 IZ=<strong id="prot-iz-show">--</strong>A</div>
+      </div>
+      <div class="formula-block" id="prot-result-block" style="display:none">
+        <div class="formula-title">保护协调验证 (IEC 433条)</div>
+        <div class="formula-line">
+          <span class="fl-name">条件1: IB ≤ IN ≤ IZ</span>
+          <span class="fl-value" id="prot-cond1">--</span>
+          <span class="fl-desc" id="prot-cond1-detail"></span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">条件2: I2 ≤ 1.45×IZ</span>
+          <span class="fl-value" id="prot-cond2">--</span>
+          <span class="fl-desc" id="prot-cond2-detail"></span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">I2 (约定动作电流)</span>
+          <span class="fl-value" id="prot-i2">--</span>
+          <span class="fl-desc" id="prot-i2-desc"></span>
+        </div>
+        <div class="formula-line">
+          <span class="fl-name">1.45×IZ</span>
+          <span class="fl-value" id="prot-145iz">--</span>
+          <span class="fl-desc">A</span>
+        </div>
+        <div class="formula-result">
+          <span class="fr-label">保护协调:</span>
+          <span class="fr-value" id="prot-verdict">--</span>
+        </div>
+      </div>
+      <div class="form-hint" style="margin-top:8px;text-align:center">
+        IB ≤ IN ≤ IZ &nbsp;&amp;&nbsp; I2 ≤ 1.45×IZ &nbsp;|&nbsp; I2=1.45×IN(MCB/MCCB), I2=1.6×IN(熔断器)
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== RIGHT PANEL: Comparison & Summary ======== -->
+<div class="right-panel">
+  <!-- Current Params Summary -->
+  <div class="param-summary" id="param-summary">
+    <div class="ps-title">当前方案参数</div>
+    <div class="ps-row"><span class="ps-key">敷设方式</span><span class="ps-val" id="ps-method">有孔托盘 → E</span></div>
+    <div class="ps-row"><span class="ps-key">绝缘/导体</span><span class="ps-val" id="ps-cable">XLPE / 铜 / 多芯</span></div>
+    <div class="ps-row"><span class="ps-key">载流导体</span><span class="ps-val" id="ps-cores">3根 (三相)</span></div>
+    <div class="ps-row"><span class="ps-key">设计电流</span><span class="ps-val" id="ps-current">-- A</span></div>
+    <div class="ps-row"><span class="ps-key">综合降额</span><span class="ps-val" id="ps-derating">--</span></div>
+  </div>
+
+  <!-- Unit Price Editor -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-header">
+      <h3>参考单价 <span style="font-size:9px;font-weight:400;text-transform:none;color:var(--text-muted)">(¥/m, 可编辑)</span></h3>
+      <button class="btn-link" onclick="resetPrices()" style="font-size:9px">恢复默认</button>
+    </div>
+    <div class="card-body" style="padding:8px 12px;max-height:140px;overflow-y:auto" id="price-editor">
+      <div style="font-size:10px;color:var(--text-muted);text-align:center;padding:12px">输入参数后显示相关截面价格</div>
+    </div>
+  </div>
+
+  <!-- Comparison Table -->
+  <div class="card">
+    <div class="card-header">
+      <h3>方案对比</h3>
+    </div>
+    <div class="card-body" style="padding:0;max-height:420px;overflow-y:auto">
+      <table class="comparison-table" id="comp-table">
+        <thead>
+          <tr><th>方案</th><th>截面</th><th>修正后(A)</th><th>载荷率</th><th>单价</th><th>评价</th></tr>
+        </thead>
+        <tbody id="comp-body">
+          <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px">输入参数后自动生成</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cable Info -->
+  <div class="cable-info" id="cable-info" style="display:none">
+    <div class="ci-title">推荐电缆信息</div>
+    <div class="ci-row"><span class="ci-key">建议型号</span><span class="ci-val" id="ci-model">--</span></div>
+    <div class="ci-row"><span class="ci-key">参考外径</span><span class="ci-val" id="ci-od">--</span></div>
+    <div class="ci-row"><span class="ci-key">参考重量</span><span class="ci-val" id="ci-weight">--</span></div>
+    <div class="ci-row"><span class="ci-key">估算单价</span><span class="ci-val" id="ci-price">--</span></div>
+    <div class="ci-row"><span class="ci-key">最高工作温度</span><span class="ci-val" id="ci-temp">--</span></div>
+  </div>
+</div>
+
+</div><!-- end app-layout -->
+
+<script>
+// ============================================================
+// DATA LAYER
+// ============================================================
+const AMPACITY_TABLES={B1:{PVC:{Cu:{"2":{1.5:17.5,2.5:24,4:32,6:41,10:57,16:76,25:101,35:125,50:151,70:192,95:232,120:269,150:300,185:341,240:400,300:458},"3":{1.5:15.5,2.5:21,4:28,6:36,10:50,16:68,25:89,35:110,50:134,70:171,95:207,120:239,150:262,185:296,240:346,300:394}},Al:{"2":{2.5:18.5,4:25,6:32,10:44,16:59,25:78,35:96,50:117,70:149,95:180,120:208,150:236,185:268,240:315,300:360},"3":{2.5:16.5,4:22,6:28,10:39,16:53,25:70,35:86,50:104,70:133,95:161,120:186,150:207,185:234,240:273,300:311}}},XLPE:{Cu:{"2":{1.5:23,2.5:31,4:42,6:54,10:75,16:100,25:133,35:164,50:198,70:253,95:306,120:354,150:393,185:449,240:528,300:603},"3":{1.5:20,2.5:27.5,4:37,6:48,10:66,16:88,25:117,35:144,50:175,70:222,95:269,120:312,150:342,185:389,240:455,300:518}},Al:{"2":{2.5:24,4:32,6:42,10:58,16:77,25:103,35:127,50:154,70:196,95:237,120:274,150:306,185:349,240:411,300:470},"3":{2.5:21.5,4:29,6:37,10:51,16:68,25:90,35:112,50:136,70:173,95:210,120:242,150:266,185:303,240:354,300:404}}}},B2:{PVC:{Cu:{"2":{1.5:19.5,2.5:27,4:36,6:46,10:63,16:85,25:112,35:138,50:168,70:213,95:258,120:299,150:336,185:382,240:448,300:514},"3":{1.5:17.5,2.5:24,4:32,6:41,10:57,16:76,25:96,35:119,50:144,70:184,95:223,120:259,150:291,185:331,240:390,300:447}},Al:{"2":{2.5:21,4:28,6:36,10:49,16:66,25:87,35:107,50:130,70:165,95:200,120:232,150:261,185:298,240:352,300:406},"3":{2.5:18.5,4:25,6:32,10:44,16:59,25:75,35:92,50:112,70:143,95:173,120:201,150:227,185:259,240:305,300:351}}},XLPE:{Cu:{"2":{1.5:26,2.5:36,4:49,6:63,10:86,16:115,25:149,35:185,50:225,70:289,95:352,120:410,150:459,185:527,240:622,300:713},"3":{1.5:23,2.5:32,4:42,6:54,10:75,16:100,25:127,35:158,50:192,70:246,95:298,120:346,150:390,185:447,240:530,300:608}},Al:{"2":{2.5:28,4:38,6:49,10:67,16:89,25:116,35:143,50:174,70:224,95:272,120:316,150:356,185:409,240:485,300:557},"3":{2.5:25,4:33,6:42,10:58,16:77,25:99,35:122,50:149,70:191,95:232,120:269,150:304,185:348,240:413,300:474}}}},C:{PVC:{Cu:{"2":{1.5:22,2.5:30,4:40,6:51,10:70,16:94,25:119,35:148,50:180,70:232,95:282,120:328,150:371,185:424,240:500,300:576},"3":{1.5:19.5,2.5:27,4:36,6:46,10:63,16:85,25:107,35:134,50:163,70:209,95:254,120:294,150:331,185:379,240:447,300:514}},Al:{"2":{2.5:23,4:31,6:40,10:54,16:73,25:93,35:115,50:140,70:181,95:220,120:255,150:290,185:330,240:390,300:451},"3":{2.5:21,4:28,6:36,10:49,16:66,25:83,35:104,50:126,70:163,95:198,120:229,150:259,185:295,240:350,300:402}}},XLPE:{Cu:{"2":{1.5:29,2.5:40,4:54,6:70,10:96,16:128,25:164,35:206,50:250,70:321,95:391,120:455,150:517,185:594,240:705,300:812},"3":{1.5:25,2.5:34,4:46,6:59,10:81,16:108,25:138,35:171,50:209,70:269,95:328,120:382,150:432,185:497,240:590,300:680}},Al:{"2":{2.5:31,4:42,6:54,10:75,16:99,25:127,35:160,50:194,70:250,95:304,120:354,150:404,185:464,240:552,300:637},"3":{2.5:26.5,4:36,6:46,10:63,16:84,25:108,35:133,50:163,70:209,95:256,120:297,150:339,185:389,240:461,300:532}}}},D1:{PVC:{Cu:{"2":{1.5:22,2.5:29,4:37,6:46,10:60,16:78,25:99,35:119,50:140,70:173,95:204,120:231,150:261,185:292,240:336,300:379},"3":{1.5:18,2.5:24,4:30,6:38,10:50,16:64,25:82,35:98,50:116,70:143,95:169,120:192,150:217,185:243,240:280,300:316}},Al:{"2":{2.5:22,4:29,6:36,10:47,16:61,25:77,35:93,50:109,70:135,95:159,120:180,150:204,185:228,240:262,300:296},"3":{2.5:18.5,4:24,6:30,10:39,16:50,25:64,35:77,50:91,70:112,95:132,120:150,150:169,185:190,240:218,300:247}}},XLPE:{Cu:{"2":{1.5:25,2.5:33,4:43,6:53,10:71,16:91,25:116,35:139,50:164,70:203,95:239,120:271,150:306,185:343,240:395,300:446},"3":{1.5:21,2.5:28,4:36,6:44,10:58,16:75,25:96,35:115,50:135,70:167,95:197,120:223,150:251,185:281,240:324,300:365}},Al:{"2":{2.5:26,4:33,6:42,10:55,16:71,25:90,35:108,50:128,70:158,95:186,120:211,150:238,185:267,240:307,300:346},"3":{2.5:22,4:28,6:35,10:46,16:59,25:75,35:90,50:106,70:130,95:154,120:174,150:197,185:220,240:253,300:286}}}},D2:{PVC:{Cu:{"2":{1.5:22,2.5:28,4:38,6:48,10:64,16:83,25:110,35:132,50:156,70:192,95:230,120:261,150:293,185:331,240:382,300:427},"3":{1.5:19,2.5:24,4:33,6:41,10:54,16:70,25:92,35:110,50:130,70:162,95:193,120:220,150:246,185:278,240:320,300:359}},Al:{"2":{2.5:22,4:29,6:36,10:47,16:63,25:82,35:98,50:117,70:145,95:173,120:200,150:224,185:255,240:298,300:336},"3":{2.5:18.5,4:24,6:30,10:39,16:53,25:69,35:83,50:99,70:122,95:148,120:169,150:189,185:214,240:250,300:282}}},XLPE:{Cu:{"2":{1.5:27,2.5:35,4:46,6:58,10:77,16:100,25:129,35:155,50:183,70:225,95:270,120:306,150:343,185:387,240:448,300:502},"3":{1.5:23,2.5:30,4:39,6:49,10:65,16:84,25:107,35:129,50:153,70:188,95:226,120:257,150:287,185:324,240:375,300:419}},Al:{"2":{2.5:28,4:36,6:45,10:61,16:78,25:99,35:120,50:142,70:176,95:210,120:233,150:261,185:296,240:343,300:386},"3":{2.5:22,4:28,6:35,10:46,16:64,25:82,35:98,50:117,70:144,95:172,120:197,150:220,185:250,240:290,300:326}}}},EF:{PVC:{Cu:{"2":{"4":40,"6":51,"10":70,"16":94,"25":119,"35":148,"50":180,"70":232,"95":282,"120":328,"150":379,"185":434,"240":514,"300":593,"1.5":22,"2.5":30},"3":{"4":34,"6":43,"10":60,"16":80,"25":101,"35":126,"50":153,"70":196,"95":238,"120":276,"150":319,"185":364,"240":430,"300":497,"1.5":18.5,"2.5":25},"4":{"25":131,"35":162,"50":196,"70":251,"95":304,"120":352,"150":406,"185":463,"240":546,"300":629},"5":{"25":110,"35":137,"50":167,"70":216,"95":264,"120":308,"150":356,"185":409,"240":485,"300":561},"6":{"25":114,"35":143,"50":174,"70":225,"95":275,"120":321,"150":372,"185":427,"240":507,"300":587},"7":{"25":146,"35":181,"50":219,"70":281,"95":341,"120":396,"150":456,"185":521,"240":615,"300":709},"8":{"25":130,"35":162,"50":197,"70":254,"95":311,"120":362,"150":419,"185":480,"240":569,"300":659}},Al:{"2":{"4":31,"6":40,"10":54,"16":73,"25":89,"35":111,"50":135,"70":173,"95":210,"120":244,"150":282,"185":322,"240":380,"300":439,"2.5":23},"3":{"4":26,"6":33,"10":46,"16":61,"25":78,"35":96,"50":117,"70":150,"95":183,"120":212,"150":245,"185":280,"240":330,"300":381,"2.5":19.5},"4":{"25":98,"35":122,"50":149,"70":192,"95":235,"120":273,"150":316,"185":363,"240":430,"300":497},"5":{"25":84,"35":105,"50":128,"70":166,"95":203,"120":237,"150":274,"185":315,"240":375,"300":434},"6":{"25":87,"35":109,"50":133,"70":173,"95":212,"120":247,"150":287,"185":330,"240":392,"300":455},"7":{"25":112,"35":139,"50":169,"70":217,"95":265,"120":308,"150":356,"185":407,"240":482,"300":557},"8":{"25":99,"35":124,"50":152,"70":196,"95":241,"120":282,"150":327,"185":376,"240":447,"300":519}}},XLPE:{Cu:{"2":{"4":49,"6":63,"10":86,"16":115,"25":149,"35":185,"50":225,"70":289,"95":352,"120":410,"150":473,"185":542,"240":641,"300":741,"1.5":26,"2.5":36},"3":{"4":42,"6":54,"10":75,"16":100,"25":127,"35":158,"50":192,"70":246,"95":298,"120":346,"150":399,"185":456,"240":538,"300":621,"1.5":23,"2.5":32},"4":{"25":161,"35":200,"50":242,"70":310,"95":377,"120":437,"150":504,"185":575,"240":679,"300":783},"5":{"25":135,"35":169,"50":207,"70":268,"95":328,"120":383,"150":444,"185":510,"240":607,"300":703},"6":{"25":141,"35":176,"50":216,"70":279,"95":342,"120":400,"150":464,"185":533,"240":634,"300":736},"7":{"25":182,"35":226,"50":275,"70":353,"95":430,"120":500,"150":577,"185":661,"240":781,"300":902},"8":{"25":161,"35":201,"50":246,"70":318,"95":389,"120":454,"150":527,"185":605,"240":719,"300":833}},Al:{"2":{"4":38,"6":49,"10":67,"16":91,"25":108,"35":135,"50":164,"70":211,"95":257,"120":300,"150":346,"185":397,"240":470,"300":543,"2.5":28},"3":{"4":32,"6":42,"10":58,"16":77,"25":97,"35":120,"50":146,"70":187,"95":227,"120":263,"150":304,"185":347,"240":409,"300":471,"2.5":24},"4":{"25":121,"35":150,"50":184,"70":237,"95":289,"120":337,"150":389,"185":447,"240":530,"300":613},"5":{"25":103,"35":129,"50":159,"70":206,"95":253,"120":296,"150":343,"185":395,"240":471,"300":547},"6":{"25":107,"35":135,"50":165,"70":215,"95":264,"120":308,"150":358,"185":413,"240":492,"300":571},"7":{"25":138,"35":172,"50":210,"70":271,"95":332,"120":387,"150":448,"185":515,"240":611,"300":708},"8":{"25":122,"35":153,"50":188,"70":244,"95":300,"120":351,"150":408,"185":470,"240":561,"300":652}}}},G:{PVC:{Cu:{"2":{1.5:19.5,2.5:27,4:36,6:46,10:63,16:85,25:110,35:137,50:167,70:214,95:261,120:303,150:341,185:390,240:459,300:528},"3":{1.5:17.5,2.5:24,4:32,6:41,10:57,16:76,25:99,35:121,50:147,70:189,95:230,120:267,150:300,185:341,240:403,300:464}},Al:{"2":{2.5:21,4:28,6:36,10:49,16:66,25:85,35:107,50:130,70:166,95:203,120:235,150:266,185:304,240:358,300:413},"3":{2.5:18.5,4:25,6:32,10:44,16:59,25:77,35:94,50:114,70:147,95:179,120:207,150:234,185:266,240:314,300:363}}},XLPE:{Cu:{"2":{1.5:26,2.5:36,4:49,6:63,10:86,16:115,25:149,35:185,50:225,70:289,95:352,120:410,150:462,185:530,240:627,300:722},"3":{1.5:23,2.5:32,4:42,6:54,10:75,16:100,25:130,35:160,50:195,70:249,95:303,120:352,150:398,185:455,240:538,300:620}},Al:{"2":{2.5:28,4:38,6:49,10:67,16:89,25:116,35:143,50:174,70:224,95:274,120:319,150:360,185:413,240:489,300:564},"3":{2.5:25,4:33,6:42,10:58,16:77,25:101,35:124,50:152,70:194,95:236,120:274,150:310,185:355,240:419,300:484}}}}};
+
+const TEMP_AIR={PVC:{10:1.22,15:1.17,20:1.12,25:1.06,30:1.00,35:0.94,40:0.87,45:0.79,50:0.71,55:0.61,60:0.50},XLPE:{10:1.15,15:1.12,20:1.08,25:1.04,30:1.00,35:0.96,40:0.91,45:0.87,50:0.82,55:0.76,60:0.71,65:0.65,70:0.58,75:0.50,80:0.41}};
+const TEMP_GND={PVC:{10:1.10,15:1.05,20:1.00,25:0.95,30:0.89,35:0.84,40:0.77,45:0.71,50:0.63,55:0.55,60:0.45},XLPE:{10:1.07,15:1.04,20:1.00,25:0.96,30:0.93,35:0.89,40:0.85,45:0.80,50:0.76,55:0.71,60:0.65,65:0.60,70:0.53,75:0.46,80:0.38}};
+const GRP_BUNDLE={1:1.00,2:0.80,3:0.70,4:0.65,5:0.60,6:0.57,7:0.54,8:0.52,9:0.50,10:0.48,11:0.46,12:0.45};
+const GRP_TRAY_T={1:1.00,2:0.88,3:0.82,4:0.77,5:0.75,6:0.73,7:0.72,8:0.71,9:0.70};
+const GRP_TRAY_S={1:1.00,2:0.95,3:0.93,4:0.91,5:0.90,6:0.89,7:0.88,8:0.88,9:0.87};
+const GRP_UG={"touching":{1:1.00,2:0.75,3:0.65,4:0.60,5:0.55,6:0.50},"0.25m":{1:1.00,2:0.80,3:0.70,4:0.65,5:0.60,6:0.57},"0.5m":{1:1.00,2:0.85,3:0.75,4:0.70,5:0.65,6:0.62},"1.0m":{1:1.00,2:0.90,3:0.85,4:0.80,5:0.78,6:0.75}};
+const SOIL_F={0.5:1.28,0.7:1.20,1.0:1.18,1.5:1.10,2.0:1.05,2.5:1.00,3.0:0.96,3.5:0.93,4.0:0.89,5.0:0.83,6.0:0.78,7.0:0.74};
+const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300,400,500,630];
+const METHOD_NAMES={D1:'埋地管道',D2:'直埋',PT:'有孔托盘',ST:'无孔托盘',LD:'梯架',TR:'电缆沟'};
+
+// Approximate cable data for info card
+const CABLE_DATA={Cu:{XLPE:{25:{od:16,wt:480},35:{od:18,wt:620},50:{od:20,wt:830},70:{od:23,wt:1120},95:{od:26,wt:1480},120:{od:29,wt:1800},150:{od:31,wt:2180},185:{od:34,wt:2650},240:{od:38,wt:3400},300:{od:42,wt:4150}},PVC:{25:{od:17,wt:490},35:{od:19,wt:640},50:{od:21,wt:850},70:{od:24,wt:1140},95:{od:27,wt:1500},120:{od:30,wt:1820},150:{od:32,wt:2210},185:{od:35,wt:2680},240:{od:39,wt:3440},300:{od:43,wt:4200}}},Al:{XLPE:{25:{od:16,wt:280},35:{od:18,wt:350},50:{od:20,wt:460},70:{od:23,wt:610},95:{od:26,wt:790},120:{od:29,wt:960},150:{od:31,wt:1160},185:{od:34,wt:1400},240:{od:38,wt:1800},300:{od:42,wt:2200}},PVC:{25:{od:17,wt:290},35:{od:19,wt:360},50:{od:21,wt:470},70:{od:24,wt:630},95:{od:27,wt:810},120:{od:30,wt:980},150:{od:32,wt:1180},185:{od:35,wt:1430},240:{od:39,wt:1830},300:{od:43,wt:2240}}}};
+
+// Default cable unit prices (¥/m, reference market price, editable)
+const DEFAULT_PRICES={Cu:{XLPE:{1.5:3,2.5:5,4:8,6:12,10:18,16:28,25:42,35:58,50:80,70:110,95:145,120:180,150:220,185:270,240:350,300:435},PVC:{1.5:2.5,2.5:4,4:6.5,6:10,10:15,16:23,25:35,35:48,50:66,70:92,95:120,120:150,150:185,185:225,240:290,300:360}},Al:{XLPE:{16:12,25:15,35:20,50:28,70:38,95:50,120:65,150:78,185:95,240:125,300:155},PVC:{16:10,25:12.5,35:17,50:23,70:32,95:42,120:55,150:66,185:80,240:105,300:130}}};
+let userPrices={}; // User-customized prices
+
+// ============================================================
+// INTERPOLATION
+// ============================================================
+function interp(x,t){const k=Object.keys(t).map(Number).sort((a,b)=>a-b);if(t[x]!==undefined)return t[x];if(x<=k[0])return t[k[0]];if(x>=k[k.length-1])return t[k[k.length-1]];let lo,hi;for(let i=0;i<k.length-1;i++){if(k[i]<=x&&x<=k[i+1]){lo=k[i];hi=k[i+1];break}}return t[lo]+(x-lo)/(hi-lo)*(t[hi]-t[lo])}
+
+// ============================================================
+// TABLE METHOD MAPPING: installation method + cable type → IEC table ref
+// ============================================================
+// Returns {table, column} for looking up ampacity
+function getTableMethod(installMethod, cableType){
+  // For D1/D2: use dedicated D1/D2 tables with "2"/"3" column keys
+  // For air methods (PT/LD/TR): use unified EF table with column 2-8
+  // For ST (无孔托盘): use B2/C tables with "2"/"3" column keys
+  if (installMethod==='D1') return 'D1';
+  if (installMethod==='D2') return 'D2';
+  if (installMethod==='ST') return cableType==='multi'?'B2':'C';
+  // PT, LD, TR all use EF table
+  return 'EF';
+}
+
+// Resolve the column key within the table
+function getTableColumn(installMethod, cableType, loadedCores, singleArrangement){
+  const tableRef = getTableMethod(installMethod, cableType);
+  if (tableRef==='D1'||tableRef==='D2'||tableRef==='B2'||tableRef==='C'){
+    return loadedCores; // "2" or "3"
+  }
+  // EF table: column depends on cable type + arrangement
+  if (cableType==='multi'){
+    return loadedCores; // "2" or "3"
+  }
+  // Single-core: map arrangement to column
+  const arrMap={
+    'touch2':'4',
+    'trefoil':'5',
+    'flat-touch':'6',
+    'flat-h-spaced':'7',
+    'flat-v-spaced':'8'
+  };
+  return arrMap[singleArrangement]||'5';
+}
+
+function getTableMethodLabel(installMethod, cableType, loadedCores, singleArrangement){
+  const tableRef=getTableMethod(installMethod,cableType);
+  const col=getTableColumn(installMethod,cableType,loadedCores,singleArrangement);
+  const colLabels={'2':'列2(多芯/二根)','3':'列3(多芯/三根)','4':'列4(单芯接触/二根)','5':'列5(单芯三角/三根)','6':'列6(单芯扁平接触)','7':'列7(单芯扁平水平间距)','8':'列8(单芯扁平垂直间距)'};
+  const tableLabels={D1:'D1(埋地管道)',D2:'D2(直埋)',B2:'B2(穿管明敷)',C:'C(明敷)',EF:'E/F(桥架/托盘)'};
+  return (tableLabels[tableRef]||tableRef)+' '+( colLabels[col]||'列'+col);
+}
+
+// ============================================================
+// STEPPER NAVIGATION
+// ============================================================
+let currentStep=1;
+document.querySelectorAll('.step-item').forEach(s=>{
+  s.addEventListener('click',()=>{
+    const n=parseInt(s.dataset.step);
+    goToStep(n);
+  });
+});
+
+function goToStep(n){
+  // Mark completed
+  document.querySelectorAll('.step-item').forEach(s=>{
+    const sn=parseInt(s.dataset.step);
+    s.classList.remove('active');
+    if(sn<n)s.classList.add('completed');
+    if(sn===n){s.classList.add('active');s.classList.remove('completed')}
+  });
+  document.querySelectorAll('.step-panel').forEach(p=>p.style.display='none');
+  const panel=document.getElementById('sp-'+n);
+  if(panel)panel.style.display='';
+  currentStep=n;
+}
+
+// ============================================================
+// CONDITIONAL UI
+// ============================================================
+function updateUI(){
+  const m=document.querySelector('input[name="installMethod"]:checked').value;
+  const cableType=document.getElementById('cableType').value;
+  const loadedCores=document.getElementById('loadedCores').value;
+  const isUnderground=['D1','D2'].includes(m);
+  const isAirOpen=['PT','LD','TR'].includes(m); // methods that use EF table
+  
+  document.getElementById('grp-ambient').style.display=isUnderground?'none':'';
+  document.getElementById('grp-soilTemp').style.display=isUnderground?'':'none';
+  document.getElementById('grp-soilRes').style.display=isUnderground?'':'none';
+  document.getElementById('grp-ugSpacing').style.display=isUnderground?'':'none';
+  document.getElementById('grp-arrangement').style.display=isUnderground?'none':'';
+  
+  // Show single-core arrangement selector only for air-open methods with single-core cable
+  const showSingleArr = (cableType==='single' && isAirOpen);
+  document.getElementById('grp-singleArrangement').style.display=showSingleArr?'':'none';
+  
+  // Filter single arrangement options based on loaded cores
+  if(showSingleArr){
+    const sel=document.getElementById('singleArrangement');
+    if(loadedCores==='2'){
+      sel.innerHTML='<option value="touch2">相互接触 — 二根 (列4)</option>';
+    }else{
+      sel.innerHTML='<option value="trefoil">三角形排列 (列5)</option><option value="flat-touch">扁平相互接触 (列6)</option><option value="flat-h-spaced">扁平水平有间距 (列7)</option><option value="flat-v-spaced">扁平垂直有间距 (列8)</option>';
+    }
+  }
+  
+  // Update arrangement options for grouping
+  if(!isUnderground){
+    const sel=document.getElementById('arrangement');
+    sel.innerHTML='<option value="touching">触碰排列</option><option value="spaced">有间距(≥1d)</option>';
+  }
+  
+  // Update table ref hint
+  const singleArr=document.getElementById('singleArrangement')?document.getElementById('singleArrangement').value:'trefoil';
+  const refLabel=getTableMethodLabel(m,cableType,loadedCores,singleArr);
+  document.getElementById('hint-tableRef').textContent='查表: '+refLabel;
+  
+  updateAllSliders();
+  autoCalc();
+}
+document.querySelectorAll('input[name="installMethod"]').forEach(r=>r.addEventListener('change',updateUI));
+
+// ============================================================
+// SLIDER UPDATES
+// ============================================================
+function updateTempSlider(){
+  const v=parseInt(document.getElementById('ambientTemp').value);
+  document.getElementById('ambientTempVal').textContent=v+'°C';
+  const ins=document.getElementById('insulation').value;
+  const ct=interp(v,TEMP_AIR[ins]||TEMP_AIR.XLPE);
+  document.getElementById('tempFactorVal').textContent='Ct='+ct.toFixed(3);
+  autoCalc();
+}
+function updateSoilTempSlider(){
+  const v=parseInt(document.getElementById('soilTemp').value);
+  document.getElementById('soilTempVal').textContent=v+'°C';
+  const ins=document.getElementById('insulation').value;
+  const ct=interp(v,TEMP_GND[ins]||TEMP_GND.XLPE);
+  document.getElementById('soilTempFactorVal').textContent='Ct='+ct.toFixed(3);
+  autoCalc();
+}
+function updateSoilResSlider(){
+  const v=parseFloat(document.getElementById('soilRes').value);
+  document.getElementById('soilResVal').textContent=v.toFixed(1);
+  const cs=interp(v,SOIL_F);
+  document.getElementById('soilResFactorVal').textContent='Cs='+cs.toFixed(3);
+  autoCalc();
+}
+function updateGroupSlider(){
+  const n=parseInt(document.getElementById('circuitCount').value);
+  document.getElementById('circuitCountVal').textContent=n;
+  const m=document.querySelector('input[name="installMethod"]:checked').value;
+  const cableType=document.getElementById('cableType')?document.getElementById('cableType').value:'multi';
+  const tableRef=getTableMethod(m,cableType);
+  const isUnderground=['D1','D2'].includes(m);
+  let cg=1;
+  if(n>1){
+    if(isUnderground){
+      const sp=document.getElementById('ugSpacing').value;
+      cg=interp(n,GRP_UG[sp]||GRP_UG.touching);
+    }else if(tableRef==='EF'){
+      const arr=document.getElementById('arrangement').value;
+      cg=interp(n,arr==='spaced'?GRP_TRAY_S:GRP_TRAY_T);
+    }else{
+      cg=interp(n,GRP_BUNDLE);
+    }
+  }
+  document.getElementById('groupFactorVal').textContent='Cg='+cg.toFixed(3);
+  // Warn if severe derating
+  if(cg<0.6){showToast('多回路降额严重(Cg='+cg.toFixed(2)+')，建议考虑分组敷设','warn');}
+  autoCalc();
+}
+function updateAllSliders(){updateTempSlider();updateSoilTempSlider();updateSoilResSlider();updateGroupSlider();}
+
+// ============================================================
+// POWER TO CURRENT
+// ============================================================
+function calcCurrentFromPower(){
+  const P=parseFloat(document.getElementById('power').value)*1000;
+  const U=parseFloat(document.getElementById('voltage').value);
+  const Kd=parseFloat(document.getElementById('demandFactor').value)||1.0;
+  const Kv=parseFloat(document.getElementById('voltFactor').value)||0.95;
+  const pf=parseFloat(document.getElementById('pf').value);
+  const eff=parseFloat(document.getElementById('eff').value);
+  const cores=document.getElementById('loadedCores').value;
+  if(!P||!U||!pf||!eff||!Kv)return;
+  const IB=cores==='3'?(P*Kd)/(Math.sqrt(3)*U*Kv*pf*eff):(P*Kd)/(U*Kv*pf*eff);
+  document.getElementById('designCurrent').value=Math.round(IB*10)/10;
+  autoCalc();
+}
+
+// ============================================================
+// AUTO CALCULATION (debounced)
+// ============================================================
+let calcTimer=null;
+function autoCalc(){
+  clearTimeout(calcTimer);
+  calcTimer=setTimeout(()=>doCalc(),200);
+}
+
+function calculateAll(){doCalc();}
+
+// Store latest calculation context for row switching
+let lastCalcCtx=null;
+
+function doCalc(){
+  const m=document.querySelector('input[name="installMethod"]:checked').value;
+  const ins=document.getElementById('insulation').value;
+  const cond=document.getElementById('conductor').value;
+  const cores=document.getElementById('loadedCores').value;
+  const cableType=document.getElementById('cableType').value;
+  const singleArr=document.getElementById('singleArrangement')?document.getElementById('singleArrangement').value:'trefoil';
+  const IB=parseFloat(document.getElementById('designCurrent').value);
+
+  // Resolve table and column
+  const tableRef=getTableMethod(m,cableType);
+  const colKey=getTableColumn(m,cableType,cores,singleArr);
+
+  document.getElementById('ps-method').textContent=METHOD_NAMES[m]+' → '+tableRef+'/列'+colKey;
+  document.getElementById('ps-cable').textContent=ins+' / '+(cond==='Cu'?'铜':'铝')+' / '+(cableType==='multi'?'多芯':'单芯');
+  document.getElementById('ps-cores').textContent=cores+'根载流导体';
+  document.getElementById('ps-current').textContent=IB?IB+' A':'-- A';
+
+  if(!IB||IB<=0){
+    document.getElementById('hint-baseAmp').textContent='';
+    return;
+  }
+
+  const isUnderground=['D1','D2'].includes(m);
+  let Ct=1,Cg=1,Cs=1;
+  let tempDesc='',groupDesc='',soilDesc='';
+
+  if(isUnderground){
+    const st=parseInt(document.getElementById('soilTemp').value);
+    Ct=interp(st,TEMP_GND[ins]||TEMP_GND.XLPE);
+    tempDesc='土壤'+st+'°C';
+    const sr=parseFloat(document.getElementById('soilRes').value);
+    Cs=interp(sr,SOIL_F);
+    soilDesc=sr.toFixed(1)+' K·m/W';
+  }else{
+    const at=parseInt(document.getElementById('ambientTemp').value);
+    Ct=interp(at,TEMP_AIR[ins]||TEMP_AIR.XLPE);
+    tempDesc='空气'+at+'°C';
+  }
+
+  const n=parseInt(document.getElementById('circuitCount').value);
+  if(n>1){
+    if(isUnderground){
+      const sp=document.getElementById('ugSpacing').value;
+      Cg=interp(n,GRP_UG[sp]||GRP_UG.touching);
+      groupDesc=n+'回路,'+sp;
+    }else{
+      // Air methods: use tray grouping for EF-based, bundled for B2/C-based
+      const arr=document.getElementById('arrangement').value;
+      if(tableRef==='EF'){
+        Cg=interp(n,arr==='spaced'?GRP_TRAY_S:GRP_TRAY_T);
+        groupDesc=n+'回路,'+(arr==='spaced'?'有间距':'触碰');
+      }else{
+        Cg=interp(n,GRP_BUNDLE);
+        groupDesc=n+'回路,成束';
+      }
+    }
+  }else{groupDesc='单回路';}
+
+  const total=Ct*Cg*Cs;
+  const reqBase=IB/total;
+
+  document.getElementById('ps-derating').textContent=total.toFixed(3);
+  document.getElementById('hint-baseAmp').textContent='需基准载流量 ≥ '+Math.round(reqBase*10)/10+' A (综合系数'+total.toFixed(3)+')';
+  document.getElementById('hint-baseAmp').className='form-hint live-value';
+
+  const table=AMPACITY_TABLES[tableRef]?.[ins]?.[cond]?.[colKey];
+  if(!table){showToast('当前参数组合暂无数据','fail');return;}
+
+  const secs=Object.keys(table).map(Number).sort((a,b)=>a-b);
+  const alts=[];
+  let firstAdequate=null;
+  for(const s of secs){
+    const base=table[s];
+    if(base===null||base===undefined)continue; // Skip null entries (not in standard)
+    const corr=base*total;
+    const loadRatio=Math.round(IB/corr*1000)/10; // 载荷率 = IB/Iz ×100%
+    const margin=((corr-IB)/IB*100);
+    let st='ng';if(loadRatio<=90)st='ok';else if(loadRatio<=100)st='mg';
+    const price=getPrice(cond,ins,s);
+    alts.push({
+      s,base,corr:Math.round(corr*10)/10,
+      margin:Math.round(margin*10)/10,loadRatio,st,
+      price:price!==null?price:null,
+      costLabel:price!==null?'¥'+price.toFixed(1)+'/m':'--'
+    });
+    if(!firstAdequate&&corr>=IB)firstAdequate=alts[alts.length-1];
+  }
+
+  if(alts.length===0){showToast('当前参数组合无有效数据，请检查电缆芯数和排列方式','fail');return;}
+
+  // Multi-option recommendation logic
+  let recommended=null;
+  let recs=[];
+  if(firstAdequate){
+    // Option A: minimum adequate (first one ≥ IB)
+    const optMin=firstAdequate;
+
+    // Option B: recommended (balanced margin 10-30%)
+    let optRec=null;
+    for(const a of alts){
+      if(a.margin>=10&&a.margin<=35){optRec=a;break;}
+      if(a.margin>=10&&!optRec)optRec=a;
+    }
+    if(!optRec)optRec=optMin;
+
+    // Option C: economic (best price among adequate options)
+    let optEco=null;
+    let bestValue=Infinity;
+    for(const a of alts){
+      if(a.margin>=0&&a.price!==null&&a.price<bestValue){
+        bestValue=a.price;optEco=a;
+      }
+    }
+    if(!optEco)optEco=optRec;
+
+    // Compile recommendations
+    recs=[];
+    const addedSections=new Set();
+    const addRec=(a,label,styleClass,priority)=>{
+      if(!addedSections.has(a.s)){
+        addedSections.add(a.s);
+        recs.push({...a,label,styleClass,priority});
+      }
+    };
+    addRec(optRec,'推荐选型','best',0);
+    addRec(optMin,'最小满足','min',1);
+    if(optEco.s!==optRec.s&&optEco.s!==optMin.s)addRec(optEco,'经济方案','eco',2);
+    // Sort by section
+    recs.sort((a,b)=>a.s-b.s);
+    recommended=optRec;
+  }else{
+    // No adequate section at all
+    recommended=alts[alts.length-1];
+    recs=[{...recommended,label:'截面不足','styleClass':'ng',priority:0}];
+  }
+
+  // Find which sections to show in comparison (nearby + special ones)
+  const showSet=new Set();
+  // Always include all recommendation candidates
+  for(const r of recs)showSet.add(r.s);
+  // Expand around the recommended section (±4 adjacent sizes)
+  const recIdx=alts.findIndex(a=>a.s===recommended.s);
+  const expandStart=Math.max(0,recIdx-4);
+  const expandEnd=Math.min(alts.length-1,recIdx+4);
+  for(let i=expandStart;i<=expandEnd;i++)showSet.add(alts[i].s);
+  // Also show the first inadequate one just below the range (context)
+  const firstBelow=alts.findIndex(a=>a.margin>=0);
+  if(firstBelow>0)showSet.add(alts[firstBelow-1].s);
+  const shown=alts.filter(a=>showSet.has(a.s));
+  shown.sort((a,b)=>a.s-b.s);
+
+  // ===== RENDER =====
+  const rec=recommended;
+  const recCorr=rec.corr;
+  const recBase=rec.base;
+  const margin=rec.margin;
+
+  // Summary cards
+  const multiSections=recs.map(r=>r.s+'mm²').join(' | ');
+  document.getElementById('sc-section').innerHTML='<div class="sc-label">推荐截面</div><div class="sc-value" style="font-size:20px">'+multiSections+'<span class="sc-unit"></span></div>';
+  document.getElementById('sc-section').className='summary-card highlight';
+  const recLoadRatio=rec.loadRatio;
+  const mClass=recLoadRatio<=90?'pass':recLoadRatio<=100?'warn':'fail';
+  document.getElementById('sc-margin').innerHTML='<div class="sc-label">载荷率</div><div class="sc-value">'+recLoadRatio+'<span class="sc-unit"> %</span></div>';
+  document.getElementById('sc-margin').className='summary-card '+mClass;
+  document.getElementById('sc-vdrop').innerHTML='<div class="sc-label">电压降</div><div class="sc-value">--<span class="sc-unit"> %</span></div>';
+
+  // Formula detail
+  document.getElementById('f-i0').textContent=recBase;
+  document.getElementById('f-kt').textContent=Ct.toFixed(3);
+  document.getElementById('f-kt-desc').textContent=tempDesc;
+  document.getElementById('f-kg').textContent=Cg.toFixed(3);
+  document.getElementById('f-kg-desc').textContent=groupDesc;
+  if(isUnderground){
+    document.getElementById('f-ks-row').style.display='';
+    document.getElementById('f-ks').textContent=Cs.toFixed(3);
+    document.getElementById('f-ks-desc').textContent=soilDesc;
+  }else{
+    document.getElementById('f-ks-row').style.display='none';
+  }
+  document.getElementById('f-iz').textContent=Math.round(recCorr*10)/10+' A';
+  document.getElementById('f-ib').textContent=IB;
+  document.getElementById('f-req').textContent=Math.round(reqBase*10)/10;
+
+  // Alert
+  const alertEl=document.getElementById('amp-alert');
+  if(recLoadRatio>100){
+    alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>载流量不满足</strong>：'+rec.s+'mm²修正后载流量'+Math.round(recCorr)+'A < 设计电流'+IB+'A，载荷率'+recLoadRatio+'%超100%。建议增大截面或优化敷设方式。</span></div>';
+  }else if(recLoadRatio>90){
+    alertEl.innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span><strong>载荷率偏高</strong>：推荐截面'+rec.s+'mm²载荷率'+recLoadRatio+'%，接近满载。建议考虑上一级截面。</span></div>';
+  }else{
+    const recPrice=getPrice(cond,ins,rec.s);
+    const costNote=recPrice!==null?'｜参考单价 ¥'+recPrice.toFixed(1)+'/m':'';
+    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>满足要求</strong>：推荐'+rec.s+'mm²，修正后载流量'+Math.round(recCorr)+'A，载荷率'+recLoadRatio+'%。'+costNote+'</span></div>';
+  }
+
+  // Tab dot
+  document.getElementById('dot-amp').className='tab-dot '+(margin>=0?'ok':'ng');
+
+  // Store context for row switching
+  lastCalcCtx={alts,shown,recs,recommended,Ct,Cg,Cs,total,IB,tempDesc,groupDesc,soilDesc,isUnderground,cond,ins,cores,tableRef,colKey};
+
+  // Comparison table (clickable rows)
+  let html='';
+  for(let idx=0;idx<shown.length;idx++){
+    const a=shown[idx];
+    const isBest=recs.some(r=>r.s===a.s&&r.styleClass==='best');
+    const isMin=recs.some(r=>r.s===a.s&&r.styleClass==='min');
+    const isEco=recs.some(r=>r.s===a.s&&r.styleClass==='eco');
+    let label='';
+    if(isBest)label='<span class="badge-rec badge-best">★ 推荐</span>';
+    else if(isMin)label='<span class="badge-rec badge-min">最小</span>';
+    else if(isEco)label='<span class="badge-rec badge-eco">经济</span>';
+
+    const isSelected=(a.s===rec.s);
+    const rowClass=(isSelected?'selected':'')+(isBest||isMin||isEco?' recommended':'');
+    html+='<tr class="'+rowClass+'" data-section="'+a.s+'" onclick="selectSection('+a.s+')"><td>'+label+'</td><td>'+a.s+' mm²</td><td>'+a.corr+' A</td><td>'+a.loadRatio+'%</td><td style="font-size:10px">'+a.costLabel+'</td><td><span class="status-pip '+a.st+'"></span></td></tr>';
+  }
+  document.getElementById('comp-body').innerHTML=html;
+
+  // Price editor
+  renderPriceEditor(alts);
+
+  // Cable info (for recommended section)
+  const ci=CABLE_DATA[cond]?.[ins]?.[rec.s];
+  if(ci){
+    document.getElementById('cable-info').style.display='';
+    const prefix=cond==='Cu'?'YJV':'YJLV';
+    const coreStr=cores==='3'?'3×'+rec.s:'4×'+rec.s;
+    document.getElementById('ci-model').textContent=prefix+' '+coreStr+' 0.6/1kV';
+    document.getElementById('ci-od').textContent='≈'+ci.od+' mm';
+    document.getElementById('ci-weight').textContent='≈'+ci.wt+' kg/km';
+    const recPrice=getPrice(cond,ins,rec.s);
+    document.getElementById('ci-price').textContent=recPrice!==null?'¥'+recPrice.toFixed(1)+'/m':'--';
+    document.getElementById('ci-temp').textContent=ins==='XLPE'?'90°C':'70°C';
+  }else{
+    document.getElementById('cable-info').style.display='none';
+  }
+}
+
+// ============================================================
+// CABLE IMPEDANCE DATA (IEC 60228 + IEC 60287)
+// R = AC resistance at max operating temperature (Ω/km)
+// X = reactance (Ω/km), typical for trefoil/touching arrangement
+// ============================================================
+const CABLE_IMPEDANCE = {
+  Cu: {
+    XLPE: { // max 90°C, R calculated from 20°C DC resistance × (1+α×(90-20)) × 1.02(skin/prox)
+      1.5:{R:15.43,X:0.118}, 2.5:{R:9.26,X:0.109}, 4:{R:5.79,X:0.101}, 6:{R:3.86,X:0.0955},
+      10:{R:2.31,X:0.0861}, 16:{R:1.45,X:0.0817}, 25:{R:0.927,X:0.0783}, 35:{R:0.668,X:0.0762},
+      50:{R:0.494,X:0.0745}, 70:{R:0.342,X:0.0728}, 95:{R:0.253,X:0.0716}, 120:{R:0.201,X:0.0708},
+      150:{R:0.162,X:0.0700}, 185:{R:0.131,X:0.0693}, 240:{R:0.101,X:0.0685}, 300:{R:0.0813,X:0.0678}
+    },
+    PVC: { // max 70°C
+      1.5:{R:14.48,X:0.118}, 2.5:{R:8.69,X:0.109}, 4:{R:5.43,X:0.101}, 6:{R:3.62,X:0.0955},
+      10:{R:2.17,X:0.0861}, 16:{R:1.36,X:0.0817}, 25:{R:0.870,X:0.0783}, 35:{R:0.627,X:0.0762},
+      50:{R:0.464,X:0.0745}, 70:{R:0.321,X:0.0728}, 95:{R:0.237,X:0.0716}, 120:{R:0.189,X:0.0708},
+      150:{R:0.152,X:0.0700}, 185:{R:0.123,X:0.0693}, 240:{R:0.0950,X:0.0685}, 300:{R:0.0763,X:0.0678}
+    }
+  },
+  Al: {
+    XLPE: { // max 90°C
+      2.5:{R:15.20,X:0.109}, 4:{R:9.50,X:0.101}, 6:{R:6.33,X:0.0955},
+      10:{R:3.80,X:0.0861}, 16:{R:2.38,X:0.0817}, 25:{R:1.52,X:0.0783}, 35:{R:1.10,X:0.0762},
+      50:{R:0.811,X:0.0745}, 70:{R:0.562,X:0.0728}, 95:{R:0.415,X:0.0716}, 120:{R:0.330,X:0.0708},
+      150:{R:0.265,X:0.0700}, 185:{R:0.215,X:0.0693}, 240:{R:0.166,X:0.0685}, 300:{R:0.133,X:0.0678}
+    },
+    PVC: { // max 70°C
+      2.5:{R:14.27,X:0.109}, 4:{R:8.92,X:0.101}, 6:{R:5.95,X:0.0955},
+      10:{R:3.57,X:0.0861}, 16:{R:2.23,X:0.0817}, 25:{R:1.43,X:0.0783}, 35:{R:1.03,X:0.0762},
+      50:{R:0.762,X:0.0745}, 70:{R:0.528,X:0.0728}, 95:{R:0.390,X:0.0716}, 120:{R:0.310,X:0.0708},
+      150:{R:0.249,X:0.0700}, 185:{R:0.202,X:0.0693}, 240:{R:0.156,X:0.0685}, 300:{R:0.125,X:0.0678}
+    }
+  }
+};
+
+// ============================================================
+// VOLTAGE DROP CALCULATION
+// ============================================================
+function calcVoltageDrop(){
+  if(!lastCalcCtx) return;
+  const {IB,cond,ins,cores}=lastCalcCtx;
+  
+  // Get selected section from current view
+  const selectedRow=document.querySelector('#comp-body tr.selected');
+  let section=lastCalcCtx.recommended?lastCalcCtx.recommended.s:null;
+  if(selectedRow) section=parseInt(selectedRow.dataset.section);
+  if(!section) return;
+  
+  const L=parseFloat(document.getElementById('vd-length').value);
+  const U=parseFloat(document.getElementById('vd-voltage').value);
+  const pf=parseFloat(document.getElementById('pf').value)||0.95; // 引用负载模块的功率因数
+  const loadType=document.getElementById('vd-loadType').value;
+  
+  // Update auto-filled display
+  document.getElementById('vd-section-show').textContent=section;
+  document.getElementById('vd-cond-show').textContent=cond==='Cu'?'铜':'铝';
+  document.getElementById('vd-ib-show').textContent=IB;
+  document.getElementById('vd-sys-show').textContent=cores==='3'?'三相':'单相';
+  
+  if(!L||!U||!pf){
+    document.getElementById('vd-result-block').style.display='none';
+    document.getElementById('vd-alert').innerHTML='';
+    document.getElementById('dot-vd').className='tab-dot';
+    return;
+  }
+  
+  // Lookup impedance
+  const impData=CABLE_IMPEDANCE[cond]?.[ins]?.[section];
+  if(!impData){
+    document.getElementById('vd-alert').innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span>当前截面无电阻/电抗数据</span></div>';
+    document.getElementById('vd-result-block').style.display='none';
+    return;
+  }
+  
+  const R=impData.R; // Ω/km
+  const X=impData.X; // Ω/km
+  const sinPhi=Math.sqrt(1-pf*pf);
+  const limit=loadType==='lighting'?3:5;
+  
+  // Calculate voltage drop
+  let dU;
+  if(cores==='3'){
+    // 三相: ΔU = √3 × IB × L(km) × (R·cosφ + X·sinφ)
+    dU=Math.sqrt(3)*IB*(L/1000)*(R*pf+X*sinPhi);
+  }else{
+    // 单相: ΔU = 2 × IB × L(km) × (R·cosφ + X·sinφ)
+    dU=2*IB*(L/1000)*(R*pf+X*sinPhi);
+  }
+  
+  const dUr=cores==='3'?Math.sqrt(3)*IB*(L/1000)*R*pf:2*IB*(L/1000)*R*pf;
+  const dUx=cores==='3'?Math.sqrt(3)*IB*(L/1000)*X*sinPhi:2*IB*(L/1000)*X*sinPhi;
+  const dUpct=dU/U*100;
+  
+  // Render
+  document.getElementById('vd-result-block').style.display='';
+  document.getElementById('vd-r').textContent=R.toFixed(4);
+  document.getElementById('vd-x').textContent=X.toFixed(4);
+  document.getElementById('vd-dur').textContent=dUr.toFixed(2);
+  document.getElementById('vd-dux').textContent=dUx.toFixed(2);
+  document.getElementById('vd-du').textContent=dU.toFixed(2);
+  document.getElementById('vd-pct').textContent=dUpct.toFixed(2)+' %';
+  document.getElementById('vd-limit-show').textContent='限值: '+limit+'%';
+  
+  // Alert
+  const alertEl=document.getElementById('vd-alert');
+  const loadTypeLabel=loadType==='lighting'?'照明':'动力';
+  if(dUpct<=limit*0.8){
+    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>电压降满足</strong>：ΔU%='+dUpct.toFixed(2)+'% ≤ '+limit+'% ('+loadTypeLabel+')。'+section+'mm² × '+L+'m 合格。</span></div>';
+    document.getElementById('dot-vd').className='tab-dot ok';
+  }else if(dUpct<=limit){
+    alertEl.innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span><strong>电压降接近限值</strong>：ΔU%='+dUpct.toFixed(2)+'% (限值'+limit+'%)。建议核实或考虑增大截面。</span></div>';
+    document.getElementById('dot-vd').className='tab-dot ok';
+  }else{
+    // Calculate minimum section needed
+    let minSection=null;
+    const allSections=Object.keys(CABLE_IMPEDANCE[cond]?.[ins]||{}).map(Number).sort((a,b)=>a-b);
+    for(const s of allSections){
+      const imp=CABLE_IMPEDANCE[cond][ins][s];
+      let testDU;
+      if(cores==='3')testDU=Math.sqrt(3)*IB*(L/1000)*(imp.R*pf+imp.X*sinPhi);
+      else testDU=2*IB*(L/1000)*(imp.R*pf+imp.X*sinPhi);
+      if(testDU/U*100<=limit){minSection=s;break;}
+    }
+    const suggestion=minSection?'建议增大截面至 '+minSection+' mm²':'需缩短线路长度或增大电压等级';
+    alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>电压降超标</strong>：ΔU%='+dUpct.toFixed(2)+'% > '+limit+'%。'+suggestion+'。</span></div>';
+    document.getElementById('dot-vd').className='tab-dot ng';
+  }
+  
+  // Update summary card
+  const vdClass=dUpct<=limit?'pass':'fail';
+  document.getElementById('sc-vdrop').innerHTML='<div class="sc-label">电压降</div><div class="sc-value">'+dUpct.toFixed(1)+'<span class="sc-unit"> %</span></div>';
+  document.getElementById('sc-vdrop').className='summary-card '+vdClass;
+}
+
+// ============================================================
+// PRICE HELPERS
+// ============================================================
+function getPrice(cond,ins,s){
+  const key=cond+'|'+ins+'|'+s;
+  if(userPrices[key]!==undefined)return userPrices[key];
+  return DEFAULT_PRICES[cond]?.[ins]?.[s]||null;
+}
+function setPrice(cond,ins,s,val){
+  userPrices[cond+'|'+ins+'|'+s]=val;
+  doCalc();
+}
+function resetPrices(){
+  userPrices={};
+  doCalc();
+  showToast('单价已恢复为默认参考值');
+}
+function renderPriceEditor(alts){
+  const cond=document.getElementById('conductor').value;
+  const ins=document.getElementById('insulation').value;
+  const shown=alts.slice(0,9);
+  let html='';
+  for(const a of shown){
+    const p=getPrice(cond,ins,a.s);
+    html+='<div class="cost-input-row"><span style="min-width:50px">'+a.s+' mm²</span><span style="font-size:9px;color:var(--text-muted)">¥</span><input type="number" value="'+(p!==null?p:'')+'" min="0" step="0.1" onchange="setPrice(\''+cond+'\',\''+ins+'\','+a.s+',parseFloat(this.value)||0)" title="修改单价"/><span style="font-size:9px;color:var(--text-muted)">/m</span></div>';
+  }
+  document.getElementById('price-editor').innerHTML=html||'<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:12px">输入参数后显示相关截面价格</div>';
+}
+
+
+// ============================================================
+// SELECT SECTION (click row to view detail)
+// ============================================================
+function selectSection(section){
+  if(!lastCalcCtx)return;
+  const{alts,shown,recs,recommended,Ct,Cg,Cs,total,IB,tempDesc,groupDesc,soilDesc,isUnderground,cond,ins,cores}=lastCalcCtx;
+  const a=alts.find(x=>x.s===section);
+  if(!a)return;
+
+  // Highlight selected row
+  document.querySelectorAll('#comp-body tr').forEach(tr=>{
+    tr.classList.remove('selected');
+    if(parseInt(tr.dataset.section)===section)tr.classList.add('selected');
+  });
+
+  // Update summary card (section)
+  const isRec=(section===recommended.s);
+  const recLabel=isRec?'推荐截面':'查看截面';
+  document.getElementById('sc-section').innerHTML='<div class="sc-label">'+recLabel+'</div><div class="sc-value">'+section+'<span class="sc-unit"> mm²</span></div>';
+  document.getElementById('sc-section').className=isRec?'summary-card highlight':'summary-card';
+
+  // Update load ratio card
+  const mClass=a.loadRatio<=90?'pass':a.loadRatio<=100?'warn':'fail';
+  document.getElementById('sc-margin').innerHTML='<div class="sc-label">载荷率</div><div class="sc-value">'+a.loadRatio+'<span class="sc-unit"> %</span></div>';
+  document.getElementById('sc-margin').className='summary-card '+mClass;
+
+  // Update formula detail for this section
+  document.getElementById('f-i0').textContent=a.base;
+  document.getElementById('f-iz').textContent=a.corr+' A';
+
+  // Alert update
+  const alertEl=document.getElementById('amp-alert');
+  if(a.loadRatio>100){
+    alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>'+section+'mm² 不满足</strong>：修正后载流量'+a.corr+'A < 设计电流'+IB+'A，载荷率'+a.loadRatio+'%。需选择更大截面。</span></div>';
+  }else if(a.loadRatio>90){
+    alertEl.innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span><strong>'+section+'mm² 载荷率偏高</strong>：修正后'+a.corr+'A，载荷率'+a.loadRatio+'%。'+(isRec?'':'推荐选用 '+recommended.s+'mm²。')+'</span></div>';
+  }else{
+    const p=getPrice(cond,ins,section);
+    const costNote=p!==null?'｜参考单价 ¥'+p.toFixed(1)+'/m':'';
+    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>'+section+'mm² 满足要求</strong>：修正后'+a.corr+'A，载荷率'+a.loadRatio+'%。'+costNote+(isRec?' (推荐选型)':'')+'</span></div>';
+  }
+
+  // Update cable info for selected section
+  const ci=CABLE_DATA[cond]?.[ins]?.[section];
+  if(ci){
+    document.getElementById('cable-info').style.display='';
+    const prefix=cond==='Cu'?'YJV':'YJLV';
+    const coreStr=cores==='3'?'3×'+section:'4×'+section;
+    document.getElementById('ci-model').textContent=prefix+' '+coreStr+' 0.6/1kV';
+    document.getElementById('ci-od').textContent='≈'+ci.od+' mm';
+    document.getElementById('ci-weight').textContent='≈'+ci.wt+' kg/km';
+    const sp=getPrice(cond,ins,section);
+    document.getElementById('ci-price').textContent=sp!==null?'¥'+sp.toFixed(1)+'/m':'--';
+    document.getElementById('ci-temp').textContent=ins==='XLPE'?'90°C':'70°C';
+  }else{
+    document.getElementById('cable-info').style.display='none';
+  }
+  // Recalculate voltage drop and other checks for new section
+  calcVoltageDrop();
+  calcShortCircuit();
+  calcProtection();
+}
+
+// ============================================================
+// DETAIL TABS
+// ============================================================
+document.querySelectorAll('.detail-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.detail-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('dp-'+tab.dataset.dtab).classList.add('active');
+    if(tab.dataset.dtab==='vdrop') calcVoltageDrop();
+    if(tab.dataset.dtab==='sc') calcShortCircuit();
+    if(tab.dataset.dtab==='prot') calcProtection();
+  });
+});
+
+// ============================================================
+// SHORT CIRCUIT CALCULATION
+// ============================================================
+// K factors per IEC 60364-5-54 Table 54.2/54.3
+const K_FACTORS={Cu:{PVC:115,XLPE:143},Al:{PVC:76,XLPE:94}};
+
+function calcShortCircuit(){
+  if(!lastCalcCtx) return;
+  const{cond,ins,recommended}=lastCalcCtx;
+  
+  const selectedRow=document.querySelector('#comp-body tr.selected');
+  let section=recommended?recommended.s:null;
+  if(selectedRow) section=parseInt(selectedRow.dataset.section);
+  if(!section) return;
+  
+  const Isc=parseFloat(document.getElementById('sc-fault').value); // kA
+  const t=parseFloat(document.getElementById('sc-time').value); // s
+  
+  document.getElementById('sc-section-show').textContent=section;
+  document.getElementById('sc-cond-show').textContent=cond==='Cu'?'铜':'铝';
+  document.getElementById('sc-ins-show').textContent=ins;
+  
+  if(!Isc||!t){
+    document.getElementById('sc-result-block').style.display='none';
+    document.getElementById('sc-alert').innerHTML='';
+    document.getElementById('dot-sc').className='tab-dot';
+    return;
+  }
+  
+  const K=K_FACTORS[cond]?.[ins]||115;
+  const K2S2=Math.pow(K*section,2); // (K×S)² in A²·s
+  const I2t=Math.pow(Isc*1000,2)*t; // (Isc)²×t in A²·s
+  const Smin=Isc*1000*Math.sqrt(t)/K; // mm²
+  const pass=K2S2>=I2t;
+  
+  // Render
+  document.getElementById('sc-result-block').style.display='';
+  document.getElementById('sc-k').textContent=K;
+  document.getElementById('sc-k-desc').textContent=cond+'/'+ins;
+  document.getElementById('sc-k2s2').textContent=(K2S2/1e6).toFixed(2)+' ×10⁶';
+  document.getElementById('sc-i2t').textContent=(I2t/1e6).toFixed(2)+' ×10⁶';
+  document.getElementById('sc-smin').textContent=Math.round(Smin*10)/10;
+  document.getElementById('sc-verdict').textContent=pass?'满足 ✓':'不满足 ✗';
+  
+  const alertEl=document.getElementById('sc-alert');
+  if(pass){
+    const ratio=Math.round(K2S2/I2t*100)/100;
+    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>短路耐量满足</strong>：K²S²/I²t = '+ratio+'倍 ≥ 1。'+section+'mm²可承受'+Isc+'kA/'+t+'s短路。</span></div>';
+    document.getElementById('dot-sc').className='tab-dot ok';
+  }else{
+    // Find minimum standard section
+    const stdSections=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300,400,500,630];
+    let recSection=null;
+    for(const s of stdSections){if(Math.pow(K*s,2)>=I2t){recSection=s;break;}}
+    const suggestion=recSection?'建议增大截面至 '+recSection+' mm²':'超出标准截面范围，需多回路并联';
+    alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>短路耐量不满足</strong>：需最小截面 '+Math.ceil(Smin)+' mm²。'+suggestion+'。</span></div>';
+    document.getElementById('dot-sc').className='tab-dot ng';
+  }
+}
+
+// ============================================================
+// PROTECTION COORDINATION CALCULATION
+// ============================================================
+function calcProtection(){
+  if(!lastCalcCtx) return;
+  const{IB,recommended,alts}=lastCalcCtx;
+  
+  const selectedRow=document.querySelector('#comp-body tr.selected');
+  let section=recommended?recommended.s:null;
+  if(selectedRow) section=parseInt(selectedRow.dataset.section);
+  
+  // Get IZ for selected section
+  const selAlt=alts.find(a=>a.s===section);
+  const IZ=selAlt?selAlt.corr:0;
+  
+  const IN=parseFloat(document.getElementById('prot-in').value);
+  const protType=document.getElementById('prot-type').value;
+  
+  document.getElementById('prot-ib-show').textContent=IB||'--';
+  document.getElementById('prot-iz-show').textContent=IZ?Math.round(IZ):'--';
+  
+  if(!IN||!IB||!IZ){
+    document.getElementById('prot-result-block').style.display='none';
+    document.getElementById('prot-alert').innerHTML='';
+    document.getElementById('dot-pr').className='tab-dot';
+    return;
+  }
+  
+  // I2 factor: MCB/MCCB = 1.45×IN, fuse gG = 1.6×IN
+  const i2Factor=protType==='fuse'?1.6:1.45;
+  const I2=IN*i2Factor;
+  const IZ145=1.45*IZ;
+  
+  const cond1=IB<=IN&&IN<=IZ; // IB ≤ IN ≤ IZ
+  const cond2=I2<=IZ145;      // I2 ≤ 1.45×IZ
+  const pass=cond1&&cond2;
+  
+  // Render
+  document.getElementById('prot-result-block').style.display='';
+  document.getElementById('prot-cond1').textContent=cond1?'满足 ✓':'不满足 ✗';
+  document.getElementById('prot-cond1-detail').textContent=Math.round(IB)+'A ≤ '+Math.round(IN)+'A ≤ '+Math.round(IZ)+'A';
+  document.getElementById('prot-cond2').textContent=cond2?'满足 ✓':'不满足 ✗';
+  document.getElementById('prot-cond2-detail').textContent=Math.round(I2)+'A ≤ '+Math.round(IZ145)+'A';
+  document.getElementById('prot-i2').textContent=Math.round(I2);
+  document.getElementById('prot-i2-desc').textContent=i2Factor+'×IN ('+protType+')';
+  document.getElementById('prot-145iz').textContent=Math.round(IZ145);
+  document.getElementById('prot-verdict').textContent=pass?'满足 ✓':'不满足 ✗';
+  
+  const alertEl=document.getElementById('prot-alert');
+  if(pass){
+    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>保护协调满足</strong>：IB('+Math.round(IB)+'A) ≤ IN('+Math.round(IN)+'A) ≤ IZ('+Math.round(IZ)+'A)，I2('+Math.round(I2)+'A) ≤ 1.45×IZ('+Math.round(IZ145)+'A)。</span></div>';
+    document.getElementById('dot-pr').className='tab-dot ok';
+  }else{
+    let reason='';
+    if(!cond1){
+      if(IN<IB)reason='IN('+Math.round(IN)+'A) < IB('+Math.round(IB)+'A)，保护装置额定电流偏小';
+      else reason='IN('+Math.round(IN)+'A) > IZ('+Math.round(IZ)+'A)，保护装置额定电流偏大，无法有效保护电缆';
+    }
+    if(!cond2) reason+=(reason?' 且 ':'')+'I2('+Math.round(I2)+'A) > 1.45×IZ('+Math.round(IZ145)+'A)';
+    alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>保护协调不满足</strong>：'+reason+'。建议调整保护装置或电缆截面。</span></div>';
+    document.getElementById('dot-pr').className='tab-dot ng';
+  }
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(type==='warn'?' warn-toast':'')+(type==='fail'?' fail-toast':'');
+  setTimeout(()=>{t.className='toast'},3000);
+}
+
+// ============================================================
+// RESET
+// ============================================================
+function resetAll(){
+  document.getElementById('m-PT').checked=true;
+  document.getElementById('cableType').value='multi';
+  document.getElementById('insulation').value='XLPE';
+  document.getElementById('conductor').value='Cu';
+  document.getElementById('loadedCores').value='3';
+  document.getElementById('ambientTemp').value=30;
+  document.getElementById('soilTemp').value=20;
+  document.getElementById('soilRes').value=2.5;
+  document.getElementById('circuitCount').value=1;
+  document.getElementById('designCurrent').value='';
+  document.getElementById('power').value='';
+  goToStep(1);
+  updateUI();
+  document.getElementById('sc-section').innerHTML='<div class="sc-label">推荐截面</div><div class="sc-value">--<span class="sc-unit"> mm²</span></div>';
+  document.getElementById('sc-section').className='summary-card highlight';
+  document.getElementById('sc-margin').innerHTML='<div class="sc-label">载荷率</div><div class="sc-value">--<span class="sc-unit"> %</span></div>';
+  document.getElementById('sc-margin').className='summary-card';
+  document.getElementById('comp-body').innerHTML='<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px">输入参数后自动生成</td></tr>';
+  document.getElementById('price-editor').innerHTML='<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:12px">输入参数后显示相关截面价格</div>';
+  document.getElementById('cable-info').style.display='none';
+  document.getElementById('amp-alert').innerHTML='';
+  document.getElementById('hint-baseAmp').textContent='';
+}
+
+// ============================================================
+// EXPORT EXCEL
+// ============================================================
+function exportExcel(){
+  const IB=parseFloat(document.getElementById('designCurrent').value);
+  if(!IB){showToast('请先输入设计电流并计算','warn');return;}
+  const m=document.querySelector('input[name="installMethod"]:checked').value;
+  const ins=document.getElementById('insulation').value;
+  const cond=document.getElementById('conductor').value;
+  const cores=document.getElementById('loadedCores').value;
+  const recText=document.getElementById('sc-section').querySelector('.sc-value').textContent;
+
+  const ws1Data=[['电缆选型计算报告'],[],['参数','值'],['敷设方式',m+' '+METHOD_NAMES[m]],['绝缘类型',ins],['导体材料',cond==='Cu'?'铜':'铝'],['载流导体',cores+'根'],['设计电流',IB+' A'],['推荐截面',recText],['综合修正系数',document.getElementById('ps-derating').textContent],['载流量计算',document.getElementById('f-iz').textContent]];
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(ws1Data);
+
+  // Add comparison sheet
+  const compHead=[['方案对比表'],[],['截面(mm²)','修正后载流量(A)','裕度(%)','参考单价(¥/m)','状态']];
+  const compRows=document.querySelectorAll('#comp-body tr');
+  for(const row of compRows){
+    const cells=row.querySelectorAll('td');
+    if(cells.length>=6){
+      const label=row.querySelector('.badge-rec')?row.querySelector('.badge-rec').textContent.trim():'';
+      compHead.push([(label?label+' ':'')+cells[1].textContent,cells[2].textContent,cells[3].textContent,cells[4].textContent,cells[5].querySelector('.status-pip')?'-':'']);
+    }
+  }
+  const ws2=XLSX.utils.aoa_to_sheet(compHead);
+  ws2['!cols']=[{wch:16},{wch:18},{wch:12},{wch:14},{wch:8}];
+
+  ws['!cols']=[{wch:16},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,ws,'计算结果');
+  XLSX.utils.book_append_sheet(wb,ws2,'方案对比');
+  XLSX.writeFile(wb,'电缆选型_'+METHOD_NAMES[m]+'_'+recText.replace(/[^0-9|]/g,'')+'.xlsx');
+  showToast('Excel已导出');
+}
+
+// ============================================================
+// REPORT DRAWER (placeholder)
+// ============================================================
+function showReportDrawer(){showToast('详细报告功能将在v0.2版本上线');}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown',e=>{
+  if(e.altKey&&e.key>='1'&&e.key<='4'){e.preventDefault();goToStep(parseInt(e.key));}
+  if(e.key==='Enter'&&!e.shiftKey){const el=document.activeElement;if(el.tagName==='INPUT'&&el.type==='number')doCalc();}
+});
+
+// Init
+updateUI();
+</script>
+</body>
+</html>
