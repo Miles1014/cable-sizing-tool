@@ -755,8 +755,8 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <div class="ps-row"><span class="ps-key">综合降额</span><span class="ps-val" id="ps-derating">--</span></div>
   </div>
 
-  <!-- Unit Price Editor -->
-  <div class="card" style="margin-bottom:12px">
+  <!-- Unit Price Editor (暂关闭，后续开发) -->
+  <div class="card" style="margin-bottom:12px;display:none" id="price-section">
     <div class="card-header">
       <h3>参考单价 <span style="font-size:9px;font-weight:400;text-transform:none;color:var(--text-muted)">(¥/m, 可编辑)</span></h3>
       <button class="btn-link" onclick="resetPrices()" style="font-size:9px">恢复默认</button>
@@ -774,7 +774,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <div class="card-body" style="padding:0;max-height:420px;overflow-y:auto">
       <table class="comparison-table" id="comp-table">
         <thead>
-          <tr><th>方案</th><th>截面</th><th>修正后(A)</th><th>载荷率</th><th>单价</th><th>评价</th></tr>
+          <tr><th>方案</th><th>截面</th><th>修正后(A)</th><th>载荷率</th><th>评价</th></tr>
         </thead>
         <tbody id="comp-body">
           <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px">输入参数后自动生成</td></tr>
@@ -789,8 +789,23 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <div class="ci-row"><span class="ci-key">建议型号</span><span class="ci-val" id="ci-model">--</span></div>
     <div class="ci-row"><span class="ci-key">参考外径</span><span class="ci-val" id="ci-od">--</span></div>
     <div class="ci-row"><span class="ci-key">参考重量</span><span class="ci-val" id="ci-weight">--</span></div>
-    <div class="ci-row"><span class="ci-key">估算单价</span><span class="ci-val" id="ci-price">--</span></div>
+    <div class="ci-row" style="display:none"><span class="ci-key">估算单价</span><span class="ci-val" id="ci-price">--</span></div>
     <div class="ci-row"><span class="ci-key">最高工作温度</span><span class="ci-val" id="ci-temp">--</span></div>
+  </div>
+
+  <!-- History Records -->
+  <div class="card" style="margin-top:12px">
+    <div class="card-header">
+      <h3>选型记录</h3>
+      <button class="btn" onclick="saveCurrentRecord()" style="padding:3px 10px;font-size:10px" id="btn-save-record">保存当前</button>
+    </div>
+    <div class="card-body" style="padding:0;max-height:240px;overflow-y:auto" id="history-list">
+      <div style="font-size:10px;color:var(--text-muted);text-align:center;padding:16px">暂无保存的选型记录</div>
+    </div>
+    <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px">
+      <button class="btn" onclick="exportHistoryExcel()" style="padding:3px 8px;font-size:10px;flex:1">批量导出Excel</button>
+      <button class="btn" onclick="clearHistory()" style="padding:3px 8px;font-size:10px;color:var(--fail)">清空</button>
+    </div>
   </div>
 </div>
 
@@ -1214,9 +1229,7 @@ function doCalc(){
   }else if(recLoadRatio>90){
     alertEl.innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span><strong>载荷率偏高</strong>：推荐截面'+rec.s+'mm²载荷率'+recLoadRatio+'%，接近满载。建议考虑上一级截面。</span></div>';
   }else{
-    const recPrice=getPrice(cond,ins,rec.s);
-    const costNote=recPrice!==null?'｜参考单价 ¥'+recPrice.toFixed(1)+'/m':'';
-    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>满足要求</strong>：推荐'+rec.s+'mm²，修正后载流量'+Math.round(recCorr)+'A，载荷率'+recLoadRatio+'%。'+costNote+'</span></div>';
+    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>满足要求</strong>：推荐'+rec.s+'mm²，修正后载流量'+Math.round(recCorr)+'A，载荷率'+recLoadRatio+'%。</span></div>';
   }
 
   // Tab dot
@@ -1239,7 +1252,7 @@ function doCalc(){
 
     const isSelected=(a.s===rec.s);
     const rowClass=(isSelected?'selected':'')+(isBest||isMin||isEco?' recommended':'');
-    html+='<tr class="'+rowClass+'" data-section="'+a.s+'" onclick="selectSection('+a.s+')"><td>'+label+'</td><td>'+a.s+' mm²</td><td>'+a.corr+' A</td><td>'+a.loadRatio+'%</td><td style="font-size:10px">'+a.costLabel+'</td><td><span class="status-pip '+a.st+'"></span></td></tr>';
+    html+='<tr class="'+rowClass+'" data-section="'+a.s+'" onclick="selectSection('+a.s+')"><td>'+label+'</td><td>'+a.s+' mm²</td><td>'+a.corr+' A</td><td>'+a.loadRatio+'%</td><td><span class="status-pip '+a.st+'"></span></td></tr>';
   }
   document.getElementById('comp-body').innerHTML=html;
 
@@ -1465,9 +1478,7 @@ function selectSection(section){
   }else if(a.loadRatio>90){
     alertEl.innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span><strong>'+section+'mm² 载荷率偏高</strong>：修正后'+a.corr+'A，载荷率'+a.loadRatio+'%。'+(isRec?'':'推荐选用 '+recommended.s+'mm²。')+'</span></div>';
   }else{
-    const p=getPrice(cond,ins,section);
-    const costNote=p!==null?'｜参考单价 ¥'+p.toFixed(1)+'/m':'';
-    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>'+section+'mm² 满足要求</strong>：修正后'+a.corr+'A，载荷率'+a.loadRatio+'%。'+costNote+(isRec?' (推荐选型)':'')+'</span></div>';
+    alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>'+section+'mm² 满足要求</strong>：修正后'+a.corr+'A，载荷率'+a.loadRatio+'%。'+(isRec?' (推荐选型)':'')+'</span></div>';
   }
 
   // Update cable info for selected section
@@ -1672,35 +1683,82 @@ function resetAll(){
 // EXPORT EXCEL
 // ============================================================
 function exportExcel(){
-  const IB=parseFloat(document.getElementById('designCurrent').value);
-  if(!IB){showToast('请先输入设计电流并计算','warn');return;}
+  if(!lastCalcCtx||!lastCalcCtx.recommended){showToast('请先完成载流量计算','warn');return;}
+  const ctx=lastCalcCtx;
   const m=document.querySelector('input[name="installMethod"]:checked').value;
-  const ins=document.getElementById('insulation').value;
-  const cond=document.getElementById('conductor').value;
-  const cores=document.getElementById('loadedCores').value;
-  const recText=document.getElementById('sc-section').querySelector('.sc-value').textContent;
+  const ins=ctx.ins;
+  const cond=ctx.cond;
+  const cores=ctx.cores;
+  const IB=ctx.IB;
+  const cableType=document.getElementById('cableType').value;
+  const rec=ctx.recommended;
 
-  const ws1Data=[['电缆选型计算报告'],[],['参数','值'],['敷设方式',m+' '+METHOD_NAMES[m]],['绝缘类型',ins],['导体材料',cond==='Cu'?'铜':'铝'],['载流导体',cores+'根'],['设计电流',IB+' A'],['推荐截面',recText],['综合修正系数',document.getElementById('ps-derating').textContent],['载流量计算',document.getElementById('f-iz').textContent]];
   const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet(ws1Data);
 
-  // Add comparison sheet
-  const compHead=[['方案对比表'],[],['截面(mm²)','修正后载流量(A)','裕度(%)','参考单价(¥/m)','状态']];
-  const compRows=document.querySelectorAll('#comp-body tr');
-  for(const row of compRows){
-    const cells=row.querySelectorAll('td');
-    if(cells.length>=6){
-      const label=row.querySelector('.badge-rec')?row.querySelector('.badge-rec').textContent.trim():'';
-      compHead.push([(label?label+' ':'')+cells[1].textContent,cells[2].textContent,cells[3].textContent,cells[4].textContent,cells[5].querySelector('.status-pip')?'-':'']);
-    }
+  // Sheet 1: 计算结果
+  const ws1Data=[
+    ['电缆选型计算报告'],
+    ['生成日期: '+new Date().toLocaleString('zh-CN')],
+    [],
+    ['=== 输入参数 ==='],
+    ['敷设方式', METHOD_NAMES[m]+' ('+m+')'],
+    ['绝缘类型', ins],
+    ['导体材料', cond==='Cu'?'铜 (Cu)':'铝 (Al)'],
+    ['电缆芯数', cableType==='multi'?'多芯':'单芯'],
+    ['载流导体数', cores+'根'],
+    ['设计电流 IB', IB+' A'],
+    [],
+    ['=== 修正系数 ==='],
+    ['温度修正 Kt', ctx.Ct.toFixed(3), ctx.tempDesc],
+    ['群敷修正 Kg', ctx.Cg.toFixed(3), ctx.groupDesc],
+    ['土壤修正 Ks', ctx.Cs.toFixed(3), ctx.soilDesc||'--'],
+    ['综合系数', ctx.total.toFixed(3)],
+    [],
+    ['=== 选型结果 ==='],
+    ['推荐截面', rec.s+' mm²'],
+    ['基准载流量 I₀', rec.base+' A'],
+    ['修正后载流量 Iz', rec.corr+' A'],
+    ['载荷率', rec.loadRatio+'%']
+  ];
+
+  // Add voltage drop if calculated
+  const vdPct=document.getElementById('vd-pct')?document.getElementById('vd-pct').textContent:'--';
+  const vdLen=document.getElementById('vd-length')?document.getElementById('vd-length').value:'';
+  if(vdLen){
+    ws1Data.push([]);
+    ws1Data.push(['=== 电压降校验 ===']);
+    ws1Data.push(['电缆长度', vdLen+' m']);
+    ws1Data.push(['电压降 ΔU%', vdPct]);
   }
-  const ws2=XLSX.utils.aoa_to_sheet(compHead);
-  ws2['!cols']=[{wch:16},{wch:18},{wch:12},{wch:14},{wch:8}];
 
-  ws['!cols']=[{wch:16},{wch:30}];
-  XLSX.utils.book_append_sheet(wb,ws,'计算结果');
+  const ws1=XLSX.utils.aoa_to_sheet(ws1Data);
+  ws1['!cols']=[{wch:16},{wch:20},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws1,'计算结果');
+
+  // Sheet 2: 方案对比
+  const compData=[
+    ['方案对比表'],
+    [],
+    ['方案','截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','状态']
+  ];
+  for(const a of ctx.shown){
+    const isRec=ctx.recs.some(r=>r.s===a.s&&r.styleClass==='best');
+    const isMin=ctx.recs.some(r=>r.s===a.s&&r.styleClass==='min');
+    const isEco=ctx.recs.some(r=>r.s===a.s&&r.styleClass==='eco');
+    let label='';
+    if(isRec)label='★ 推荐';
+    else if(isMin)label='最小';
+    else if(isEco)label='经济';
+    const statusText=a.loadRatio<=90?'充足':a.loadRatio<=100?'偏高':'不足';
+    compData.push([label, a.s, a.base, a.corr, a.loadRatio, statusText]);
+  }
+  const ws2=XLSX.utils.aoa_to_sheet(compData);
+  ws2['!cols']=[{wch:8},{wch:10},{wch:14},{wch:14},{wch:10},{wch:6}];
   XLSX.utils.book_append_sheet(wb,ws2,'方案对比');
-  XLSX.writeFile(wb,'电缆选型_'+METHOD_NAMES[m]+'_'+recText.replace(/[^0-9|]/g,'')+'.xlsx');
+
+  // Export
+  const fileName='电缆选型_'+METHOD_NAMES[m]+'_'+rec.s+'mm2_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  XLSX.writeFile(wb,fileName);
   showToast('Excel已导出');
 }
 
@@ -1717,8 +1775,173 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey){const el=document.activeElement;if(el.tagName==='INPUT'&&el.type==='number')doCalc();}
 });
 
+// ============================================================
+// HISTORY RECORDS (localStorage)
+// ============================================================
+const STORAGE_KEY='cable-sizing-history';
+
+function getHistory(){
+  try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[];}catch(e){return[];}
+}
+
+function saveHistory(records){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(records));
+}
+
+function saveCurrentRecord(){
+  if(!lastCalcCtx||!lastCalcCtx.recommended){
+    showToast('请先完成载流量计算','warn');
+    return;
+  }
+  const ctx=lastCalcCtx;
+  const m=document.querySelector('input[name="installMethod"]:checked').value;
+  const cableType=document.getElementById('cableType').value;
+  const cores=document.getElementById('loadedCores').value;
+  const singleArr=document.getElementById('singleArrangement')?document.getElementById('singleArrangement').value:'';
+  
+  // Get selected section
+  const selectedRow=document.querySelector('#comp-body tr.selected');
+  const section=selectedRow?parseInt(selectedRow.dataset.section):ctx.recommended.s;
+  const selAlt=ctx.alts.find(a=>a.s===section);
+  
+  // Get voltage drop info
+  const vdPct=document.getElementById('vd-pct')?document.getElementById('vd-pct').textContent:'--';
+  
+  const record={
+    id:Date.now(),
+    date:new Date().toLocaleString('zh-CN'),
+    // Inputs
+    method:m,
+    methodName:METHOD_NAMES[m],
+    insulation:ctx.ins,
+    conductor:ctx.cond,
+    cableType:cableType,
+    cores:cores,
+    singleArr:singleArr,
+    designCurrent:ctx.IB,
+    ambientTemp:document.getElementById('ambientTemp')?document.getElementById('ambientTemp').value:'--',
+    circuitCount:document.getElementById('circuitCount')?document.getElementById('circuitCount').value:'1',
+    // Results
+    section:section,
+    baseAmpacity:selAlt?selAlt.base:'--',
+    correctedAmpacity:selAlt?selAlt.corr:'--',
+    loadRatio:selAlt?selAlt.loadRatio:'--',
+    totalFactor:ctx.total?ctx.total.toFixed(3):'--',
+    Ct:ctx.Ct?ctx.Ct.toFixed(3):'--',
+    Cg:ctx.Cg?ctx.Cg.toFixed(3):'--',
+    Cs:ctx.Cs?ctx.Cs.toFixed(3):'--',
+    voltageDrop:vdPct,
+    // Cable length for voltage drop
+    cableLength:document.getElementById('vd-length')?document.getElementById('vd-length').value:'',
+    note:''
+  };
+  
+  const history=getHistory();
+  history.unshift(record);
+  saveHistory(history);
+  renderHistory();
+  showToast('选型记录已保存');
+}
+
+function renderHistory(){
+  const history=getHistory();
+  const container=document.getElementById('history-list');
+  if(history.length===0){
+    container.innerHTML='<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:16px">暂无保存的选型记录</div>';
+    return;
+  }
+  let html='<table style="width:100%;border-collapse:collapse;font-size:10px">';
+  html+='<tr style="background:#F8FAFC"><th style="padding:5px 6px;text-align:left">日期</th><th>敷设</th><th>截面</th><th>载荷率</th><th>操作</th></tr>';
+  for(const r of history){
+    html+='<tr style="border-bottom:1px solid #F0F2F5">';
+    html+='<td style="padding:5px 6px;font-size:9px;color:var(--text-muted)">'+r.date.replace(/\d{4}\//, '')+'</td>';
+    html+='<td style="padding:5px 4px;text-align:center">'+r.methodName+'</td>';
+    html+='<td style="padding:5px 4px;text-align:center;font-weight:600">'+r.section+'</td>';
+    html+='<td style="padding:5px 4px;text-align:center">'+r.loadRatio+'%</td>';
+    html+='<td style="padding:5px 4px;text-align:center"><button onclick="loadRecord('+r.id+')" style="font-size:9px;padding:1px 5px;border:1px solid var(--border);border-radius:2px;background:#fff;cursor:pointer" title="加载此记录">加载</button> <button onclick="deleteRecord('+r.id+')" style="font-size:9px;padding:1px 5px;border:1px solid var(--border);border-radius:2px;background:#fff;cursor:pointer;color:var(--fail)" title="删除">×</button></td>';
+    html+='</tr>';
+  }
+  html+='</table>';
+  container.innerHTML=html;
+}
+
+function loadRecord(id){
+  const history=getHistory();
+  const r=history.find(h=>h.id===id);
+  if(!r)return;
+  
+  // Restore inputs
+  const radio=document.querySelector('input[name="installMethod"][value="'+r.method+'"]');
+  if(radio)radio.checked=true;
+  document.getElementById('insulation').value=r.insulation;
+  document.getElementById('conductor').value=r.conductor;
+  document.getElementById('cableType').value=r.cableType;
+  document.getElementById('loadedCores').value=r.cores;
+  if(r.singleArr&&document.getElementById('singleArrangement'))document.getElementById('singleArrangement').value=r.singleArr;
+  document.getElementById('designCurrent').value=r.designCurrent;
+  if(r.ambientTemp&&document.getElementById('ambientTemp'))document.getElementById('ambientTemp').value=r.ambientTemp;
+  if(r.circuitCount&&document.getElementById('circuitCount'))document.getElementById('circuitCount').value=r.circuitCount;
+  if(r.cableLength&&document.getElementById('vd-length'))document.getElementById('vd-length').value=r.cableLength;
+  
+  updateUI();
+  showToast('已加载选型记录');
+}
+
+function deleteRecord(id){
+  let history=getHistory();
+  history=history.filter(h=>h.id!==id);
+  saveHistory(history);
+  renderHistory();
+}
+
+function clearHistory(){
+  if(!confirm('确认清空所有选型记录？'))return;
+  saveHistory([]);
+  renderHistory();
+  showToast('记录已清空');
+}
+
+function exportHistoryExcel(){
+  const history=getHistory();
+  if(history.length===0){showToast('没有可导出的记录','warn');return;}
+  
+  const header=['序号','日期','敷设方式','绝缘','导体','芯数','载流导体','设计电流(A)','推荐截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','综合系数','Ct','Cg','Cs','电压降(%)','电缆长度(m)'];
+  const rows=[['电缆选型计算 — 批量报告'],[],header];
+  
+  history.forEach((r,i)=>{
+    rows.push([
+      i+1,
+      r.date,
+      r.methodName,
+      r.insulation,
+      r.conductor==='Cu'?'铜':'铝',
+      r.cableType==='multi'?'多芯':'单芯',
+      r.cores+'根',
+      r.designCurrent,
+      r.section,
+      r.baseAmpacity,
+      r.correctedAmpacity,
+      r.loadRatio,
+      r.totalFactor,
+      r.Ct,
+      r.Cg,
+      r.Cs,
+      r.voltageDrop,
+      r.cableLength||'--'
+    ]);
+  });
+  
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:5},{wch:16},{wch:10},{wch:6},{wch:4},{wch:5},{wch:7},{wch:10},{wch:12},{wch:12},{wch:12},{wch:8},{wch:8},{wch:6},{wch:6},{wch:6},{wch:8},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'选型记录');
+  XLSX.writeFile(wb,'电缆选型记录_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showToast('已导出'+history.length+'条记录');
+}
+
 // Init
 updateUI();
+renderHistory();
 </script>
 </body>
 </html>
