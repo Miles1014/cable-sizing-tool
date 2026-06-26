@@ -91,6 +91,9 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .form-hint{font-size:10px;color:var(--text-muted);margin-top:3px}
 .form-hint.live-value{color:var(--accent);font-weight:500;font-family:var(--font-mono)}
+.form-hint.recommend{background:#EBF5FB;color:#2980B9;padding:4px 8px;border-radius:4px;font-size:10px;display:flex;align-items:center;gap:4px;cursor:pointer;transition:all 0.15s}
+.form-hint.recommend:hover{background:#D4E6F1}
+.form-hint.recommend .rec-badge{background:var(--accent);color:#fff;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600}
 .error-msg{font-size:10px;color:var(--fail);margin-top:3px;display:none}
 .form-group.has-error .error-msg{display:block}
 .form-group.has-error .form-control{border-color:var(--fail)}
@@ -491,6 +494,14 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             <input type="number" class="form-control" id="designCurrent" placeholder="输入或由下方换算" min="0.1" step="0.1" oninput="autoCalc()">
             <div class="form-hint" id="hint-baseAmp"></div>
             <div class="error-msg" id="err-current">设计电流必须大于0</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">并联组数 <span class="unit">(≥1)</span> <span class="tip" data-tip="当设计电流超过单根电缆最大载流量时，采用多根并联。推荐值基于当前参数自动计算。">?</span></label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="number" class="form-control" id="parallelGroups" value="1" min="1" step="1" style="flex:1" oninput="onGroupChange()">
+              <button type="button" class="btn-link" id="btn-applyGroups" style="font-size:10px;white-space:nowrap;display:none;color:var(--accent)" onclick="applyRecommendedGroups()">使用推荐</button>
+            </div>
+            <div class="form-hint" id="hint-groups" style="display:none"></div>
           </div>
         </div>
         <div class="form-section">
@@ -1063,6 +1074,27 @@ function calcCurrentFromPower(){
 }
 
 // ============================================================
+// GROUP MANAGEMENT
+// ============================================================
+function onGroupChange(){
+  const el=document.getElementById('parallelGroups');
+  const v=parseInt(el.value);
+  if(v<1||isNaN(v))el.value=1;
+  autoCalc();
+}
+
+function applyRecommendedGroups(){
+  // Read the recommended value from the hint
+  const hintEl=document.getElementById('hint-groups');
+  const match=hintEl.textContent.match(/推荐 (\d+) 组/);
+  if(match){
+    document.getElementById('parallelGroups').value=parseInt(match[1]);
+    document.getElementById('btn-applyGroups').style.display='none';
+    autoCalc();
+  }
+}
+
+// ============================================================
 // AUTO CALCULATION (debounced)
 // ============================================================
 let calcTimer=null;
@@ -1084,6 +1116,8 @@ function doCalc(){
   const cableType=document.getElementById('cableType').value;
   const singleArr=document.getElementById('singleArrangement')?document.getElementById('singleArrangement').value:'trefoil';
   const IB=parseFloat(document.getElementById('designCurrent').value);
+  const groups=Math.max(1,parseInt(document.getElementById('parallelGroups').value)||1);
+  const IbEff=IB/groups; // Effective current per parallel circuit
 
   // Resolve table and column
   const tableRef=getTableMethod(m,cableType);
@@ -1092,7 +1126,7 @@ function doCalc(){
   document.getElementById('ps-method').textContent=METHOD_NAMES[m]+' → '+tableRef+'/列'+colKey;
   document.getElementById('ps-cable').textContent=ins+' / '+(cond==='Cu'?'铜':'铝')+' / '+(cableType==='multi'?'多芯':'单芯');
   document.getElementById('ps-cores').textContent=cores+'根载流导体';
-  document.getElementById('ps-current').textContent=IB?IB+' A':'-- A';
+  document.getElementById('ps-current').textContent=IB?(IB+' A'+(groups>1?' ('+groups+'组×'+(IB/groups).toFixed(1)+'A)':'')):'-- A';
 
   if(!IB||IB<=0){
     document.getElementById('hint-baseAmp').textContent='';
@@ -1136,10 +1170,10 @@ function doCalc(){
   }else{groupDesc='单回路';}
 
   const total=Ct*Cg*Cs;
-  const reqBase=IB/total;
+  const reqBase=IbEff/total;
 
   document.getElementById('ps-derating').textContent=total.toFixed(3);
-  document.getElementById('hint-baseAmp').textContent='需基准载流量 ≥ '+Math.round(reqBase*10)/10+' A (综合系数'+total.toFixed(3)+')';
+  document.getElementById('hint-baseAmp').textContent='需基准载流量 ≥ '+Math.round(reqBase*10)/10+' A /回路 (综合系数'+total.toFixed(3)+(groups>1?', '+groups+'组并联':'')+')';
   document.getElementById('hint-baseAmp').className='form-hint live-value';
 
   const table=AMPACITY_TABLES[tableRef]?.[ins]?.[cond]?.[colKey];
@@ -1152,8 +1186,8 @@ function doCalc(){
     const base=table[s];
     if(base===null||base===undefined)continue; // Skip null entries (not in standard)
     const corr=base*total;
-    const loadRatio=Math.round(IB/corr*1000)/10; // 载荷率 = IB/Iz ×100%
-    const margin=((corr-IB)/IB*100);
+    const loadRatio=Math.round(IbEff/corr*1000)/10; // 载荷率 = IbEff/Iz ×100%
+    const margin=((corr-IbEff)/IbEff*100);
     let st='ng';if(loadRatio<=90)st='ok';else if(loadRatio<=100)st='mg';
     const price=getPrice(cond,ins,s);
     alts.push({
@@ -1162,7 +1196,7 @@ function doCalc(){
       price:price!==null?price:null,
       costLabel:price!==null?'¥'+price.toFixed(1)+'/m':'--'
     });
-    if(!firstAdequate&&corr>=IB)firstAdequate=alts[alts.length-1];
+    if(!firstAdequate&&corr>=IbEff)firstAdequate=alts[alts.length-1];
   }
 
   if(alts.length===0){showToast('当前参数组合无有效数据，请检查电缆芯数和排列方式','fail');return;}
@@ -1228,6 +1262,35 @@ function doCalc(){
   const shown=alts.filter(a=>showSet.has(a.s));
   shown.sort((a,b)=>a.s-b.s);
 
+  // ===== Auto-recommend parallel groups =====
+  const maxAdequate=alts.filter(a=>a.st!=='ng');
+  let maxCorrected=maxAdequate.length>0?maxAdequate[maxAdequate.length-1].corr:0;
+  let recommendedGroups=1;
+  if(IB>0&&alts.length>0){
+    const effectiveMax=maxCorrected>0?maxCorrected:alts[alts.length-1].corr;
+    if(effectiveMax>0){
+      recommendedGroups=Math.ceil(IB/(effectiveMax*0.95));
+      if(recommendedGroups<1)recommendedGroups=1;
+      if(maxCorrected===0)maxCorrected=effectiveMax; // Use largest available for display
+    }
+  }
+  const groupRecEl=document.getElementById('hint-groups');
+  if(groupRecEl){
+    if(recommendedGroups>1||groups>1){
+      const currentGroups=parseInt(document.getElementById('parallelGroups').value)||1;
+      const perCableStr=currentGroups>1?' | 每组: <strong>'+(IB/currentGroups).toFixed(1)+' A</strong>':'';
+      groupRecEl.innerHTML=(recommendedGroups>1
+        ?'<span class="rec-badge">推荐 '+recommendedGroups+' 组</span> (最大单根载流量 '+Math.round(maxCorrected)+' A)'
+        :'')+perCableStr;
+      groupRecEl.style.display='block';
+      groupRecEl.className='form-hint recommend'+(recommendedGroups<=1?'':'');
+      document.getElementById('btn-applyGroups').style.display=recommendedGroups>1?'inline-block':'none';
+    }else{
+      groupRecEl.style.display='none';
+      document.getElementById('btn-applyGroups').style.display='none';
+    }
+  }
+
   // ===== RENDER =====
   const rec=recommended;
   const recCorr=rec.corr;
@@ -1258,7 +1321,7 @@ function doCalc(){
     document.getElementById('f-ks-row').style.display='none';
   }
   document.getElementById('f-iz').textContent=Math.round(recCorr*10)/10+' A';
-  document.getElementById('f-ib').textContent=IB;
+  document.getElementById('f-ib').textContent=IB+(groups>1?' (÷'+groups+'组 = '+IbEff.toFixed(1)+'A/回路)':'');
   document.getElementById('f-req').textContent=Math.round(reqBase*10)/10;
 
   // Alert
@@ -1275,7 +1338,7 @@ function doCalc(){
   document.getElementById('dot-amp').className='tab-dot '+(margin>=0?'ok':'ng');
 
   // Store context for row switching
-  lastCalcCtx={alts,shown,recs,recommended,Ct,Cg,Cs,total,IB,tempDesc,groupDesc,soilDesc,isUnderground,cond,ins,cores,tableRef,colKey};
+  lastCalcCtx={alts,shown,recs,recommended,Ct,Cg,Cs,total,IB,IbEff,groups,tempDesc,groupDesc,soilDesc,isUnderground,cond,ins,cores,tableRef,colKey};
 
   // Comparison table (clickable rows)
   let html='';
@@ -1357,7 +1420,7 @@ const CABLE_IMPEDANCE = {
 // ============================================================
 function calcVoltageDrop(){
   if(!lastCalcCtx) return;
-  const {IB,cond,ins,cores}=lastCalcCtx;
+  const {IB,cond,ins,cores,groups=1}=lastCalcCtx;
   
   // Get selected section from current view
   const selectedRow=document.querySelector('#comp-body tr.selected');
@@ -1373,7 +1436,7 @@ function calcVoltageDrop(){
   // Update auto-filled display
   document.getElementById('vd-section-show').textContent=section;
   document.getElementById('vd-cond-show').textContent=cond==='Cu'?'铜':'铝';
-  document.getElementById('vd-ib-show').textContent=IB;
+  document.getElementById('vd-ib-show').textContent=IB+(groups>1?' ('+groups+'组并联)':'');
   document.getElementById('vd-sys-show').textContent=cores==='3'?'三相':'单相';
   
   if(!L||!U||!pf){
@@ -1391,18 +1454,18 @@ function calcVoltageDrop(){
     return;
   }
   
-  const R=impData.R; // Ω/km
-  const X=impData.X; // Ω/km
+  const R=impData.R/groups; // Ω/km (parallel → R/N)
+  const X=impData.X/groups; // Ω/km (parallel → X/N)
   const sinPhi=Math.sqrt(1-pf*pf);
   const limit=loadType==='lighting'?3:5;
   
-  // Calculate voltage drop
+  // Calculate voltage drop (IB passes through all groups combined)
   let dU;
   if(cores==='3'){
-    // 三相: ΔU = √3 × IB × L(km) × (R·cosφ + X·sinφ)
+    // 三相: ΔU = √3 × IB × L(km) × (R/groups·cosφ + X/groups·sinφ)
     dU=Math.sqrt(3)*IB*(L/1000)*(R*pf+X*sinPhi);
   }else{
-    // 单相: ΔU = 2 × IB × L(km) × (R·cosφ + X·sinφ)
+    // 单相: ΔU = 2 × IB × L(km) × (R/groups·cosφ + X/groups·sinφ)
     dU=2*IB*(L/1000)*(R*pf+X*sinPhi);
   }
   
@@ -1412,8 +1475,8 @@ function calcVoltageDrop(){
   
   // Render
   document.getElementById('vd-result-block').style.display='';
-  document.getElementById('vd-r').textContent=R.toFixed(4);
-  document.getElementById('vd-x').textContent=X.toFixed(4);
+  document.getElementById('vd-r').textContent=R.toFixed(4)+(groups>1?' ('+impData.R.toFixed(4)+'÷'+groups+')':'');
+  document.getElementById('vd-x').textContent=X.toFixed(4)+(groups>1?' ('+impData.X.toFixed(4)+'÷'+groups+')':'');
   document.getElementById('vd-dur').textContent=dUr.toFixed(2);
   document.getElementById('vd-dux').textContent=dUx.toFixed(2);
   document.getElementById('vd-du').textContent=dU.toFixed(2);
@@ -1436,8 +1499,8 @@ function calcVoltageDrop(){
     for(const s of allSections){
       const imp=CABLE_IMPEDANCE[cond][ins][s];
       let testDU;
-      if(cores==='3')testDU=Math.sqrt(3)*IB*(L/1000)*(imp.R*pf+imp.X*sinPhi);
-      else testDU=2*IB*(L/1000)*(imp.R*pf+imp.X*sinPhi);
+      if(cores==='3')testDU=Math.sqrt(3)*IB*(L/1000)*(imp.R/groups*pf+imp.X/groups*sinPhi);
+      else testDU=2*IB*(L/1000)*(imp.R/groups*pf+imp.X/groups*sinPhi);
       if(testDU/U*100<=limit){minSection=s;break;}
     }
     const suggestion=minSection?'建议增大截面至 '+minSection+' mm²':'需缩短线路长度或增大电压等级';
@@ -1565,7 +1628,7 @@ const K_FACTORS={Cu:{PVC:115,XLPE:143},Al:{PVC:76,XLPE:94}};
 
 function calcShortCircuit(){
   if(!lastCalcCtx) return;
-  const{cond,ins,recommended}=lastCalcCtx;
+  const{cond,ins,recommended,groups=1}=lastCalcCtx;
   
   const selectedRow=document.querySelector('#comp-body tr.selected');
   let section=recommended?recommended.s:null;
@@ -1577,7 +1640,7 @@ function calcShortCircuit(){
   
   document.getElementById('sc-section-show').textContent=section;
   document.getElementById('sc-cond-show').textContent=cond==='Cu'?'铜':'铝';
-  document.getElementById('sc-ins-show').textContent=ins;
+  document.getElementById('sc-ins-show').textContent=ins+(groups>1?' ('+groups+'组并联)':'');
   
   if(!Isc||!t){
     document.getElementById('sc-result-block').style.display='none';
@@ -1587,9 +1650,9 @@ function calcShortCircuit(){
   }
   
   const K=K_FACTORS[cond]?.[ins]||115;
-  const K2S2=Math.pow(K*section,2); // (K×S)² in A²·s
-  const I2t=Math.pow(Isc*1000,2)*t; // (Isc)²×t in A²·s
-  const Smin=Isc*1000*Math.sqrt(t)/K; // mm²
+  const K2S2=groups*Math.pow(K*section,2); // N×(K×S)² — total thermal capacity
+  const I2t=Math.pow(Isc*1000,2)*t;
+  const Smin=Isc*1000*Math.sqrt(t)/K/Math.sqrt(groups); // per-cable minimum, adjusted for groups
   const pass=K2S2>=I2t;
   
   // Render
@@ -1611,7 +1674,7 @@ function calcShortCircuit(){
     const stdSections=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300,400,500,630];
     let recSection=null;
     for(const s of stdSections){if(Math.pow(K*s,2)>=I2t){recSection=s;break;}}
-    const suggestion=recSection?'建议增大截面至 '+recSection+' mm²':'超出标准截面范围，需多回路并联';
+    const suggestion=recSection?'建议增大截面至 '+recSection+' mm²':'超出标准截面范围，需增加并联组数或增大截面';
     alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>短路耐量不满足</strong>：需最小截面 '+Math.ceil(Smin)+' mm²。'+suggestion+'。</span></div>';
     document.getElementById('dot-sc').className='tab-dot ng';
   }
@@ -1622,7 +1685,7 @@ function calcShortCircuit(){
 // ============================================================
 function calcProtection(){
   if(!lastCalcCtx) return;
-  const{IB,recommended,alts}=lastCalcCtx;
+  const{IB,recommended,alts,groups=1}=lastCalcCtx;
   
   const selectedRow=document.querySelector('#comp-body tr.selected');
   let section=recommended?recommended.s:null;
@@ -1630,13 +1693,13 @@ function calcProtection(){
   
   // Get IZ for selected section
   const selAlt=alts.find(a=>a.s===section);
-  const IZ=selAlt?selAlt.corr:0;
+  const IZ=selAlt?(selAlt.corr*groups):0; // Total combined ampacity (groups × per-cable)
   
   const IN=parseFloat(document.getElementById('prot-in').value);
   const protType=document.getElementById('prot-type').value;
   
   document.getElementById('prot-ib-show').textContent=IB||'--';
-  document.getElementById('prot-iz-show').textContent=IZ?Math.round(IZ):'--';
+  document.getElementById('prot-iz-show').textContent=IZ?Math.round(IZ)+(groups>1?' ('+groups+'组×'+Math.round(IZ/groups)+'A)':''):'--';
   
   if(!IN||!IB||!IZ){
     document.getElementById('prot-result-block').style.display='none';
@@ -1650,8 +1713,8 @@ function calcProtection(){
   const I2=IN*i2Factor;
   const IZ145=1.45*IZ;
   
-  const cond1=IB<=IN&&IN<=IZ; // IB ≤ IN ≤ IZ
-  const cond2=I2<=IZ145;      // I2 ≤ 1.45×IZ
+  const cond1=IB<=IN&&IN<=IZ; // IB ≤ IN ≤ IZ_total
+  const cond2=I2<=IZ145;      // I2 ≤ 1.45×IZ_total
   const pass=cond1&&cond2;
   
   // Render
@@ -1705,6 +1768,7 @@ function resetAll(){
   document.getElementById('soilRes').value=2.5;
   document.getElementById('circuitCount').value=1;
   document.getElementById('designCurrent').value='';
+  document.getElementById('parallelGroups').value='1';
   document.getElementById('power').value='';
   goToStep(1);
   updateUI();
@@ -1746,6 +1810,7 @@ function exportExcel(){
     ['导体材料', cond==='Cu'?'铜 (Cu)':'铝 (Al)'],
     ['电缆芯数', cableType==='multi'?'多芯':'单芯'],
     ['载流导体数', cores+'根'],
+    ['并联组数', ctx.groups||1],
     ['设计电流 IB', IB+' A'],
     [],
     ['=== 修正系数 ==='],
@@ -1859,6 +1924,7 @@ function saveCurrentRecord(){
     cores:cores,
     singleArr:singleArr,
     designCurrent:ctx.IB,
+    parallelGroups:ctx.groups||1,
     ambientTemp:document.getElementById('ambientTemp')?document.getElementById('ambientTemp').value:'--',
     circuitCount:document.getElementById('circuitCount')?document.getElementById('circuitCount').value:'1',
     // Results
@@ -1919,6 +1985,8 @@ function loadRecord(id){
   document.getElementById('loadedCores').value=r.cores;
   if(r.singleArr&&document.getElementById('singleArrangement'))document.getElementById('singleArrangement').value=r.singleArr;
   document.getElementById('designCurrent').value=r.designCurrent;
+  if(r.parallelGroups)document.getElementById('parallelGroups').value=r.parallelGroups;
+  else document.getElementById('parallelGroups').value='1';
   if(r.ambientTemp&&document.getElementById('ambientTemp'))document.getElementById('ambientTemp').value=r.ambientTemp;
   if(r.circuitCount&&document.getElementById('circuitCount'))document.getElementById('circuitCount').value=r.circuitCount;
   if(r.cableLength&&document.getElementById('vd-length'))document.getElementById('vd-length').value=r.cableLength;
@@ -1945,7 +2013,7 @@ function exportHistoryExcel(){
   const history=getHistory();
   if(history.length===0){showToast('没有可导出的记录','warn');return;}
   
-  const header=['序号','日期','敷设方式','绝缘','导体','芯数','载流导体','设计电流(A)','推荐截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','综合系数','Ct','Cg','Cs','电压降(%)','电缆长度(m)'];
+  const header=['序号','日期','敷设方式','绝缘','导体','芯数','载流导体','组数','设计电流(A)','推荐截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','综合系数','Ct','Cg','Cs','电压降(%)','电缆长度(m)'];
   const rows=[['电缆选型计算 — 批量报告'],[],header];
   
   history.forEach((r,i)=>{
@@ -1957,6 +2025,7 @@ function exportHistoryExcel(){
       r.conductor==='Cu'?'铜':'铝',
       r.cableType==='multi'?'多芯':'单芯',
       r.cores+'根',
+      r.parallelGroups||1,
       r.designCurrent,
       r.section,
       r.baseAmpacity,
