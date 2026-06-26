@@ -42,7 +42,10 @@ body{font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--tex
 .header-actions button:hover{background:rgba(255,255,255,0.2)}
 
 /* ===== Three Column Layout ===== */
-.app-layout{display:grid;grid-template-columns:minmax(280px,25%) minmax(400px,45%) minmax(260px,30%);gap:16px;padding:16px;max-width:1600px;margin:0 auto;min-height:calc(100vh - 48px)}
+.app-layout{display:grid;grid-template-columns:25% 45% 30%;gap:12px;padding:12px;max-width:1600px;margin:0 auto;min-height:calc(100vh - 48px);overflow:hidden}
+.left-panel{min-width:0;overflow:hidden}
+.center-panel{min-width:0;overflow:hidden}
+.right-panel{min-width:0;overflow:hidden}
 
 /* ===== Card System ===== */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
@@ -126,11 +129,11 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 .comparison-table .badge-eco{background:var(--warn-light);color:var(--warn)}
 
 /* ===== Result Summary Cards ===== */
-.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.summary-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px;text-align:center;transition:all 0.3s;box-shadow:var(--shadow)}
-.summary-card .sc-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:4px}
-.summary-card .sc-value{font-size:26px;font-weight:700;font-family:var(--font-serif);color:var(--primary);line-height:1.1}
-.summary-card .sc-unit{font-size:11px;color:var(--text-muted);font-family:var(--font-sans);font-weight:400}
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px 8px;text-align:center;transition:all 0.3s;box-shadow:var(--shadow)}
+.summary-card .sc-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px}
+.summary-card .sc-value{font-size:20px;font-weight:700;font-family:var(--font-serif);color:var(--primary);line-height:1.1}
+.summary-card .sc-unit{font-size:10px;color:var(--text-muted);font-family:var(--font-sans);font-weight:400}
 .summary-card.pass{border-left:3px solid var(--pass);background:var(--pass-light)}
 .summary-card.pass .sc-value{color:var(--pass)}
 .summary-card.warn{border-left:3px solid var(--warn);background:var(--warn-light)}
@@ -174,9 +177,14 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 .alert-card strong{font-weight:600}
 
 /* ===== Right Panel: Comparison ===== */
-.comparison-table{width:100%;border-collapse:collapse;font-size:11px}
+.comparison-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
 .comparison-table th{padding:7px 8px;text-align:center;background:#F8FAFC;color:var(--text-muted);font-weight:600;font-size:10px;text-transform:uppercase;border-bottom:1px solid var(--border)}
-.comparison-table td{padding:7px 8px;text-align:center;border-bottom:1px solid #F0F2F5;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px}
+.comparison-table th:nth-child(1){width:60px}
+.comparison-table th:nth-child(2){width:70px}
+.comparison-table th:nth-child(3){width:80px}
+.comparison-table th:nth-child(4){width:65px}
+.comparison-table th:nth-child(5){width:40px}
+.comparison-table td{padding:7px 8px;text-align:center;border-bottom:1px solid #F0F2F5;color:var(--text-secondary);font-family:var(--font-mono);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .comparison-table tr{cursor:pointer;transition:background 0.15s}
 .comparison-table tr:hover{background:#F0F4FA}
 .comparison-table tr.selected{background:var(--accent-light);outline:2px solid var(--accent);outline-offset:-2px}
@@ -215,9 +223,60 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 .empty-state h4{font-size:13px;color:var(--text-secondary);margin-bottom:4px}
 .empty-state p{font-size:11px;max-width:200px}
 
-/* ===== Responsive ===== */
-@media(max-width:1200px){.app-layout{grid-template-columns:1fr 1fr;}.right-panel{grid-column:1/-1}}
-@media(max-width:768px){.app-layout{grid-template-columns:1fr}.summary-row{grid-template-columns:1fr}}
+/* ===== Transitions & Animations ===== */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.step-panel{animation:fadeIn 0.25s ease}
+.detail-panel.active{animation:fadeIn 0.2s ease}
+
+/* ===== Left Panel Accordion Style ===== */
+.left-panel .card{border-radius:6px}
+.left-panel .stepper{border-radius:6px;overflow:hidden}
+
+/* ===== Center Panel Visual Zone ===== */
+.center-panel{background:linear-gradient(to bottom,#F0F6FC 0%,#F5F7FA 120px);border-radius:8px;padding:12px;border:1px solid #E8F0F8;min-width:0;overflow:hidden}
+.center-panel .card{border-radius:6px;box-shadow:0 2px 8px rgba(30,42,58,0.05)}
+
+/* ===== Right Panel Tabs ===== */
+.right-panel{display:flex;flex-direction:column;gap:0;min-width:0;overflow:hidden}
+.right-tab-nav{display:flex;background:#FAFBFC;border:1px solid var(--border);border-bottom:none;border-radius:6px 6px 0 0;overflow:hidden}
+.right-tab-btn{flex:1;padding:9px 8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;text-transform:uppercase;letter-spacing:0.3px}
+.right-tab-btn:hover{color:var(--text);background:#F0F4FA}
+.right-tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:#fff}
+.right-tab-content{display:none;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px;background:#fff;overflow:hidden}
+.right-tab-content.active{display:block}
+
+/* ===== Enhanced Comparison Table ===== */
+.comparison-table tr.recommended td:first-child{border-left:3px solid var(--accent)}
+.comparison-table tr.selected td:first-child{border-left:3px solid var(--accent)}
+
+/* ===== Verification Summary Chips ===== */
+.verify-summary{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.verify-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:10px;font-weight:500;border:1px solid var(--border);background:#fff;transition:all 0.15s;cursor:pointer}
+.verify-chip.pass{background:var(--pass-light);border-color:rgba(46,172,104,0.3);color:var(--pass)}
+.verify-chip.fail{background:var(--fail-light);border-color:rgba(231,76,60,0.3);color:var(--fail)}
+.verify-chip.pending{background:#F8F9FA;color:var(--text-muted)}
+.verify-chip:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+
+/* ===== History Table ===== */
+.history-table{width:100%;border-collapse:collapse;font-size:10px}
+.history-table th{padding:6px 8px;text-align:center;background:#F8FAFC;color:var(--text-muted);font-weight:600;font-size:9px;text-transform:uppercase;border-bottom:1px solid var(--border);position:sticky;top:0}
+.history-table td{padding:6px 8px;text-align:center;border-bottom:1px solid #F5F7FA;color:var(--text-secondary)}
+.history-table tr:hover{background:#F8FAFC}
+.history-table .btn-sm{font-size:9px;padding:2px 6px;border:1px solid var(--border);border-radius:3px;background:#fff;cursor:pointer;transition:all 0.1s}
+.history-table .btn-sm:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+
+/* ===== Responsive Enhanced ===== */
+@media(max-width:768px){
+  .app-layout{grid-template-columns:1fr;gap:10px;padding:10px}
+  .summary-row{grid-template-columns:1fr}
+  .app-header{padding:0 12px;height:44px}
+  .app-header h1{font-size:13px}
+  .center-panel{padding:10px}
+  .method-grid{grid-template-columns:1fr 1fr!important}
+  .form-row{grid-template-columns:1fr!important}
+  .detail-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .detail-tab{white-space:nowrap;padding:9px 10px}
+}
 
 /* ===== Scrollbar ===== */
 ::-webkit-scrollbar{width:5px}
@@ -474,32 +533,33 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
         </div>
       </div>
 
-      <!-- Step 4: 保护设置 (框架) -->
+      <!-- Step 4: 保护设置 -->
       <div class="step-panel" id="sp-4" style="display:none">
         <div class="form-section">
-          <div class="section-label">保护装置 <span style="font-size:9px;color:var(--warn);font-weight:400;text-transform:none">(v0.2开发中)</span></div>
+          <div class="section-label">保护装置</div>
           <div class="form-group">
             <label class="form-label">保护类型</label>
-            <select class="form-control" disabled>
-              <option>微型断路器 (MCB)</option>
-              <option>塑壳断路器 (MCCB)</option>
-              <option>熔断器 (Fuse)</option>
+            <select class="form-control" id="prot-type" onchange="calcProtection()">
+              <option value="MCB">微型断路器 (MCB)</option>
+              <option value="MCCB">塑壳断路器 (MCCB)</option>
+              <option value="fuse">熔断器 gG (Fuse)</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">额定电流 IN <span class="unit">(A)</span></label>
-            <input type="number" class="form-control" placeholder="待开发" disabled>
-          </div>
-          <div class="form-group">
-            <label class="form-label">脱扣特性</label>
-            <select class="form-control" disabled>
-              <option>C型</option><option>B型</option><option>D型</option>
-            </select>
+            <label class="form-label">额定电流 IN <span class="unit">(A)</span> <span class="tip" data-tip="保护装置的额定电流，需满足 IB≤IN≤IZ">?</span></label>
+            <input type="number" class="form-control" id="prot-in" placeholder="如 160, 250, 400" min="1" step="1" oninput="calcProtection()">
           </div>
         </div>
-        <div class="alert-card alert-warn">
-          <span class="alert-icon">&#9888;</span>
-          <span>保护协调模块将在 v0.2 版本中实现，届时支持 IB≤IN≤IZ 和 I2≤1.45×IZ 双重验证。</span>
+        <div class="form-section">
+          <div class="section-label">短路参数</div>
+          <div class="form-group">
+            <label class="form-label">预期短路电流 <span class="unit">(kA)</span> <span class="tip" data-tip="线路末端最大预期短路电流，由上游供电系统阻抗决定">?</span></label>
+            <input type="number" class="form-control" id="sc-fault" placeholder="如 10, 20, 50" min="0.1" step="0.1" oninput="calcShortCircuit()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">保护切断时间 <span class="unit">(s)</span> <span class="tip" data-tip="保护装置从故障发生到完全切断的时间。MCB≤0.1s，MCCB≤0.5s，后备≤5s">?</span></label>
+            <input type="number" class="form-control" id="sc-time" placeholder="如 0.1, 0.5, 1" min="0.01" max="5" step="0.01" oninput="calcShortCircuit()">
+          </div>
         </div>
       </div>
     </div>
@@ -641,20 +701,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <!-- Short Circuit Detail -->
     <div class="detail-panel" id="dp-sc">
       <div id="sc-alert"></div>
-      <div class="formula-block">
-        <div class="formula-title">短路耐量校验参数</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-          <div class="form-group">
-            <label class="form-label">预期短路电流 <span class="unit">(kA)</span> <span class="tip" data-tip="线路末端最大短路电流，由上游供电系统决定">?</span></label>
-            <input type="number" class="form-control" id="sc-fault" placeholder="如 10, 20, 50" min="0.1" step="0.1" oninput="calcShortCircuit()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">保护切断时间 <span class="unit">(s)</span> <span class="tip" data-tip="保护装置从故障发生到完全切断的时间。MCB通常≤0.1s，MCCB≤0.5s，后备保护≤5s">?</span></label>
-            <input type="number" class="form-control" id="sc-time" placeholder="如 0.1, 0.5, 1" min="0.01" max="5" step="0.01" oninput="calcShortCircuit()">
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">自动带入：截面=<strong id="sc-section-show">--</strong>mm², 导体=<strong id="sc-cond-show">--</strong>, 绝缘=<strong id="sc-ins-show">--</strong></div>
-      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">自动带入：截面=<strong id="sc-section-show">--</strong>mm², 导体=<strong id="sc-cond-show">--</strong>, 绝缘=<strong id="sc-ins-show">--</strong> | 参数输入在左侧步骤④</div>
       <div class="formula-block" id="sc-result-block" style="display:none">
         <div class="formula-title">热稳定性验算 (IEC 434条)</div>
         <div class="formula-line">
@@ -688,27 +735,10 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       </div>
     </div>
 
-    <!-- Protection Detail -->
+    <!-- Protection Detail (结果展示，输入在左侧④) -->
     <div class="detail-panel" id="dp-prot">
       <div id="prot-alert"></div>
-      <div class="formula-block">
-        <div class="formula-title">保护协调校验参数</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
-          <div class="form-group">
-            <label class="form-label">保护装置额定电流 IN <span class="unit">(A)</span></label>
-            <input type="number" class="form-control" id="prot-in" placeholder="如 160, 250, 400" min="1" step="1" oninput="calcProtection()">
-          </div>
-          <div class="form-group">
-            <label class="form-label">保护类型</label>
-            <select class="form-control" id="prot-type" onchange="calcProtection()">
-              <option value="MCB">微型断路器 MCB</option>
-              <option value="MCCB">塑壳断路器 MCCB</option>
-              <option value="fuse">熔断器 gG</option>
-            </select>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">自动带入：设计电流 IB=<strong id="prot-ib-show">--</strong>A, 载流量 IZ=<strong id="prot-iz-show">--</strong>A</div>
-      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-bottom:10px">自动带入：设计电流 IB=<strong id="prot-ib-show">--</strong>A, 载流量 IZ=<strong id="prot-iz-show">--</strong>A | 参数输入在左侧步骤④</div>
       <div class="formula-block" id="prot-result-block" style="display:none">
         <div class="formula-title">保护协调验证 (IEC 433条)</div>
         <div class="formula-line">
@@ -745,67 +775,76 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 
 <!-- ======== RIGHT PANEL: Comparison & Summary ======== -->
 <div class="right-panel">
-  <!-- Current Params Summary -->
-  <div class="param-summary" id="param-summary">
-    <div class="ps-title">当前方案参数</div>
-    <div class="ps-row"><span class="ps-key">敷设方式</span><span class="ps-val" id="ps-method">有孔托盘 → E</span></div>
-    <div class="ps-row"><span class="ps-key">绝缘/导体</span><span class="ps-val" id="ps-cable">XLPE / 铜 / 多芯</span></div>
-    <div class="ps-row"><span class="ps-key">载流导体</span><span class="ps-val" id="ps-cores">3根 (三相)</span></div>
-    <div class="ps-row"><span class="ps-key">设计电流</span><span class="ps-val" id="ps-current">-- A</span></div>
-    <div class="ps-row"><span class="ps-key">综合降额</span><span class="ps-val" id="ps-derating">--</span></div>
+  <!-- Right Panel Tab Navigation -->
+  <div class="right-tab-nav">
+    <div class="right-tab-btn active" data-rtab="compare" onclick="switchRightTab('compare')">方案对比</div>
+    <div class="right-tab-btn" data-rtab="info" onclick="switchRightTab('info')">电缆信息</div>
+    <div class="right-tab-btn" data-rtab="history" onclick="switchRightTab('history')">选型记录</div>
   </div>
 
-  <!-- Unit Price Editor (暂关闭，后续开发) -->
-  <div class="card" style="margin-bottom:12px;display:none" id="price-section">
-    <div class="card-header">
-      <h3>参考单价 <span style="font-size:9px;font-weight:400;text-transform:none;color:var(--text-muted)">(¥/m, 可编辑)</span></h3>
-      <button class="btn-link" onclick="resetPrices()" style="font-size:9px">恢复默认</button>
+  <!-- Tab 1: 方案对比 -->
+  <div class="right-tab-content active" id="rt-compare">
+    <!-- Current Params Summary -->
+    <div class="param-summary" id="param-summary">
+      <div class="ps-title">当前方案参数</div>
+      <div class="ps-row"><span class="ps-key">敷设方式</span><span class="ps-val" id="ps-method">有孔托盘 → E</span></div>
+      <div class="ps-row"><span class="ps-key">绝缘/导体</span><span class="ps-val" id="ps-cable">XLPE / 铜 / 多芯</span></div>
+      <div class="ps-row"><span class="ps-key">载流导体</span><span class="ps-val" id="ps-cores">3根载流导体</span></div>
+      <div class="ps-row"><span class="ps-key">设计电流</span><span class="ps-val" id="ps-current">-- A</span></div>
+      <div class="ps-row"><span class="ps-key">综合降额</span><span class="ps-val" id="ps-derating">--</span></div>
     </div>
-    <div class="card-body" style="padding:8px 12px;max-height:140px;overflow-y:auto" id="price-editor">
-      <div style="font-size:10px;color:var(--text-muted);text-align:center;padding:12px">输入参数后显示相关截面价格</div>
-    </div>
-  </div>
 
-  <!-- Comparison Table -->
-  <div class="card">
-    <div class="card-header">
-      <h3>方案对比</h3>
+    <!-- Verification Chips -->
+    <div class="verify-summary" id="verify-chips">
+      <span class="verify-chip pending" id="vc-amp" onclick="document.querySelector('[data-dtab=ampacity]').click()">&#9679; 载流量</span>
+      <span class="verify-chip pending" id="vc-vd" onclick="document.querySelector('[data-dtab=vdrop]').click()">&#9679; 电压降</span>
+      <span class="verify-chip pending" id="vc-sc" onclick="document.querySelector('[data-dtab=sc]').click()">&#9679; 短路</span>
+      <span class="verify-chip pending" id="vc-prot" onclick="document.querySelector('[data-dtab=prot]').click()">&#9679; 保护</span>
     </div>
-    <div class="card-body" style="padding:0;max-height:420px;overflow-y:auto">
+
+    <!-- Comparison Table -->
+    <div style="max-height:380px;overflow-y:auto;margin-top:12px">
       <table class="comparison-table" id="comp-table">
         <thead>
           <tr><th>方案</th><th>截面</th><th>修正后(A)</th><th>载荷率</th><th>评价</th></tr>
         </thead>
         <tbody id="comp-body">
-          <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px">输入参数后自动生成</td></tr>
+          <tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px">输入参数后自动生成</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Cable Info -->
-  <div class="cable-info" id="cable-info" style="display:none">
-    <div class="ci-title">推荐电缆信息</div>
-    <div class="ci-row"><span class="ci-key">建议型号</span><span class="ci-val" id="ci-model">--</span></div>
-    <div class="ci-row"><span class="ci-key">参考外径</span><span class="ci-val" id="ci-od">--</span></div>
-    <div class="ci-row"><span class="ci-key">参考重量</span><span class="ci-val" id="ci-weight">--</span></div>
-    <div class="ci-row" style="display:none"><span class="ci-key">估算单价</span><span class="ci-val" id="ci-price">--</span></div>
-    <div class="ci-row"><span class="ci-key">最高工作温度</span><span class="ci-val" id="ci-temp">--</span></div>
+  <!-- Tab 2: 电缆信息 -->
+  <div class="right-tab-content" id="rt-info">
+    <div class="cable-info" id="cable-info" style="display:none;margin:0;border:none;background:transparent">
+      <div class="ci-title">推荐电缆信息</div>
+      <div class="ci-row"><span class="ci-key">建议型号</span><span class="ci-val" id="ci-model">--</span></div>
+      <div class="ci-row"><span class="ci-key">参考外径</span><span class="ci-val" id="ci-od">--</span></div>
+      <div class="ci-row"><span class="ci-key">参考重量</span><span class="ci-val" id="ci-weight">--</span></div>
+      <div class="ci-row" style="display:none"><span class="ci-key">估算单价</span><span class="ci-val" id="ci-price">--</span></div>
+      <div class="ci-row"><span class="ci-key">最高工作温度</span><span class="ci-val" id="ci-temp">--</span></div>
+    </div>
+    <div id="cable-info-empty" style="font-size:11px;color:var(--text-muted);text-align:center;padding:32px">完成计算后显示电缆详细信息</div>
   </div>
 
-  <!-- History Records -->
-  <div class="card" style="margin-top:12px">
-    <div class="card-header">
-      <h3>选型记录</h3>
-      <button class="btn" onclick="saveCurrentRecord()" style="padding:3px 10px;font-size:10px" id="btn-save-record">保存当前</button>
+  <!-- Tab 3: 选型记录 -->
+  <div class="right-tab-content" id="rt-history">
+    <div style="padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:#FAFBFC">
+      <button class="btn" onclick="saveCurrentRecord()" style="padding:4px 12px;font-size:10px;font-weight:600;background:var(--accent);color:#fff;border-color:var(--accent)" id="btn-save-record">&#10010; 保存当前方案</button>
+      <div style="display:flex;gap:4px">
+        <button class="btn" onclick="exportHistoryExcel()" style="padding:3px 8px;font-size:9px">导出Excel</button>
+        <button class="btn" onclick="clearHistory()" style="padding:3px 8px;font-size:9px;color:var(--fail)">清空</button>
+      </div>
     </div>
-    <div class="card-body" style="padding:0;max-height:240px;overflow-y:auto" id="history-list">
-      <div style="font-size:10px;color:var(--text-muted);text-align:center;padding:16px">暂无保存的选型记录</div>
+    <div style="max-height:320px;overflow-y:auto" id="history-list">
+      <div style="font-size:10px;color:var(--text-muted);text-align:center;padding:24px">暂无保存的选型记录</div>
     </div>
-    <div style="padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px">
-      <button class="btn" onclick="exportHistoryExcel()" style="padding:3px 8px;font-size:10px;flex:1">批量导出Excel</button>
-      <button class="btn" onclick="clearHistory()" style="padding:3px 8px;font-size:10px;color:var(--fail)">清空</button>
-    </div>
+  </div>
+
+  <!-- Hidden price section (后续开发) -->
+  <div style="display:none" id="price-section">
+    <div id="price-editor"></div>
   </div>
 </div>
 
@@ -1252,7 +1291,8 @@ function doCalc(){
 
     const isSelected=(a.s===rec.s);
     const rowClass=(isSelected?'selected':'')+(isBest||isMin||isEco?' recommended':'');
-    html+='<tr class="'+rowClass+'" data-section="'+a.s+'" onclick="selectSection('+a.s+')"><td>'+label+'</td><td>'+a.s+' mm²</td><td>'+a.corr+' A</td><td>'+a.loadRatio+'%</td><td><span class="status-pip '+a.st+'"></span></td></tr>';
+    const ratioDisplay=a.loadRatio>999?'>999%':a.loadRatio+'%';
+    html+='<tr class="'+rowClass+'" data-section="'+a.s+'" onclick="selectSection('+a.s+')"><td>'+label+'</td><td>'+a.s+' mm²</td><td>'+a.corr+' A</td><td style="color:'+(a.loadRatio<=90?'var(--pass)':a.loadRatio<=100?'var(--warn)':'var(--fail)')+'">'+ratioDisplay+'</td><td><span class="status-pip '+a.st+'"></span></td></tr>';
   }
   document.getElementById('comp-body').innerHTML=html;
 
@@ -1672,7 +1712,7 @@ function resetAll(){
   document.getElementById('sc-section').className='summary-card highlight';
   document.getElementById('sc-margin').innerHTML='<div class="sc-label">载荷率</div><div class="sc-value">--<span class="sc-unit"> %</span></div>';
   document.getElementById('sc-margin').className='summary-card';
-  document.getElementById('comp-body').innerHTML='<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px">输入参数后自动生成</td></tr>';
+  document.getElementById('comp-body').innerHTML='<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--text-muted);font-size:11px">输入参数后自动生成</td></tr>';
   document.getElementById('price-editor').innerHTML='<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:12px">输入参数后显示相关截面价格</div>';
   document.getElementById('cable-info').style.display='none';
   document.getElementById('amp-alert').innerHTML='';
@@ -1847,18 +1887,18 @@ function renderHistory(){
   const history=getHistory();
   const container=document.getElementById('history-list');
   if(history.length===0){
-    container.innerHTML='<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:16px">暂无保存的选型记录</div>';
+    container.innerHTML='<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:24px">暂无保存的选型记录</div>';
     return;
   }
-  let html='<table style="width:100%;border-collapse:collapse;font-size:10px">';
-  html+='<tr style="background:#F8FAFC"><th style="padding:5px 6px;text-align:left">日期</th><th>敷设</th><th>截面</th><th>载荷率</th><th>操作</th></tr>';
+  let html='<table class="history-table">';
+  html+='<tr><th>日期</th><th>敷设</th><th>截面</th><th>载荷率</th><th>操作</th></tr>';
   for(const r of history){
-    html+='<tr style="border-bottom:1px solid #F0F2F5">';
-    html+='<td style="padding:5px 6px;font-size:9px;color:var(--text-muted)">'+r.date.replace(/\d{4}\//, '')+'</td>';
-    html+='<td style="padding:5px 4px;text-align:center">'+r.methodName+'</td>';
-    html+='<td style="padding:5px 4px;text-align:center;font-weight:600">'+r.section+'</td>';
-    html+='<td style="padding:5px 4px;text-align:center">'+r.loadRatio+'%</td>';
-    html+='<td style="padding:5px 4px;text-align:center"><button onclick="loadRecord('+r.id+')" style="font-size:9px;padding:1px 5px;border:1px solid var(--border);border-radius:2px;background:#fff;cursor:pointer" title="加载此记录">加载</button> <button onclick="deleteRecord('+r.id+')" style="font-size:9px;padding:1px 5px;border:1px solid var(--border);border-radius:2px;background:#fff;cursor:pointer;color:var(--fail)" title="删除">×</button></td>';
+    html+='<tr>';
+    html+='<td style="font-size:9px;color:var(--text-muted)">'+r.date.replace(/\d{4}\//, '')+'</td>';
+    html+='<td>'+r.methodName+'</td>';
+    html+='<td style="font-weight:600;font-family:var(--font-mono)">'+r.section+'</td>';
+    html+='<td>'+r.loadRatio+'%</td>';
+    html+='<td><button class="btn-sm" onclick="loadRecord('+r.id+')" title="加载">加载</button> <button class="btn-sm btn-del" onclick="deleteRecord('+r.id+')" title="删除">×</button></td>';
     html+='</tr>';
   }
   html+='</table>';
@@ -1938,6 +1978,43 @@ function exportHistoryExcel(){
   XLSX.writeFile(wb,'电缆选型记录_'+new Date().toISOString().slice(0,10)+'.xlsx');
   showToast('已导出'+history.length+'条记录');
 }
+
+// ============================================================
+// RIGHT PANEL TAB SWITCHING
+// ============================================================
+function switchRightTab(tabId){
+  document.querySelectorAll('.right-tab-btn').forEach(b=>{b.classList.remove('active');if(b.dataset.rtab===tabId)b.classList.add('active');});
+  document.querySelectorAll('.right-tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('rt-'+tabId).classList.add('active');
+}
+
+// ============================================================
+// VERIFICATION CHIP UPDATES
+// ============================================================
+function updateVerifyChips(){
+  const ampDot=document.getElementById('dot-amp');
+  const vdDot=document.getElementById('dot-vd');
+  const scDot=document.getElementById('dot-sc');
+  const prDot=document.getElementById('dot-pr');
+  
+  const vcAmp=document.getElementById('vc-amp');
+  const vcVd=document.getElementById('vc-vd');
+  const vcSc=document.getElementById('vc-sc');
+  const vcProt=document.getElementById('vc-prot');
+  
+  vcAmp.className='verify-chip '+(ampDot.classList.contains('ok')?'pass':ampDot.classList.contains('ng')?'fail':'pending');
+  vcVd.className='verify-chip '+(vdDot.classList.contains('ok')?'pass':vdDot.classList.contains('ng')?'fail':'pending');
+  vcSc.className='verify-chip '+(scDot.classList.contains('ok')?'pass':scDot.classList.contains('ng')?'fail':'pending');
+  vcProt.className='verify-chip '+(prDot.classList.contains('ok')?'pass':prDot.classList.contains('ng')?'fail':'pending');
+}
+
+// Hook verify chip updates after each calc
+const _origCalcVD=calcVoltageDrop;
+calcVoltageDrop=function(){_origCalcVD();updateVerifyChips();};
+const _origCalcSC=calcShortCircuit;
+calcShortCircuit=function(){_origCalcSC();updateVerifyChips();};
+const _origCalcPR=calcProtection;
+calcProtection=function(){_origCalcPR();updateVerifyChips();};
 
 // Init
 updateUI();
