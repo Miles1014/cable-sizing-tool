@@ -286,6 +286,49 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 ::-webkit-scrollbar-track{background:#F5F7FA}
 ::-webkit-scrollbar-thumb{background:#CCD5DE;border-radius:3px}
 ::-webkit-scrollbar-thumb:hover{background:#A0ADB8}
+/* ===== Help / README Modal ===== */
+.help-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center}
+.help-overlay.open{display:flex}
+.help-modal{background:#fff;border-radius:10px;width:90vw;max-width:880px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden}
+.help-top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--border);background:#f8fafc}
+.help-top h2{font-size:16px;font-weight:700;color:var(--primary)}
+.help-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all 0.15s}
+.help-close:hover{background:var(--fail-light);color:var(--fail);border-color:var(--fail)}
+.help-tabs{display:flex;border-bottom:1px solid var(--border);background:#fff;padding:0 24px;gap:0}
+.help-tab{padding:10px 20px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;transition:all 0.15s;white-space:nowrap}
+.help-tab:hover{color:var(--text)}
+.help-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.help-body{flex:1;overflow-y:auto;padding:24px}
+.help-body h3{font-size:15px;font-weight:700;color:var(--primary);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid #eef2f6}
+.help-body h3:first-child{margin-top:0}
+.help-body h4{font-size:13px;font-weight:600;color:var(--primary);margin:14px 0 6px}
+.help-body p{font-size:12px;line-height:1.8;color:var(--text-secondary);margin-bottom:10px}
+.help-body ul,.help-body ol{padding-left:18px;margin-bottom:12px}
+.help-body li{font-size:12px;line-height:1.8;color:var(--text-secondary);margin-bottom:4px}
+.help-body .step-card{background:var(--accent-light);border-left:3px solid var(--accent);padding:10px 14px;border-radius:4px;margin-bottom:12px}
+.help-body .step-card .num{display:inline-block;background:var(--accent);color:#fff;width:20px;height:20px;text-align:center;line-height:20px;border-radius:50%;font-size:11px;font-weight:700;margin-right:8px}
+.help-body .step-card strong{font-size:12px}
+.help-body .step-card p{margin:4px 0 0 28px;font-size:11px}
+.help-body .feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.help-body .feature-item{background:#f8fafc;border:1px solid #eef2f6;border-radius:6px;padding:12px}
+.help-body .feature-item .fi-icon{font-size:20px;margin-bottom:4px}
+.help-body .feature-item .fi-title{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:2px}
+.help-body .feature-item .fi-desc{font-size:10px;color:var(--text-muted);line-height:1.5}
+.help-body .ver-block{margin-bottom:16px;padding-left:16px;border-left:2px solid #eef2f6}
+.help-body .ver-block .ver-tag{display:inline-block;background:var(--primary);color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;margin-bottom:6px}
+.help-body .ver-block .ver-date{font-size:10px;color:var(--text-muted);margin-left:8px}
+.help-body .ver-block ul{margin-top:4px}
+.help-body code{background:#f0f4f8;padding:1px 5px;border-radius:3px;font-size:11px;font-family:var(--font-mono)}
+.help-body table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:11px}
+.help-body table th{background:#f0f4f8;padding:6px 10px;text-align:left;font-weight:600;border:1px solid var(--border);font-size:10px}
+.help-body table td{padding:6px 10px;border:1px solid var(--border);color:var(--text-secondary)}
+@media(max-width:700px){
+  .help-modal{width:95vw;max-height:90vh;border-radius:8px}
+  .help-tabs{padding:0 12px}
+  .help-tab{padding:8px 12px;font-size:11px}
+  .help-body{padding:16px}
+  .help-body .feature-grid{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -300,6 +343,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <span class="std-ref">IEC 60364-5-52 / GB/T 16895.6-2014</span>
   </div>
   <div class="header-actions">
+    <button onclick="openHelp()" style="font-size:14px;padding:5px 10px" title="使用帮助">?</button>
     <button onclick="showReportDrawer()">&#128196; 详细报告</button>
     <button onclick="exportExcel()">&#8681; 导出Excel</button>
   </div>
@@ -2085,9 +2129,195 @@ calcShortCircuit=function(){_origCalcSC();updateVerifyChips();};
 const _origCalcPR=calcProtection;
 calcProtection=function(){_origCalcPR();updateVerifyChips();};
 
+// ============================================================
+// HELP / README MODAL
+// ============================================================
+function openHelp(){
+  document.getElementById('helpOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeHelp(){
+  document.getElementById('helpOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function switchHelpTab(tab){
+  document.querySelectorAll('.help-tab').forEach(t=>t.classList.toggle('active',t.dataset.htab===tab));
+  document.querySelectorAll('.help-content').forEach(c=>c.style.display='none');
+  const target=document.getElementById('hc-'+tab);
+  if(target)target.style.display='';
+}
+// ESC to close
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeHelp();});
+
 // Init
 updateUI();
 renderHistory();
 </script>
+<!-- ===== Help / README Modal ===== -->
+<div class="help-overlay" id="helpOverlay" onclick="if(event.target===this)closeHelp()">
+<div class="help-modal">
+  <div class="help-top">
+    <h2>CableSizer Pro — 使用帮助</h2>
+    <button class="help-close" onclick="closeHelp()">&#x2715;</button>
+  </div>
+  <div class="help-tabs">
+    <div class="help-tab active" data-htab="overview" onclick="switchHelpTab('overview')">系统概览</div>
+    <div class="help-tab" data-htab="guide" onclick="switchHelpTab('guide')">操作指南</div>
+    <div class="help-tab" data-htab="features" onclick="switchHelpTab('features')">功能详解</div>
+    <div class="help-tab" data-htab="changelog" onclick="switchHelpTab('changelog')">版本记录</div>
+  </div>
+  <div class="help-body" id="helpBody">
+
+    <!-- TAB: 系统概览 -->
+    <div class="help-content" id="hc-overview">
+      <h3>CableSizer Pro 是什么？</h3>
+      <p>基于 <strong>IEC 60364-5-52</strong>（等效国标 <strong>GB/T 16895.6-2014</strong>）的低压电缆载流量计算与选型系统。面向工业、商业和民用低压电气设计场景，覆盖电缆截面选择、载流量校验、电压降、短路耐受、保护协调的全链路自动计算。</p>
+
+      <h3>界面布局</h3>
+      <p>系统采用<strong>三列布局</strong>，从左到右依次为：</p>
+      <div class="step-card"><span class="num">左</span><strong>参数输入区</strong><p>四步向导式输入：敷设方式 → 环境条件 → 负载参数 → 保护设置。顶部步骤导航可随时切换，实时预览载流量估算结果。</p></div>
+      <div class="step-card"><span class="num">中</span><strong>计算结果区</strong><p>顶部摘要卡片（推荐截面/载荷率/电压降），中部为载流量分解计算详情，Tab 可切换查看电压降、短路耐量、保护协调的完整计算过程和结果。</p></div>
+      <div class="step-card"><span class="num">右</span><strong>方案对比与辅助区</strong><p>多方案对比表（推荐/最小/经济三档选型）、电缆信息卡、选型历史记录。对比表行可点击切换截面，联动中间面板重新显示。</p></div>
+
+      <h3>适用标准与范围</h3>
+      <table>
+        <tr><th>项目</th><th>覆盖范围</th></tr>
+        <tr><td>参考标准</td><td>IEC 60364-5-52 (2017) / GB/T 16895.6-2014</td></tr>
+        <tr><td>敷设方式</td><td>7种：有孔托盘、无孔托盘、梯架、电缆沟、埋地管道、直埋、穿管</td></tr>
+        <tr><td>绝缘类型</td><td>XLPE (交联聚乙烯) ≤90°C / PVC (聚氯乙烯) ≤70°C</td></tr>
+        <tr><td>导体材料</td><td>铜 (Cu) / 铝 (Al)</td></tr>
+        <tr><td>电缆芯数</td><td>多芯电缆 / 单芯电缆</td></tr>
+        <tr><td>载流导体</td><td>三根 / 二根载流导体</td></tr>
+        <tr><td>截面范围</td><td>1.5 ~ 630 mm²</td></tr>
+        <tr><td>电压等级</td><td>低压 0.6/1kV</td></tr>
+      </table>
+
+      <h3>使用前提</h3>
+      <p>本工具为纯前端单文件 Web 应用，无需安装、无需注册。支持在线使用（GitHub Pages）和本地离线使用（下载 HTML 文件即可）。导出 Excel 需要 <code>SheetJS</code> 库（已通过 CDN 自动加载）。无后端依赖，数据存储在本地浏览器 localStorage 中。</p>
+    </div>
+
+    <!-- TAB: 操作指南 -->
+    <div class="help-content" id="hc-guide" style="display:none">
+      <h3>快速入门</h3>
+      <p>左侧面板按<strong>四步向导</strong>完成参数输入，每步填写完毕后点击「计算选型」或在任意参数变更时系统自动计算。建议安装顺序完成所有步骤。</p>
+
+      <h4>步骤一：基本参数</h4>
+      <div class="step-card"><span class="num">1</span><strong>选择敷设方式</strong><p>7 种敷设方式分为"土壤中"和"空气中"两组。每种方式有对应的 IEC 标准查表引用号（如 EF/列3）。选择后系统自动确定查表路径。</p></div>
+      <div class="step-card"><span class="num">2</span><strong>配置电缆参数</strong><p>选择绝缘类型（XLPE/PVC）、导体材料（Cu/Al）、电缆芯数（多芯/单芯）、载流导体数（二根/三根）。这些参数直接影响查表列和载流量计算。</p></div>
+
+      <h4>步骤二：环境条件</h4>
+      <div class="step-card"><span class="num">3</span><strong>温度修正</strong><p>空气敷设：输入环境温度（默认 30°C），系统自动计算 K<sub>t</sub> 修正系数（查表 B.52.15/B.52.16）。土壤敷设：输入土壤温度（默认 20°C）。</p></div>
+      <div class="step-card"><span class="num">4</span><strong>群敷 / 土壤修正</strong><p>输入回路数和敷设间距（空气中）或土壤热阻系数（土壤中）。系统自动计算 K<sub>g</sub> 和 K<sub>s</sub>。</p></div>
+
+      <h4>步骤三：负载参数</h4>
+      <div class="step-card"><span class="num">5</span><strong>输入设计电流 IB</strong><p>直接输入以 A 为单位的电流值，或使用下方的「功率换算」辅助工具：输入有功功率(kW)、电压(V)、需要系数 Kd、功率因数 cosφ、效率 η，系统自动换算为 IB。</p></div>
+      <div class="step-card"><span class="num">6</span><strong>（可选）并联组数</strong><p>当 IB 超过单根电缆最大载流量时，系统自动推荐并联组数并显示提示。点击「使用推荐」自动填入，也可手动修改。</p></div>
+
+      <h4>步骤四：保护设置</h4>
+      <div class="step-card"><span class="num">7</span><strong>输入保护参数</strong><p>选择保护类型（MCB/MCCB/熔断器），输入额定电流 IN 和预期短路电流 Isc、保护切断时间 t。系统自动校验保护协调（IEC 433）和短路耐量（IEC 434）。</p></div>
+
+      <h3>查看结果</h3>
+      <p>输入完成后，中间面板实时展示：推荐的电缆截面、载荷率、详细计算过程。点击中间面板的 Tab 切换查看电压降、短路耐量、保护协调的完整校验结果。右侧面板展示多方案对比，点击任一行可切换查看不同截面的详细参数。</p>
+    </div>
+
+    <!-- TAB: 功能详解 -->
+    <div class="help-content" id="hc-features" style="display:none">
+      <h3>核心功能</h3>
+      <div class="feature-grid">
+        <div class="feature-item"><div class="fi-icon">&#x26A1;</div><div class="fi-title">载流量自动计算</div><div class="fi-desc">基于 IEC 60364-5-52 表 B.52.2~B.52.14 的完整载流量数据，自动查表、插值修正系数，计算 I<sub>Z</sub> = I<sub>0</sub> × K<sub>t</sub> × K<sub>g</sub> × K<sub>s</sub></div></div>
+        <div class="feature-item"><div class="fi-icon">&#x1F4C9;</div><div class="fi-title">电压降校验</div><div class="fi-desc">内置电缆阻抗数据库（R+X 参数），三相/单相公式自动应用。限值判定：照明≤3%、动力≤5%。超标自动反算最小截面</div></div>
+        <div class="feature-item"><div class="fi-icon">&#x26A1;</div><div class="fi-title">短路耐量校验</div><div class="fi-desc">IEC 434 条款：K²S² ≥ I²t。K 系数（Cu/PVC=115, Cu/XLPE=143, Al/PVC=76, Al/XLPE=94）自动查取</div></div>
+        <div class="feature-item"><div class="fi-icon">&#x1F6E1;</div><div class="fi-title">保护协调验证</div><div class="fi-desc">双重条件：IB ≤ IN ≤ IZ 且 I2 ≤ 1.45×IZ。MCB/MCCB(1.45×IN), 熔断器(1.6×IN) 自动区分</div></div>
+        <div class="feature-item"><div class="fi-icon">&#x1F3AF;</div><div class="fi-title">三档智能推荐</div><div class="fi-desc">推荐选型（余量10-35%）、最小满足（刚刚满足IB）、经济方案（最优性价比）三档自动比对</div></div>
+        <div class="feature-item"><div class="fi-icon">&#x1F50C;</div><div class="fi-title">并联组数推荐</div><div class="fi-desc">IB超过单根最大载流量时，自动反算所需并联组数，一键应用。电压降/短路/保护均联动适配</div></div>
+        <div class="feature-item"><div class="fi-icon">&#x1F4CA;</div><div class="fi-title">Excel报告导出</div><div class="fi-desc">一键导出完整计算报告（输入参数+系数+结果+方案对比表），含 SheetJS 格式，可直接打印存档</div></div>
+        <div class="feature-item"><div class="fi-icon">&#x1F4BE;</div><div class="fi-title">选型历史记录</div><div class="fi-desc">自动保存到本地浏览器 localStorage，支持加载/删除/批量导出。每条记录含完整上下文</div></div>
+      </div>
+
+      <h3>计算引擎说明</h3>
+      <h4>载流量计算公式</h4>
+      <p><code>I<sub>Z</sub> = I<sub>0</sub> × K<sub>t</sub> × K<sub>g</sub> × K<sub>s</sub></code></p>
+      <p>其中：<br>I<sub>0</sub> — 基准载流量（查 IEC 表 B.52.2~B.52.14）<br>K<sub>t</sub> — 温度修正系数（表 B.52.15/16，线性插值）<br>K<sub>g</sub> — 群敷修正系数（表 B.52.17~21）<br>K<sub>s</sub> — 土壤热阻修正系数（仅地下敷设，线性插值）</p>
+
+      <h4>电压降公式</h4>
+      <p><code>三相：ΔU = √3 × I<sub>B</sub> × L × (R·cosφ + X·sinφ)</code><br><code>单相：ΔU = 2 × I<sub>B</sub> × L × (R·cosφ + X·sinφ)</code></p>
+
+      <h4>短路耐量公式</h4>
+      <p><code>S<sub>min</sub> = √(I²t) / K</code> &nbsp; 校验条件：<code>K²S² ≥ I²t</code></p>
+
+      <h3>数据来源</h3>
+      <p>载流量数据直接提取自 IEC 60364-5-52 标准表格（B.52.2~B.52.14），覆盖 7 种敷设方式 × 2 种绝缘 × 2 种导体 × 完整截面范围。修正系数采用标准规定的线性插值法计算。</p>
+    </div>
+
+    <!-- TAB: 版本记录 -->
+    <div class="help-content" id="hc-changelog" style="display:none">
+      <h3>版本更新记录</h3>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.1.1</span><span class="ver-date">2026-06-26</span>
+        <ul>
+          <li>新增 <strong>并联组数自动推荐</strong> — IB 过大时根据最大载流量反算推荐组数</li>
+          <li>并联组数支持用户自定义覆盖</li>
+          <li>电压降/短路/保护校验联动适配并联场景</li>
+          <li>修复三列布局右侧面板被排出 grid 的 bug</li>
+          <li>修复百分比列宽+gap 导致右侧溢出问题（fr 单位替换）</li>
+          <li>布局改为全宽填充（移除 max-width 限制）</li>
+        </ul>
+      </div>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.1</span><span class="ver-date">2026-06-14</span>
+        <ul>
+          <li><strong>核心载流量计算</strong>：覆盖 7 种敷设方式，完整 IEC 查表数据</li>
+          <li><strong>温度/群敷/土壤热阻修正</strong>：标准线性插值</li>
+          <li><strong>电压降校验模块</strong>：内置阻抗数据库、照明/动力限值判定</li>
+          <li><strong>短路耐量校验</strong>：IEC 434 热稳定验算、自动推荐最小截面</li>
+          <li><strong>保护协调验证</strong>：IEC 433 条件验证、MCB/MCCB/熔断器区分</li>
+          <li><strong>三档智能推荐</strong>：推荐/最小/经济三档自动比对</li>
+          <li><strong>方案对比表</strong>：可点击切换截面、实时联动</li>
+          <li><strong>Excel 报告导出</strong>：完整计算报告+方案对比</li>
+          <li><strong>选型历史记录</strong>：localStorage 存储、加载/删除/批量导出</li>
+          <li><strong>Step 4 向导式输入</strong>：逐步引导参数配置</li>
+          <li><strong>功率换算工具</strong>：kW → A 自动换算</li>
+          <li><strong>修正系数实时预览</strong>：滑块调节 + 系数值同步显示</li>
+        </ul>
+      </div>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.2</span><span class="ver-date">开发中</span>
+        <ul>
+          <li>批量计算引擎</li>
+          <li>厂家参数数据库接入</li>
+          <li>经济截面优化</li>
+          <li>成本方案对比</li>
+          <li>管道热阻精细化</li>
+        </ul>
+      </div>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.3</span><span class="ver-date">规划中</span>
+        <ul>
+          <li>谐波影响分析</li>
+          <li>多工况并行对比</li>
+          <li>计算书 PDF 导出</li>
+          <li>自定义修正系数</li>
+        </ul>
+      </div>
+
+      <div class="ver-block">
+        <span class="ver-tag">v1.0</span><span class="ver-date">远景</span>
+        <ul>
+          <li>参数化建模</li>
+          <li>云端协同选型</li>
+          <li>AI 辅助建议</li>
+          <li>CAD/PDM 接口对接</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
 </body>
 </html>
