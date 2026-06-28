@@ -2681,6 +2681,21 @@ renderHistory();
       <h3>版本更新记录</h3>
 
       <div class="ver-block">
+        <span class="ver-tag">v0.1.2</span><span class="ver-date">2026-06-28</span>
+        <ul>
+          <li><strong>群敷系数标准对齐</strong>：B.52.18(直埋)/B.52.19(埋地管道)/B.52.20(托盘梯架多芯)/B.52.21(托盘梯架单芯) 全表替换旧简化数据</li>
+          <li><strong>托盘/梯架层数参数</strong>：新增层数(1/2/3/6层)、每层电缆数、触碰/有间距等多维参数</li>
+          <li><strong>地下联动规则</strong>：D1/D2 模式下 Step2 并列回路数锁定，仅 Step3 并联组数可改，双向即时同步</li>
+          <li><strong>空气独立规则</strong>：PT/ST/LD/TR 模式下 Step2 与 Step3 无联动，各自独立设置</li>
+          <li><strong>超出范围处理</strong>：回路数超出标准最大时自动取最接近系数，显示 ⚠ 提示</li>
+          <li><strong>Iz 公式展开</strong>：显示详细参数代入过程(I₀ × Kₜ × K₉ × Kₛ × N = 结果)</li>
+          <li><strong>系数精度统一</strong>：温度/群敷/土壤修正系数均显示 2 位小数</li>
+          <li><strong>UI 优化</strong>：右侧参数卡增加 Iz 行、载流量面板增加组数行、tooltip 改用 body 级渲染避免裁剪</li>
+          <li><strong>README 帮助系统</strong>：Header 新增 ? 按钮，4 标签 Modal（概览/指南/功能/版本记录）</li>
+        </ul>
+      </div>
+
+      <div class="ver-block">
         <span class="ver-tag">v0.1.1</span><span class="ver-date">2026-06-26</span>
         <ul>
           <li>新增 <strong>并联组数自动推荐</strong> — IB 过大时根据最大载流量反算推荐组数</li>
