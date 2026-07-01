@@ -2736,6 +2736,17 @@ renderHistory();
       <h3>版本更新记录</h3>
 
       <div class="ver-block">
+        <span class="ver-tag">v0.1.3</span><span class="ver-date">2026-07-02</span>
+        <ul>
+          <li><strong>群敷系数全表重录</strong>：B52.18(直埋)/B52.19(埋地管道)/B52.20(梯架多芯)/B52.21(单芯空气) 按 IEC 60364-5-52 标准截图重新识别录入，修正数十处数据错误</li>
+          <li><strong>B52.21 单芯排列增强</strong>：6 组子表（新增 2 组），单芯+PT 提供 4 选项（水平/垂直×触碰/有间距），单芯+LD/TR 提供 2 选项</li>
+          <li><strong>D1/D2 单回路 Cg 修复</strong>：标准未定义 n=1，旧逻辑误取 20 回路系数；改为 Cg=1.00 并提示标准差异</li>
+          <li><strong>D2 排列控件修复</strong>：直埋场景下不再显示无关的"电缆排列"控件</li>
+          <li><strong>UI 优化</strong>："每层电缆数"→"每层回路数"；Cg 显示 2 位小数；超出标准范围提示改为具体说明取值</li>
+        </ul>
+      </div>
+
+      <div class="ver-block">
         <span class="ver-tag">v0.1.2</span><span class="ver-date">2026-06-28</span>
         <ul>
           <li><strong>群敷系数标准对齐</strong>：B.52.18(直埋)/B.52.19(埋地管道)/B.52.20(托盘梯架多芯)/B.52.21(托盘梯架单芯) 全表替换旧简化数据</li>
