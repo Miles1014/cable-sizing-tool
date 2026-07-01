@@ -1322,7 +1322,7 @@ function updateGroupSlider(){
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
     if(n<=1){
       cg=1.0;
-      groupLimitMsg='IEC 60364-5-52 表 B.52.18 未定义单回路群敷系数，按物理含义取 Cg=1.00';
+      // n=1 无相互热影响，Cg=1.00 为正常值，不需要提示
     }else{
       const sp=document.getElementById('ugSpacingD2').value;
       const table=B52_18_D2[sp]||B52_18_D2.touching;
@@ -1339,7 +1339,7 @@ function updateGroupSlider(){
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
     if(n<=1){
       cg=1.0;
-      groupLimitMsg='IEC 60364-5-52 表 B.52.19 未定义单回路群敷系数，按物理含义取 Cg=1.00';
+      // n=1 无相互热影响，Cg=1.00 为正常值，不需要提示
     }else{
       const sp=document.getElementById('ugSpacingD1').value;
       const table=cableType==='single'?B52_19_D1_SINGLE:B52_19_D1_MULTI;
