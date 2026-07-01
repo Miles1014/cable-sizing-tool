@@ -330,6 +330,8 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   .help-body{padding:16px}
   .help-body .feature-grid{grid-template-columns:1fr}
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zhi-mang-xing@5/index.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/liu-jian-mao-cao@5/index.css">
 </style>
 </head>
 <body>
@@ -510,9 +512,9 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             </select>
           </div>
           <div class="form-group" id="grp-cablesPerLayer">
-            <label class="form-label" id="lbl-cablesPerLayer">每层电缆数 <span class="tip" data-tip="同一托盘/梯架平面上并列的电缆根数(多芯)或回路数(单芯)">?</span></label>
+            <label class="form-label" id="lbl-cablesPerLayer">每层回路数 <span class="tip" data-tip="同一托盘/梯架平面上并列的回路数。多芯电缆每根即一个回路，单芯电缆每3根为一回路。">?</span></label>
             <select class="form-control" id="cablesPerLayer" onchange="updateGroupSlider()">
-              <option value="1">1 根</option><option value="2">2 根</option><option value="3">3 根</option><option value="4">4 根</option><option value="6">6 根</option><option value="9">9 根</option>
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="9">9</option>
             </select>
           </div>
           <div class="form-group" id="grp-ugCircuitCount" style="display:none">
@@ -945,29 +947,32 @@ const TEMP_AIR={PVC:{10:1.22,15:1.17,20:1.12,25:1.06,30:1.00,35:0.94,40:0.87,45:
 const TEMP_GND={PVC:{10:1.10,15:1.05,20:1.00,25:0.95,30:0.89,35:0.84,40:0.77,45:0.71,50:0.63,55:0.55,60:0.45},XLPE:{10:1.07,15:1.04,20:1.00,25:0.96,30:0.93,35:0.89,40:0.85,45:0.80,50:0.76,55:0.71,60:0.65,65:0.60,70:0.53,75:0.46,80:0.38}};
 // ===== GROUPING CORRECTION FACTORS (IEC 60364-5-52 Annex B) =====
 
-// B.52.18 - 直埋 (D2)  — 多回路电缆降低系数 (2~20回路 × 5间距)
+// B.52.18 - 直埋 (D2) — 多回路电缆降低系数 (IEC 60364-5-52 B.52.18)
+// 标准定义回路数: 2~9, 12, 16, 20；非标准值经线性插值填充
 const B52_18_D2 = {
-  touching:{2:0.75,3:0.65,4:0.60,5:0.55,6:0.50,7:0.45,8:0.43,9:0.40,10:0.38,11:0.36,12:0.35,13:0.33,14:0.33,15:0.31,16:0.31,17:0.30,18:0.30,19:0.29,20:0.29},
-  oneDia:  {2:0.80,3:0.70,4:0.60,5:0.55,6:0.52,7:0.48,8:0.45,9:0.43,10:0.41,11:0.39,12:0.38,13:0.36,14:0.36,15:0.33,16:0.33,17:0.32,18:0.32,19:0.34,20:0.35},
-  d125:    {2:0.85,3:0.75,4:0.70,5:0.65,6:0.60,7:0.57,8:0.54,9:0.52,10:0.50,11:0.48,12:0.47,13:0.45,14:0.44,15:0.42,16:0.42,17:0.41,18:0.41,19:0.43,20:0.44},
-  d25:     {2:0.90,3:0.80,4:0.75,5:0.70,6:0.65,7:0.63,8:0.60,9:0.58,10:0.56,11:0.54,12:0.53,13:0.51,14:0.51,15:0.49,16:0.49,17:0.47,18:0.47,19:0.51,20:0.53},
-  d50:     {2:0.90,3:0.85,4:0.80,5:0.75,6:0.72,7:0.69,8:0.67,9:0.65,10:0.63,11:0.61,12:0.60,13:0.58,14:0.58,15:0.56,16:0.56,17:0.55,18:0.55,19:0.65,20:0.66}
+  touching:{2:0.75,3:0.65,4:0.60,5:0.55,6:0.50,7:0.45,8:0.43,9:0.41,10:0.39,11:0.38,12:0.36,13:0.35,14:0.34,15:0.33,16:0.32,17:0.31,18:0.31,19:0.30,20:0.29},
+  oneDia:  {2:0.80,3:0.70,4:0.60,5:0.55,6:0.55,7:0.51,8:0.48,9:0.46,10:0.45,11:0.43,12:0.42,13:0.41,14:0.40,15:0.39,16:0.38,17:0.37,18:0.37,19:0.36,20:0.35},
+  d125:    {2:0.85,3:0.75,4:0.70,5:0.65,6:0.60,7:0.59,8:0.57,9:0.55,10:0.54,11:0.52,12:0.51,13:0.50,14:0.49,15:0.48,16:0.47,17:0.46,18:0.46,19:0.45,20:0.44},
+  d25:     {2:0.90,3:0.80,4:0.75,5:0.70,6:0.70,7:0.67,8:0.65,9:0.63,10:0.62,11:0.60,12:0.59,13:0.58,14:0.58,15:0.57,16:0.56,17:0.55,18:0.55,19:0.54,20:0.53},
+  d50:     {2:0.90,3:0.85,4:0.80,5:0.80,6:0.80,7:0.76,8:0.75,9:0.74,10:0.73,11:0.72,12:0.71,13:0.70,14:0.70,15:0.69,16:0.68,17:0.68,18:0.67,19:0.67,20:0.66}
 };
 
-// B.52.19(A) - 埋地管道 (D1) 多芯电缆 → 单路管槽内多芯电缆 (2~20电缆 × 4间距)
+// B.52.19(A) - 埋地管道 (D1) 多芯电缆 → 单路管槽内多芯电缆 (IEC 60364-5-52 B.52.19)
+// 标准定义回路数: 2~12, 13~20；非标准值经线性插值填充
 const B52_19_D1_MULTI = {
-  touching:{2:0.84,3:0.78,4:0.75,5:0.72,6:0.70,7:0.68,8:0.66,9:0.65,10:0.64,11:0.63,12:0.62,13:0.61,14:0.60,15:0.59,16:0.58,17:0.57,18:0.56,19:0.55,20:0.54},
-  d25:     {2:0.88,3:0.83,4:0.80,5:0.78,6:0.76,7:0.74,8:0.73,9:0.72,10:0.71,11:0.70,12:0.69,13:0.68,14:0.67,15:0.66,16:0.65,17:0.64,18:0.64,19:0.63,20:0.62},
-  d50:     {2:0.91,3:0.87,4:0.84,5:0.82,6:0.80,7:0.79,8:0.78,9:0.77,10:0.76,11:0.75,12:0.75,13:0.74,14:0.74,15:0.73,16:0.73,17:0.72,18:0.72,19:0.71,20:0.70},
-  d100:    {2:0.93,3:0.90,4:0.88,5:0.87,6:0.86,7:0.85,8:0.84,9:0.83,10:0.82,11:0.81,12:0.80,13:0.79,14:0.78,15:0.77,16:0.77,17:0.76,18:0.75,19:0.74,20:0.73}
+  touching:{2:0.85,3:0.75,4:0.70,5:0.65,6:0.60,7:0.57,8:0.54,9:0.52,10:0.49,11:0.47,12:0.45,13:0.44,14:0.42,15:0.41,16:0.39,17:0.38,18:0.37,19:0.35,20:0.34},
+  d25:     {2:0.90,3:0.85,4:0.80,5:0.80,6:0.80,7:0.76,8:0.74,9:0.73,10:0.72,11:0.70,12:0.69,13:0.68,14:0.68,15:0.67,16:0.66,17:0.65,18:0.65,19:0.64,20:0.63},
+  d50:     {2:0.95,3:0.90,4:0.85,5:0.85,6:0.80,7:0.80,8:0.78,9:0.77,10:0.76,11:0.75,12:0.74,13:0.73,14:0.72,15:0.72,16:0.71,17:0.70,18:0.70,19:0.69,20:0.68},
+  d100:    {2:0.95,3:0.95,4:0.90,5:0.90,6:0.90,7:0.88,8:0.88,9:0.87,10:0.86,11:0.86,12:0.85,13:0.85,14:0.84,15:0.84,16:0.83,17:0.83,18:0.83,19:0.82,20:0.82}
 };
 
-// B.52.19(B) - 埋地管道 (D1) 单芯电缆 → 非磁性单路管槽内单芯电缆 (2~20回路 × 4间距)
+// B.52.19(B) - 埋地管道 (D1) 单芯电缆 → 非磁性单路管槽内单芯电缆 (IEC 60364-5-52 B.52.19)
+// 标准定义回路数: 2~20 (全部为标准定义值)
 const B52_19_D1_SINGLE = {
-  touching:{2:0.80,3:0.70,4:0.65,5:0.60,6:0.57,7:0.54,8:0.52,9:0.50,10:0.48,11:0.46,12:0.45,13:0.44,14:0.43,15:0.42,16:0.41,17:0.40,18:0.39,19:0.38,20:0.37},
-  d25:     {2:0.85,3:0.78,4:0.73,5:0.69,6:0.66,7:0.63,8:0.61,9:0.59,10:0.57,11:0.55,12:0.54,13:0.53,14:0.52,15:0.51,16:0.50,17:0.49,18:0.48,19:0.47,20:0.46},
-  d50:     {2:0.89,3:0.84,4:0.80,5:0.77,6:0.74,7:0.72,8:0.70,9:0.68,10:0.67,11:0.65,12:0.64,13:0.63,14:0.62,15:0.61,16:0.60,17:0.59,18:0.58,19:0.57,20:0.56},
-  d100:    {2:0.91,3:0.88,4:0.85,5:0.83,6:0.81,7:0.79,8:0.78,9:0.77,10:0.76,11:0.75,12:0.74,13:0.73,14:0.72,15:0.71,16:0.70,17:0.69,18:0.69,19:0.68,20:0.67}
+  touching:{2:0.80,3:0.70,4:0.65,5:0.60,6:0.60,7:0.53,8:0.50,9:0.47,10:0.45,11:0.43,12:0.41,13:0.39,14:0.37,15:0.35,16:0.34,17:0.33,18:0.31,19:0.30,20:0.29},
+  d25:     {2:0.90,3:0.80,4:0.75,5:0.70,6:0.70,7:0.66,8:0.63,9:0.61,10:0.59,11:0.57,12:0.56,13:0.54,14:0.53,15:0.52,16:0.51,17:0.50,18:0.49,19:0.48,20:0.47},
+  d50:     {2:0.90,3:0.85,4:0.80,5:0.80,6:0.80,7:0.76,8:0.74,9:0.73,10:0.72,11:0.70,12:0.69,13:0.68,14:0.68,15:0.67,16:0.66,17:0.65,18:0.65,19:0.64,20:0.63},
+  d100:    {2:0.95,3:0.90,4:0.90,5:0.90,6:0.90,7:0.87,8:0.87,9:0.86,10:0.85,11:0.85,12:0.84,13:0.84,14:0.83,15:0.83,16:0.83,17:0.82,18:0.82,19:0.82,20:0.81}
 };
 
 // B.52.20 - 空气中多芯电缆 — 三维查表 [敷设方式][排列][层数][每层电缆数]
@@ -999,55 +1004,72 @@ const B52_20 = {
       3:{1:1.00,2:0.98,3:0.97,4:0.96,5:0.93,6:0.91}
     }
   },
-  ladder:{ // 梯架
+  ladder:{ // 梯架 — 图⑥⑦ 已按标准校验 (IEC 60364-5-52 B.52.20)
     touching:{
-      1:{1:1.00,2:0.87,3:0.82,4:0.80,5:0.79,6:0.78,7:0.77,8:0.76,9:0.76},
+      1:{1:1.00,2:0.87,3:0.82,4:0.80,5:0.79,6:0.79,7:0.78,8:0.78,9:0.78},
       2:{1:1.00,2:0.86,3:0.80,4:0.78,5:0.77,6:0.76,7:0.75,8:0.74,9:0.73},
-      3:{1:1.00,2:0.85,3:0.79,4:0.76,5:0.75,6:0.74,7:0.73,8:0.72,9:0.71},
-      6:{1:1.00,2:0.83,3:0.77,4:0.73,5:0.72,6:0.71,7:0.70,8:0.69,9:0.68}
+      3:{1:1.00,2:0.85,3:0.79,4:0.76,5:0.75,6:0.73,7:0.72,8:0.71,9:0.70},
+      6:{1:1.00,2:0.84,3:0.77,4:0.73,5:0.71,6:0.68,7:0.66,8:0.65,9:0.64}
     },
     spaced:{
       1:{1:1.00,2:1.00,3:1.00,4:1.00,5:1.00,6:1.00},
-      2:{1:1.00,2:1.00,3:0.99,4:0.98,5:0.98,6:0.97},
-      3:{1:1.00,2:1.00,3:0.98,4:0.97,5:0.96,6:0.95}
+      2:{1:1.00,2:0.99,3:0.98,4:0.97,5:0.96,6:0.96},
+      3:{1:1.00,2:0.98,3:0.97,4:0.96,5:0.95,6:0.93}
     }
   }
 };
 
-// B.52.21 - 空气中单芯电缆 — [敷设方式][层数][三相同路数]
+// B.52.21 - 空气中单芯电缆 — 6组子表: [敷设方式+排列][层数][三相同路数]
+// 图① 有孔托盘(水平/触碰)  图② 垂直有孔托盘(垂直/触碰)
+// 图③ 梯架线夹(水平/触碰)   图④ 有孔托盘(水平/有间距≥2De)
+// 图⑤ 垂直有孔托盘(三角/有间距) 图⑥ 梯架线夹(水平/有间距≥2De)
 const B52_21 = {
-  perfV:{ // 垂直有孔托盘
-    1:{1:0.91,2:0.72,3:0.66,4:0.63,5:0.61,6:0.59},
-    2:{1:0.91,2:0.70,3:0.64,4:0.61,5:0.59,6:0.57},
-    3:{1:0.91,2:0.69,3:0.62,4:0.59,5:0.57,6:0.55}
+  perfHTouch:{  // 图① 有孔托盘 — 相互接触 — 水平排列
+    1:{1:0.98,2:0.91,3:0.87},
+    2:{1:0.96,2:0.87,3:0.81},
+    3:{1:0.95,2:0.85,3:0.78}
   },
-  ladderC:{ // 梯架和线夹
-    1:{1:0.95,2:0.83,3:0.78,4:0.76,5:0.75,6:0.74},
-    2:{1:0.95,2:0.82,3:0.77,4:0.75,5:0.73,6:0.72},
-    3:{1:0.95,2:0.81,3:0.76,4:0.73,5:0.72,6:0.71}
+  perfHSpaced:{ // 图④ 有孔托盘 — 有间距(≥2De) — 水平排列
+    1:{1:1.00,2:0.98,3:0.96},
+    2:{1:0.97,2:0.93,3:0.89},
+    3:{1:0.96,2:0.92,3:0.86}
   },
-  perfH:{ // 水平有孔托盘
-    1:{1:0.90,2:0.78,3:0.73,4:0.72,5:0.70,6:0.69},
-    2:{1:0.90,2:0.76,3:0.71,4:0.69,5:0.68,6:0.66},
-    3:{1:0.90,2:0.75,3:0.69,4:0.67,5:0.65,6:0.64}
+  perfVTouch:{  // 图② 垂直安装有孔托盘 — 相互接触 — 垂直排列
+    1:{1:0.96,2:0.86},
+    2:{1:0.95,2:0.84}
   },
-  perfV2:{ // 有孔托盘-垂直
-    1:{1:0.91,2:0.77,3:0.74,4:0.72,5:0.71,6:0.70},
-    2:{1:0.91,2:0.75,3:0.72,4:0.70,5:0.68,6:0.67}
+  trefoilSpaced:{ // 图⑤ 垂直安装有孔托盘 — 有间距 — 三角形排列
+    1:{1:1.00,2:0.91,3:0.89},
+    2:{1:1.00,2:0.90,3:0.86}
   },
-  ladderS:{ // 梯架-有间距
-    1:{1:1.00,2:0.97,3:0.96,4:0.95,5:0.94,6:0.93},
-    2:{1:1.00,2:0.95,3:0.93,4:0.92,5:0.91,6:0.90}
+  ladderTouch:{ // 图③ 梯架和线夹等 — 相互接触 — 水平排列
+    1:{1:1.00,2:0.97,3:0.96},
+    2:{1:0.98,2:0.93,3:0.89},
+    3:{1:0.97,2:0.90,3:0.86}
+  },
+  ladderSpaced:{ // 图⑥ 梯架和线夹等 — 有间距(≥2De) — 水平排列
+    1:{1:1.00,2:1.00,3:1.00},
+    2:{1:0.97,2:0.95,3:0.93},
+    3:{1:0.96,2:0.94,3:0.90}
   }
 };
 
-// Mapping: installation method → B52_20/B52_21 key
-function getGroupTableKey(m,cableType){
+// Mapping: installation method + arrangement → B52_20/B52_21 key
+function getGroupTableKey(m,cableType,arrangement){
   if(cableType==='single'){
-    // Single-core → B.52.21
-    if(m==='PT') return {t:'B52_21',k:'perfH'};       // PT → 水平有孔托盘
-    if(m==='LD'||m==='TR') return {t:'B52_21',k:'ladderC'}; // LD/TR → 梯架和线夹
-    return {t:'B52_21',k:'perfH'};
+    // Single-core → B.52.21 (6 sub-tables, arrangement drives the selection)
+    if(m==='PT'){
+      if(arrangement==='pt-horiz-touch')  return {t:'B52_21',k:'perfHTouch'};    // 图① 有孔托盘/水平/触碰
+      if(arrangement==='pt-horiz-spaced') return {t:'B52_21',k:'perfHSpaced'};   // 图④ 有孔托盘/水平/有间距
+      if(arrangement==='pt-vert-touch')   return {t:'B52_21',k:'perfVTouch'};    // 图② 垂直有孔托盘/触碰
+      if(arrangement==='pt-trefoil')      return {t:'B52_21',k:'trefoilSpaced'}; // 图⑤ 垂直有孔托盘/三角形有间距
+      return {t:'B52_21',k:'perfHTouch'}; // default: 水平触碰
+    }
+    if(m==='LD'||m==='TR'){
+      if(arrangement==='spaced') return {t:'B52_21',k:'ladderSpaced'}; // 图⑥ 梯架/有间距
+      return {t:'B52_21',k:'ladderTouch'};  // 图③ 梯架/触碰 (default)
+    }
+    return {t:'B52_21',k:'perfHTouch'};
   }else{
     // Multi-core → B.52.20
     if(m==='PT') return {t:'B52_20',k:'perf'};     // 有孔托盘
@@ -1162,7 +1184,7 @@ function updateUI(){
   document.getElementById('grp-trayLayers').style.display=isAir?'':'none';
   document.getElementById('grp-cablesPerLayer').style.display=isAir?'':'none';
   document.getElementById('grp-ugCircuitCount').style.display=isUnderground?'':'none';
-  document.getElementById('grp-arrangement').style.display=(isAir||isD2)?'':'none';
+  document.getElementById('grp-arrangement').style.display=isAir?'':'none';
   document.getElementById('grp-ugSpacingD1').style.display=isD1?'':'none';
   document.getElementById('grp-ugSpacingD2').style.display=isD2?'':'none';
   
@@ -1180,10 +1202,22 @@ function updateUI(){
     }
   }
   
-  // Update arrangement options for grouping
+  // Update arrangement options: single-core has 4/2 modes, multi-core has 2
   if(!isUnderground){
     const sel=document.getElementById('arrangement');
-    sel.innerHTML='<option value="touching">触碰排列</option><option value="spaced">有间距(≥1d)</option>';
+    if(cableType==='single'){
+      if(m==='PT'){
+        sel.innerHTML='<option value="pt-horiz-touch">水平排列，触碰</option>'+
+          '<option value="pt-horiz-spaced">水平排列，有间距 (≥2De)</option>'+
+          '<option value="pt-vert-touch">垂直排列，触碰</option>'+
+          '<option value="pt-trefoil">垂直排列，有间距 — 三角形品字形</option>';
+      }else{ // LD/TR
+        sel.innerHTML='<option value="touching">水平排列，触碰</option>'+
+          '<option value="spaced">水平排列，有间距 (≥2De)</option>';
+      }
+    }else{
+      sel.innerHTML='<option value="touching">触碰排列</option><option value="spaced">有间距 (≥1d)</option>';
+    }
   }
   
   // Update table ref hint
@@ -1236,7 +1270,7 @@ function updateGroupSlider(){
     const nLayer=parseInt(document.getElementById('trayLayers').value)||1;
     const nPer=parseInt(document.getElementById('cablesPerLayer').value)||1;
     const arr=document.getElementById('arrangement').value;
-    const gk=getGroupTableKey(m,cableType);
+    const gk=getGroupTableKey(m,cableType,arr);
     
     if(gk.t==='B52_20'){
       // 多芯 → B52.20 二维查表
@@ -1246,14 +1280,16 @@ function updateGroupSlider(){
       if(!layerTable){
         // Beyond range: use last available layer
         const keys=Object.keys(arrTable).map(Number).sort((a,b)=>a-b);
-        layerTable=arrTable[keys[keys.length-1]];
-        groupLimitMsg='层数超出标准范围，已取最接近值';
+        const lastKey=keys[keys.length-1];
+        layerTable=arrTable[lastKey];
+        groupLimitMsg='标准仅定义 1~'+lastKey+' 层，已取第 '+lastKey+' 层系数';
       }
       let val=layerTable[nPer];
       if(val===undefined){
         const perKeys=Object.keys(layerTable).map(Number).sort((a,b)=>a-b);
-        val=layerTable[perKeys[perKeys.length-1]];
-        groupLimitMsg=(groupLimitMsg?groupLimitMsg+'；':'')+'每层电缆数超出标准范围，已取最接近值';
+        const lastPerKey=perKeys[perKeys.length-1];
+        val=layerTable[lastPerKey];
+        groupLimitMsg=(groupLimitMsg?groupLimitMsg+'；':'')+'标准仅定义 1~'+lastPerKey+' 根/层，已取 '+lastPerKey+' 根系数';
       }
       cg=val;
     }else{
@@ -1267,47 +1303,59 @@ function updateGroupSlider(){
         let circTable=table[nLayer];
         if(!circTable){
           const keys=Object.keys(table).map(Number).sort((a,b)=>a-b);
-          circTable=table[keys[keys.length-1]];
-          groupLimitMsg='层数超出标准范围，已取最接近值';
+          const lastKey=keys[keys.length-1];
+          circTable=table[lastKey];
+          groupLimitMsg='标准仅定义 1~'+lastKey+' 层，已取第 '+lastKey+' 层系数';
         }
         let val=circTable[nCircuits];
         if(val===undefined){
           const cKeys=Object.keys(circTable).map(Number).sort((a,b)=>a-b);
-          val=circTable[cKeys[cKeys.length-1]];
-          groupLimitMsg=(groupLimitMsg?groupLimitMsg+'；':'')+'回路数超出标准范围，已取最接近值';
+          const lastCKey=cKeys[cKeys.length-1];
+          val=circTable[lastCKey];
+          groupLimitMsg=(groupLimitMsg?groupLimitMsg+'；':'')+'标准仅定义 1~'+lastCKey+' 回路/层，已取 '+lastCKey+' 回路系数';
         }
         cg=val;
       }
     }
   }else if(m==='D2'){
-    // D2 直埋 → B52.18
+    // D2 直埋 → B52.18 (标准仅定义 2~20 回路)
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
-    const sp=document.getElementById('ugSpacingD2').value;
-    const table=B52_18_D2[sp]||B52_18_D2.touching;
-    let val=table[n];
-    if(val===undefined){
-      const keys=Object.keys(table).map(Number).sort((a,b)=>a-b);
-      val=table[keys[keys.length-1]];
-      groupLimitMsg='回路数超出标准范围(最大20)，已取最接近值';
+    if(n<=1){
+      cg=1.0;
+      groupLimitMsg='IEC 60364-5-52 表 B.52.18 未定义单回路群敷系数，按物理含义取 Cg=1.00';
+    }else{
+      const sp=document.getElementById('ugSpacingD2').value;
+      const table=B52_18_D2[sp]||B52_18_D2.touching;
+      let val=table[n];
+      if(val===undefined){
+        const keys=Object.keys(table).map(Number).sort((a,b)=>a-b);
+        val=table[keys[keys.length-1]];
+        groupLimitMsg='标准仅定义 2~20 回路，已取 20 回路系数';
+      }
+      cg=val;
     }
-    cg=val;
   }else if(m==='D1'){
-    // D1 埋地管道 → B52.19
+    // D1 埋地管道 → B52.19 (标准仅定义 2~20 回路)
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
-    const sp=document.getElementById('ugSpacingD1').value;
-    const table=cableType==='single'?B52_19_D1_SINGLE:B52_19_D1_MULTI;
-    const spTable=table[sp]||table.touching;
-    let val=spTable[n];
-    if(val===undefined){
-      const keys=Object.keys(spTable).map(Number).sort((a,b)=>a-b);
-      val=spTable[keys[keys.length-1]];
-      groupLimitMsg='回路数超出标准范围(最大20)，已取最接近值';
+    if(n<=1){
+      cg=1.0;
+      groupLimitMsg='IEC 60364-5-52 表 B.52.19 未定义单回路群敷系数，按物理含义取 Cg=1.00';
+    }else{
+      const sp=document.getElementById('ugSpacingD1').value;
+      const table=cableType==='single'?B52_19_D1_SINGLE:B52_19_D1_MULTI;
+      const spTable=table[sp]||table.touching;
+      let val=spTable[n];
+      if(val===undefined){
+        const keys=Object.keys(spTable).map(Number).sort((a,b)=>a-b);
+        val=spTable[keys[keys.length-1]];
+        groupLimitMsg='标准仅定义 2~20 回路，已取 20 回路系数';
+      }
+      cg=val;
     }
-    cg=val;
   }
   
   const cgDisplay=document.getElementById('groupFactorVal');
-  if(cgDisplay)cgDisplay.textContent='Cg='+cg.toFixed(3);
+  if(cgDisplay)cgDisplay.textContent='Cg='+cg.toFixed(2);
   const hintEl=document.getElementById('hint-groupLimit');
   if(groupLimitMsg){hintEl.textContent='⚠ '+groupLimitMsg;hintEl.style.display='';}
   else{hintEl.style.display='none';}
@@ -1388,7 +1436,8 @@ function recalcGroupDisplay(){
   let cg=1;
   if(isUG){
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
-    if(m==='D2'){
+    if(n<=1){cg=1.0;} // 标准仅定义 n≥2，单回路无热影响
+    else if(m==='D2'){
       const sp=document.getElementById('ugSpacingD2').value;
       const table=B52_18_D2[sp]||B52_18_D2.touching;
       cg=table[n]||Object.values(table).pop();
@@ -1400,7 +1449,7 @@ function recalcGroupDisplay(){
     }
   }
   const cgDisplay=document.getElementById('groupFactorVal');
-  if(cgDisplay)cgDisplay.textContent='Cg='+cg.toFixed(3);
+  if(cgDisplay)cgDisplay.textContent='Cg='+cg.toFixed(2);
 }
 
 // Step2 change → sync Step3 (underground only)  
@@ -1528,7 +1577,7 @@ function doCalc(){
     const nLayer=parseInt(document.getElementById('trayLayers').value)||1;
     const nPer=parseInt(document.getElementById('cablesPerLayer').value)||1;
     const arr=document.getElementById('arrangement').value;
-    const gk=getGroupTableKey(m,cableType);
+    const gk=getGroupTableKey(m,cableType,arr);
     
     if(gk.t==='B52_20'){
       const table=B52_20[gk.k];
@@ -1561,7 +1610,13 @@ function doCalc(){
         Cg=val;
       }
     }
-    groupDesc=nLayer+'层, 每层'+nPer+'根'+(arr==='spaced'?'(有间距)':'(触碰)');
+    groupDesc=nLayer+'层, 每层'+nPer+'根'+
+      (arr==='spaced'?'(有间距)':
+       arr==='pt-horiz-touch'?'(水平触碰)':
+       arr==='pt-horiz-spaced'?'(水平有间距)':
+       arr==='pt-vert-touch'?'(垂直触碰)':
+       arr==='pt-trefoil'?'(垂直三角形有间距)':
+       '(触碰)');
   }else if(m==='D2'){
     // D2 直埋 → B52.18
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
