@@ -1620,28 +1620,34 @@ function doCalc(){
   }else if(m==='D2'){
     // D2 直埋 → B52.18
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
-    const sp=document.getElementById('ugSpacingD2').value;
-    const table=B52_18_D2[sp]||B52_18_D2.touching;
-    let val=table[n];
-    if(val===undefined){
-      const keys=Object.keys(table).map(Number).sort((a,b)=>a-b);
-      val=table[keys[keys.length-1]];
+    if(n<=1){Cg=1.0;}
+    else{
+      const sp=document.getElementById('ugSpacingD2').value;
+      const table=B52_18_D2[sp]||B52_18_D2.touching;
+      let val=table[n];
+      if(val===undefined){
+        const keys=Object.keys(table).map(Number).sort((a,b)=>a-b);
+        val=table[keys[keys.length-1]];
+      }
+      Cg=val;
     }
-    Cg=val;
-    groupDesc=n+'回路, 间距'+sp;
+    groupDesc=n+'回路, 间距'+(n<=1?'--':document.getElementById('ugSpacingD2').value);
   }else if(m==='D1'){
     // D1 埋地管道 → B52.19
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
-    const sp=document.getElementById('ugSpacingD1').value;
-    const table=cableType==='single'?B52_19_D1_SINGLE:B52_19_D1_MULTI;
-    const spTable=table[sp]||table.touching;
-    let val=spTable[n];
-    if(val===undefined){
-      const keys=Object.keys(spTable).map(Number).sort((a,b)=>a-b);
-      val=spTable[keys[keys.length-1]];
+    if(n<=1){Cg=1.0;}
+    else{
+      const sp=document.getElementById('ugSpacingD1').value;
+      const table=cableType==='single'?B52_19_D1_SINGLE:B52_19_D1_MULTI;
+      const spTable=table[sp]||table.touching;
+      let val=spTable[n];
+      if(val===undefined){
+        const keys=Object.keys(spTable).map(Number).sort((a,b)=>a-b);
+        val=spTable[keys[keys.length-1]];
+      }
+      Cg=val;
     }
-    Cg=val;
-    groupDesc=n+'回路, 间距'+sp+' (管槽)';
+    groupDesc=n+'回路, 间距'+(n<=1?'--':document.getElementById('ugSpacingD1').value)+' (管槽)';
   }
 
   const total=Ct*Cg*Cs;
