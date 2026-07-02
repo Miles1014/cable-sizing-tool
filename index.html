@@ -2480,7 +2480,7 @@ function renderHistory(){
   html+='<tr><th>方案名称</th><th>日期</th><th>敷设</th><th>截面</th><th>载荷率</th><th>操作</th></tr>';
   for(const r of history){
     html+='<tr>';
-    html+='<td style="font-size:10px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(r.name||'')+'">'+(r.name||'--')+'</td>';
+    html+='<td style="font-size:10px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" title="点击编辑名称" onclick="renameRecord('+r.id+')">'+(r.name||'--')+'</td>';
     html+='<td style="font-size:9px;color:var(--text-muted)">'+r.date.replace(/\d{4}\//, '')+'</td>';
     html+='<td>'+r.methodName+'</td>';
     html+='<td style="font-weight:600;font-family:var(--font-mono)">'+r.section+'</td>';
@@ -2514,6 +2514,17 @@ function loadRecord(id){
   
   updateUI();
   showToast('已加载选型记录');
+}
+
+function renameRecord(id){
+  const history=getHistory();
+  const r=history.find(h=>h.id===id);
+  if(!r)return;
+  const newName=prompt('编辑方案名称：',r.name||'');
+  if(newName===null)return;
+  r.name=newName.trim()||r.name;
+  saveHistory(history);
+  renderHistory();
 }
 
 function deleteRecord(id){
