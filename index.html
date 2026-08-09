@@ -3538,139 +3538,36 @@ renderHistory();
       <h3>版本更新记录</h3>
 
       <div class="ver-block">
-        <span class="ver-tag">v0.5.2</span><span class="ver-date">2026-08-09</span>
+        <span class="ver-tag">v0.5</span><span class="ver-date">2026-08-09</span>
         <ul>
-          <li><strong>① D1/D2 铝导体 400mm²（GB 50217）</strong>：直埋/埋地管道 Al 二根载流 500A · 三根载流 456A</li>
-          <li><strong>② 查询页增加 B52.17 通用群敷系数表</strong>（序号2/4/5，覆盖 1~9 回路）</li>
-          <li><strong>③ EF 大截面数据补充</strong>：EF XLPE Cu/Al 400/500/630mm² 各 5 列数据（B.52.12/B.52.13）</li>
+          <li><strong>统一温度修正公式</strong>：Ct = √((tmax_source - T_amb) / (tmax_source - refTemp_source))，按数据源导体最高温度 + 参考环温计算，不再一刀切用标准表</li>
+          <li><strong>AWM3817 内置厂家库</strong>：105°C / 125°C 两变体，单芯电缆 · 二根载流(相互接触)；纯前端内置，严格模式（选厂家不回退标准）</li>
+          <li><strong>Cg 选取原则</strong>：触碰+单层用 B52_17（保守）；有间距或多层用 B52_20/21；单芯超 3 回路自动回退 B52_17</li>
+          <li><strong>环境页联动修复</strong>：并联组数与每层回路数联动（空气敷设不再跳过）；每层回路数下拉补全 1~9；方案对比切换截面时推荐组数实时更新</li>
+          <li><strong>数据补充</strong>：D1/D2 铝 400mm²（GB 50217）· EF 400/500/630mm² 大截面 · B52_17 通用群敷系数表</li>
         </ul>
       </div>
 
       <div class="ver-block">
-        <span class="ver-tag">v0.5.1</span><span class="ver-date">2026-08-09</span>
+        <span class="ver-tag">v0.4</span><span class="ver-date">2026-08-09</span>
         <ul>
-          <li><strong>AWM3817-125°C 数据更新</strong>：参考环温 30→40°C，载流量全面替换（288/356/445/520/605/650/775A）</li>
+          <li><strong>厂家库严格模式</strong>：选厂家后仅用厂家数据，未覆盖项不可用（不回退标准）</li>
+          <li><strong>提示明确化</strong>：厂家数据未覆盖时提示具体型号+敷设方式+列</li>
+          <li><strong>温度归一化公式修复</strong>：修正方向反转 bug（330A@40°C → 354.5A@30°C）</li>
         </ul>
       </div>
 
       <div class="ver-block">
-        <span class="ver-tag">v0.5.0</span><span class="ver-date">2026-08-09</span>
+        <span class="ver-tag">v0.3</span><span class="ver-date">2026-08-09</span>
         <ul>
-          <li><strong>温度修正统一公式</strong>：Ct = √((tmax_source - T_amb) / (tmax_source - refTemp_source))，按数据源导体最高温度 + 参考环温计算</li>
-          <li><strong>厂家归一化合并</strong>：原"两段式"归一化+温度修正合并为一步，避免厂家高温电缆优势被削弱</li>
-          <li>支持标准（XLPE 90/PVC 70）和厂家（105/125°C）自动选用对应 tmax</li>
+          <li><strong>敷设方式图示</strong>：查询页 B1/B2/C/D1/D2/EF/G 排布示意（内联 SVG）</li>
+          <li><strong>内置厂家库</strong>（展示+计算联动）：标准/厂家同格对比 → 列扩展 → 独立对比卡片</li>
+          <li><strong>查询页展示裁剪</strong>：仅保留 D1/D2/EF/G × XLPE</li>
         </ul>
       </div>
 
       <div class="ver-block">
-        <span class="ver-tag">v0.4.8</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>Cg 来源备注</strong>：触碰+单层（用 B52.17）时显示小字说明，提示可参考 B52.20/21</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.4.7</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>Cg 选取原则</strong>：触碰+单层 → B52_17（保守）；有间距或更多层 → B52_20/21</li>
-          <li>结果标注实际使用的表（如 [B.52.17] / [B.52.20] / [B.52.21→B52.17]）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.4.6</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>单芯超 3 回路回退 B52_17</strong>：B52.21 仅覆盖 1~3 回路，超出时自动回退 B52.17 通用表</li>
-          <li>新增 B52.17：序号4(有孔托盘)/5(梯架)/2(无孔托盘)</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.4.5</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>AWM3817 数据条件调整</strong>：载流导体数 + 敷设方式说明</li>
-          <li><strong>v0.4.5a</strong>：列映射改至单芯电缆·二根载流(相互接触) → EF 列4</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.4.3</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>每层回路数下拉框补全 1~9</strong>（原仅 1/2/3/4/6/9）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.4.2</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>并联组数与 Cg 联动修复</strong>：空气敷设下移除 isUndergroundMethod 限制</li>
-          <li>并联 8 组时 Cg 从 1.00 → 0.73（影响 27%）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.4.1</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>方案对比切换截面时推荐组数联动</strong>：按选中截面载流量实时重算推荐组数</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.4.0</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>厂家库改为严格模式</strong>：选择厂家后仅用厂家数据，未覆盖项不可用（不回退标准）</li>
-          <li>提示明确化：厂家型号 + 未覆盖敷设方式/列</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.3.5</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>多厂家同格重叠时多值堆叠显示</strong>（后改为v0.3.6列扩展、v0.3.7独立对比卡片）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.3.4</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>AWM3817 数据入库</strong>：替换旧演示数据，新增 conductorMaxTemp 字段（105/125°C）</li>
-          <li><strong>温度归一化升级</strong>：使用型号自带 conductorMaxTemp</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.3.3</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>查询页展示范围裁剪</strong>：仅保留 D1/D2/EF/G × XLPE 四组（B1/B2/C 及全部 PVC 不显示）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.3.2</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>厂家数据同格对比</strong>：标准表主体，同格内"标准值 | 厂家值"对比显示</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.3.1</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>厂家库数据并入查询页展示</strong>（独立表格形式）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.3.0</span><span class="ver-date">2026-08-09</span>
-        <ul>
-          <li><strong>敷设方式图示</strong>：① 基础载流量板块顶部加 B1/B2/C/D1/D2/EF/G 排布示意</li>
-          <li><strong>内置厂家库</strong>（远景 XLPE Cu/Al）</li>
-          <li><strong>计算页数据源切换</strong>：温度归一化 + 缺失回退标准</li>
-          <li><strong>查询页厂家对比</strong>（按色标区分）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.2.0</span><span class="ver-date">2026-08-08</span>
+        <span class="ver-tag">v0.2</span><span class="ver-date">2026-08-08</span>
         <ul>
           <li><strong>双页面结构</strong>：顶部 Tab 导航（载流量计算 / 标准数据查询）</li>
           <li><strong>查询页</strong>：① 基础载流量 ② 温度修正 ③ 群敷修正 ④ 土壤热阻，4 大板块、46 张表，每表标注 IEC 表号</li>
@@ -3680,78 +3577,13 @@ renderHistory();
 
       <div class="ver-block">
         <span class="ver-tag">v0.1.3</span><span class="ver-date">2026-07-02</span>
-        <ul>
-          <li><strong>群敷系数全表重录</strong>：B52.18(直埋)/B52.19(埋地管道)/B52.20(梯架多芯)/B52.21(单芯空气) 按 IEC 60364-5-52 标准截图重新识别录入，修正数十处数据错误</li>
-          <li><strong>B52.21 单芯排列增强</strong>：6 组子表（新增 2 组），单芯+PT 提供 4 选项（水平/垂直×触碰/有间距），单芯+LD/TR 提供 2 选项</li>
-          <li><strong>D1/D2 单回路 Cg 修复</strong>：标准未定义 n=1，旧逻辑误取 20 回路系数；改为 Cg=1.00（单回路无相互热影响，不显示警告提示）</li>
-          <li><strong>D2 排列控件修复</strong>：直埋场景下不再显示无关的"电缆排列"控件</li>
-          <li><strong>UI 优化</strong>："每层电缆数"→"每层回路数"；Cg 显示 2 位小数；超出标准范围提示改为具体说明取值</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.1.2</span><span class="ver-date">2026-06-28</span>
-        <ul>
-          <li><strong>群敷系数标准对齐</strong>：B.52.18(直埋)/B.52.19(埋地管道)/B.52.20(托盘梯架多芯)/B.52.21(托盘梯架单芯) 全表替换旧简化数据</li>
-          <li><strong>托盘/梯架层数参数</strong>：新增层数(1/2/3/6层)、每层电缆数、触碰/有间距等多维参数</li>
-          <li><strong>地下联动规则</strong>：D1/D2 模式下 Step2 并列回路数锁定，仅 Step3 并联组数可改，双向即时同步</li>
-          <li><strong>空气独立规则</strong>：PT/ST/LD/TR 模式下 Step2 与 Step3 无联动，各自独立设置</li>
-          <li><strong>超出范围处理</strong>：回路数超出标准最大时自动取最接近系数，显示 ⚠ 提示</li>
-          <li><strong>Iz 公式展开</strong>：显示详细参数代入过程(I₀ × Kₜ × K₉ × Kₛ × N = 结果)</li>
-          <li><strong>系数精度统一</strong>：温度/群敷/土壤修正系数均显示 2 位小数</li>
-          <li><strong>UI 优化</strong>：右侧参数卡增加 Iz 行、载流量面板增加组数行、tooltip 改用 body 级渲染避免裁剪</li>
-          <li><strong>README 帮助系统</strong>：Header 新增 ? 按钮，4 标签 Modal（概览/指南/功能/版本记录）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.1.1</span><span class="ver-date">2026-06-26</span>
-        <ul>
-          <li>新增 <strong>并联组数自动推荐</strong> — IB 过大时根据最大载流量反算推荐组数</li>
-          <li>并联组数支持用户自定义覆盖</li>
-          <li>电压降/短路/保护校验联动适配并联场景</li>
-          <li>修复三列布局右侧面板被排出 grid 的 bug</li>
-          <li>修复百分比列宽+gap 导致右侧溢出问题（fr 单位替换）</li>
-          <li>布局改为全宽填充（移除 max-width 限制）</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.1</span><span class="ver-date">2026-06-14</span>
-        <ul>
-          <li><strong>核心载流量计算</strong>：覆盖 7 种敷设方式，完整 IEC 查表数据</li>
-          <li><strong>温度/群敷/土壤热阻修正</strong>：标准线性插值</li>
-          <li><strong>电压降校验模块</strong>：内置阻抗数据库、照明/动力限值判定</li>
-          <li><strong>短路耐量校验</strong>：IEC 434 热稳定验算、自动推荐最小截面</li>
-          <li><strong>保护协调验证</strong>：IEC 433 条件验证、MCB/MCCB/熔断器区分</li>
-          <li><strong>三档智能推荐</strong>：推荐/最小/经济三档自动比对</li>
-          <li><strong>方案对比表</strong>：可点击切换截面、实时联动</li>
-          <li><strong>Excel 报告导出</strong>：完整计算报告+方案对比</li>
-          <li><strong>选型历史记录</strong>：localStorage 存储、加载/删除/批量导出</li>
-          <li><strong>Step 4 向导式输入</strong>：逐步引导参数配置</li>
-          <li><strong>功率换算工具</strong>：kW → A 自动换算</li>
-          <li><strong>修正系数实时预览</strong>：滑块调节 + 系数值同步显示</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.2</span><span class="ver-date">开发中</span>
+        <span class="ver-date">开发中</span>
         <ul>
           <li>批量计算引擎</li>
           <li>厂家参数数据库接入</li>
           <li>经济截面优化</li>
           <li>成本方案对比</li>
           <li>管道热阻精细化</li>
-        </ul>
-      </div>
-
-      <div class="ver-block">
-        <span class="ver-tag">v0.3</span><span class="ver-date">规划中</span>
-        <ul>
-          <li>谐波影响分析</li>
-          <li>多工况并行对比</li>
-          <li>计算书 PDF 导出</li>
-          <li>自定义修正系数</li>
         </ul>
       </div>
 
