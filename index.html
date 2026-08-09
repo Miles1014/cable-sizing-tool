@@ -382,6 +382,10 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 .help-top h2{font-size:16px;font-weight:700;color:var(--primary)}
 .help-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all 0.15s}
 .help-close:hover{background:var(--fail-light);color:var(--fail);border-color:var(--fail)}
+/* ? 按钮 pulse 指引（首次关闭帮助后短暂闪烁） */
+@keyframes helpPulse{0%{box-shadow:0 0 0 0 rgba(52,152,219,0.5)}70%{box-shadow:0 0 0 10px rgba(52,152,219,0)}100%{box-shadow:0 0 0 0 rgba(52,152,219,0)}}
+#helpBtnMorph{display:none;position:fixed;top:12px;right:12px;z-index:9999;background:var(--accent);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;animation:helpPulse 2s ease-out 2;pointer-events:none;opacity:0.9}
+#helpBtnMorph.hide{animation:none;opacity:0;transition:opacity 0.4s}
 .help-tabs{display:flex;border-bottom:1px solid var(--border);background:#fff;padding:0 24px;gap:0}
 .help-tab{padding:10px 20px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;transition:all 0.15s;white-space:nowrap}
 .help-tab:hover{color:var(--text)}
@@ -3401,11 +3405,41 @@ calcProtection=function(){_origCalcPR();updateVerifyChips();};
 function openHelp(){
   document.getElementById('helpOverlay').classList.add('open');
   document.body.style.overflow='hidden';
+  // 同步 checkbox 状态
+  const chk=document.getElementById('chk-noAutoHelp');
+  if(chk)chk.checked=localStorage.getItem('noAutoHelp')==='1';
 }
 function closeHelp(){
   document.getElementById('helpOverlay').classList.remove('open');
   document.body.style.overflow='';
+  // 首次关闭：显示 pulse 指引指向 ? 按钮
+  showHelpHint();
 }
+function toggleAutoHelp(){
+  const chk=document.getElementById('chk-noAutoHelp');
+  localStorage.setItem('noAutoHelp',chk.checked?'1':'0');
+}
+// 首次关闭帮助后，短暂显示指引指向右上角 ? 按钮
+let _helpHintShown=false;
+function showHelpHint(){
+  if(_helpHintShown||localStorage.getItem('noAutoHelp')==='1') return;
+  _helpHintShown=true;
+  const btn=document.getElementById('helpBtnMorph');
+  if(!btn){ // create once
+    const el=document.createElement('div');
+    el.id='helpBtnMorph';
+    el.textContent='下次点这里 → ?';
+    document.body.appendChild(el);
+    setTimeout(()=>el.classList.add('hide'), 4000);
+  }
+}
+// 首次打开自动弹窗
+function initAutoHelp(){
+  if(localStorage.getItem('noAutoHelp')!=='1'){
+    setTimeout(()=>openHelp(), 400);
+  }
+}
+// ESC to close
 function switchHelpTab(tab){
   document.querySelectorAll('.help-tab').forEach(t=>t.classList.toggle('active',t.dataset.htab===tab));
   document.querySelectorAll('.help-content').forEach(c=>c.style.display='none');
@@ -3436,13 +3470,19 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeHelp();});
 initAmpSourceOptions();
 updateUI();
 renderHistory();
+initAutoHelp();
 </script>
 <!-- ===== Help / README Modal ===== -->
 <div class="help-overlay" id="helpOverlay" onclick="if(event.target===this)closeHelp()">
 <div class="help-modal">
   <div class="help-top">
     <h2>CableSizer Pro — 使用帮助</h2>
-    <button class="help-close" onclick="closeHelp()">&#x2715;</button>
+    <div style="display:flex;align-items:center;gap:14px">
+      <label style="font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px">
+        <input type="checkbox" id="chk-noAutoHelp" onchange="toggleAutoHelp()" style="margin:0"> 不再自动显示
+      </label>
+      <button class="help-close" onclick="closeHelp()">&#x2715;</button>
+    </div>
   </div>
   <div class="help-tabs">
     <div class="help-tab active" data-htab="overview" onclick="switchHelpTab('overview')">系统概览</div>
