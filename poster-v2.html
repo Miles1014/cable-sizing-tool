@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CableSizer Pro — 首版发布</title>
+<style>
+  :root{--c1:#0f1923;--c2:#1a3c5e;--c3:#e74c3c;--c4:#f39c12;--c5:#2ecc71;--c6:#3498db;--white:#fff;--gold:#f1c40f}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'PingFang SC','Microsoft YaHei','Helvetica Neue',sans-serif;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh}
+
+  .poster{width:1200px;/*height:2000px;*/background:#fff;position:relative;overflow:hidden}
+
+  /* SECTION 1: HERO — dark bg with dramatic angles */
+  .hero{background:linear-gradient(160deg, #0a1628 0%, #0f2340 40%, #1a3c5e 100%);padding:80px 70px 60px;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:-100px;right:-80px;width:500px;height:500px;border:3px solid rgba(52,152,219,0.15);border-radius:50%}
+  .hero::after{content:'';position:absolute;bottom:-120px;left:30%;width:400px;height:400px;border:2px solid rgba(46,204,113,0.10);border-radius:50%}
+  .hero .accent-bar{position:absolute;top:0;left:0;width:8px;height:100%;background:linear-gradient(to bottom,var(--c6),var(--c5))}
+  .hero .release-tag{display:inline-block;background:var(--c3);color:#fff;font-size:16px;font-weight:800;padding:8px 24px;letter-spacing:3px;position:relative;z-index:1}
+  .hero h1{font-size:72px;font-weight:900;color:#fff;margin:24px 0 4px;line-height:1;position:relative;z-index:1;letter-spacing:-2px}
+  .hero h1 .pro{color:var(--c6);font-weight:300;text-shadow:0 0 40px rgba(52,152,219,0.3)}
+  .hero .tagline{font-size:22px;color:rgba(255,255,255,0.75);margin:10px 0 28px;font-weight:300;letter-spacing:1px;position:relative;z-index:1}
+  .hero .stats{display:flex;gap:40px;position:relative;z-index:1;margin-top:20px}
+  .hero .stat{text-align:center}
+  .hero .stat .num{font-size:42px;font-weight:900;color:var(--c5);display:block;line-height:1.2}
+  .hero .stat .label{font-size:13px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:1px}
+  .hero .stat-line{width:1px;height:40px;background:rgba(255,255,255,0.1);align-self:center}
+
+  /* BIG FEATURE CARDS */
+  .features{padding:50px 60px;display:grid;grid-template-columns:1fr 1fr;gap:20px;background:#f8fafc}
+  .feature-card{background:#fff;border-radius:6px;padding:0;display:flex;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:1px solid #eef2f6}
+  .feature-card .fc-left{width:8px;flex-shrink:0}
+  .feature-card .fc-left.c-a{background:var(--c6)}
+  .feature-card .fc-left.c-b{background:var(--c5)}
+  .feature-card .fc-left.c-c{background:var(--c4)}
+  .feature-card .fc-left.c-d{background:var(--c3)}
+  .feature-card .fc-body{padding:24px 28px;flex:1}
+  .feature-card .fc-icon{font-size:32px;margin-bottom:6px}
+  .feature-card .fc-title{font-size:20px;font-weight:800;color:#1a2a3a;margin-bottom:6px}
+  .feature-card .fc-desc{font-size:14px;color:#5a6b7b;line-height:1.8}
+
+  /* ROADMAP — horizontal blocks */
+  .roadmap{background:linear-gradient(135deg,#0a1628,#0f2340);padding:50px 60px;color:#fff;position:relative}
+  .roadmap::after{content:'';position:absolute;bottom:0;right:0;width:200px;height:200px;border:2px solid rgba(52,152,219,0.12);border-radius:50%}
+  .roadmap .section-label{font-size:14px;color:var(--c6);text-transform:uppercase;letter-spacing:3px;margin-bottom:8px;font-weight:700}
+  .roadmap h2{font-size:40px;font-weight:900;margin-bottom:32px;letter-spacing:-1px}
+  .roadmap .phases{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .phase{border:2px solid rgba(255,255,255,0.08);border-radius:6px;padding:28px 22px;position:relative;background:rgba(255,255,255,0.02)}
+  .phase.now{border-color:var(--c5);background:rgba(46,204,113,0.06)}
+  .phase.now::before{content:'● LIVE';position:absolute;top:-12px;left:20px;background:var(--c5);color:#000;font-size:10px;font-weight:900;padding:3px 10px;border-radius:3px;letter-spacing:1px}
+  .phase .ph-ver{font-size:32px;font-weight:900;margin-bottom:8px}
+  .phase .ph-name{font-size:14px;color:rgba(255,255,255,0.5);margin-bottom:14px;letter-spacing:1px}
+  .phase ul{list-style:none;font-size:14px;line-height:2.2;color:rgba(255,255,255,0.7)}
+  .phase ul li::before{content:'▸ ';color:var(--c6)}
+
+  /* CTA + QR */
+  .cta-section{display:flex;padding:60px 70px;background:#fff;align-items:center;gap:40px}
+  .cta-left{flex:1}
+  .cta-left h2{font-size:42px;font-weight:900;color:#0a1628;margin-bottom:12px;line-height:1.2}
+  .cta-left h2 span{color:var(--c3)}
+  .cta-left p{font-size:17px;color:#5a6b7b;line-height:1.8;margin-bottom:8px}
+  .cta-left .url-block{margin-top:20px;background:#f0f4f8;padding:14px 20px;border-radius:4px;font-family:'SF Mono','Consolas',monospace}
+  .cta-left .url-block .label{font-size:11px;color:var(--c6);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+  .cta-left .url-block .url{font-size:17px;color:#2c3e50;font-weight:600;word-break:break-all}
+  .cta-right{flex-shrink:0;text-align:center}
+  .cta-right .qr-img{width:180px;height:180px;margin-bottom:8px}
+  .cta-right .qr-label{font-size:12px;color:var(--text-muted);margin-top:6px}
+
+  .footer-bar{background:#0a1628;color:rgba(255,255,255,0.5);text-align:center;padding:16px;font-size:12px;letter-spacing:1px}
+
+  .bold-num{font-family:'SF Mono','Consolas',monospace}
+</style>
+</head>
+<body>
+
+<div class="poster">
+
+  <!-- ═══════ HERO ═══════ -->
+  <div class="hero">
+    <div class="accent-bar"></div>
+    <div class="release-tag">◆ 首版发布 v0.1 ◆</div>
+    <h1>CableSizer <span class="pro">Pro</span></h1>
+    <div class="tagline">IEC 60364-5-52 &nbsp;·&nbsp; GB/T 16895.6-2014 &nbsp;·&nbsp; 低压电缆智能选型系统</div>
+    <div class="stats">
+      <div class="stat"><span class="num">7</span><span class="label">敷设方式</span></div>
+      <div class="stat-line"></div>
+      <div class="stat"><span class="num">4</span><span class="label">校验维度</span></div>
+      <div class="stat-line"></div>
+      <div class="stat"><span class="num">∞</span><span class="label">智能推荐</span></div>
+      <div class="stat-line"></div>
+      <div class="stat"><span class="num">0</span><span class="label">安装/注册</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════ FEATURES ═══════ -->
+  <div class="features">
+    <div class="feature-card">
+      <div class="fc-left c-a"></div>
+      <div class="fc-body">
+        <div class="fc-icon">⚡</div>
+        <div class="fc-title">标准驱动，精准计算</div>
+        <div class="fc-desc">严格依据 IEC 60364-5-52 标准<br>覆盖 7 种敷设方式 | PVC/XLPE | Cu/Al<br>温度、群敷、土壤热阻自动修正</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-left c-b"></div>
+      <div class="fc-body">
+        <div class="fc-icon">🎯</div>
+        <div class="fc-title">三段推荐 + 并联反算</div>
+        <div class="fc-desc">推荐选型 / 最小满足 / 经济方案<br>设计电流过大时自动推荐并联组数<br>载荷率、余量一目了然</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-left c-c"></div>
+      <div class="fc-body">
+        <div class="fc-icon">✓</div>
+        <div class="fc-title">四项校验，闭环验证</div>
+        <div class="fc-desc">载流量 + 电压降 + 短路耐量 + 保护协调<br>IEC 434/433 条款联动校验<br>超标自动反算最小截面，即时反馈</div>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="fc-left c-d"></div>
+      <div class="fc-body">
+        <div class="fc-icon">📊</div>
+        <div class="fc-title">纯前端，随处可用</div>
+        <div class="fc-desc">单 HTML 文件，无需安装/注册<br>一键 Excel 报告导出 | 历史记录<br>GitHub Pages 在线 & 本地离线双模式</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ ROADMAP ═══════ -->
+  <div class="roadmap">
+    <div class="section-label">Development Roadmap</div>
+    <h2>从单机工具到智能平台</h2>
+    <div class="phases">
+      <div class="phase now">
+        <div class="ph-ver">v0.1</div>
+        <div class="ph-name">核心引擎</div>
+        <ul>
+          <li>完整载流量计算</li>
+          <li>电压降校验</li>
+          <li>短路耐量校验</li>
+          <li>保护协调校验</li>
+          <li>并联组数智能推荐</li>
+          <li>Excel 报告导出</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-ver">v0.2</div>
+        <div class="ph-name">工程增强</div>
+        <ul>
+          <li>批量计算引擎</li>
+          <li>厂家参数数据库</li>
+          <li>经济截面优化</li>
+          <li>成本方案对比</li>
+          <li>管道热阻精细化</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-ver">v0.3</div>
+        <div class="ph-name">深度分析</div>
+        <ul>
+          <li>谐波影响分析</li>
+          <li>多工况并行对比</li>
+          <li>计算书 PDF 导出</li>
+          <li>自定义修正系数</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph-ver">v1.0</div>
+        <div class="ph-name">智能平台</div>
+        <ul>
+          <li>参数化建模</li>
+          <li>云端协同选型</li>
+          <li>AI 辅助建议</li>
+          <li>CAD/PDM 对接</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ CTA + QR ═══════ -->
+  <div class="cta-section">
+    <div class="cta-left">
+      <h2>邀你参与 <span>内测</span></h2>
+      <p>首版功能已上线。无论你是电气工程师、项目经理还是技术专家——</p>
+      <p style="font-size:20px;font-weight:700;color:#1a2a3a;margin:16px 0">点击试用 ✦ 提出反馈 ✦ 影响开发方向</p>
+      <div class="url-block">
+        <div class="label">▸ 在线地址</div>
+        <div class="url">miles1014.github.io/cable-sizing-tool</div>
+      </div>
+      <div class="url-block" style="margin-top:8px">
+        <div class="label">▸ 问题反馈</div>
+        <div class="url">github.com/Miles1014/cable-sizing-tool/issues</div>
+      </div>
+    </div>
+    <div class="cta-right">
+      <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://miles1014.github.io/cable-sizing-tool/"
+           alt="扫码体验 CableSizer Pro" crossorigin="anonymous">
+      <div class="qr-label">微信扫码立即体验</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-bar">
+    CableSizer Pro &nbsp;·&nbsp; v0.1 &nbsp;·&nbsp; June 2026 &nbsp;·&nbsp; Powered by ESSCable &nbsp;·&nbsp; IEC 60364-5-52
+  </div>
+
+</div>
+
+</body>
+</html>
