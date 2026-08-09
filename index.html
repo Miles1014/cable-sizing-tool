@@ -382,10 +382,41 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 .help-top h2{font-size:16px;font-weight:700;color:var(--primary)}
 .help-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text-muted);transition:all 0.15s}
 .help-close:hover{background:var(--fail-light);color:var(--fail);border-color:var(--fail)}
-/* ? 按钮 pulse 指引（首次关闭帮助后短暂闪烁） */
-@keyframes helpPulse{0%{box-shadow:0 0 0 0 rgba(52,152,219,0.5)}70%{box-shadow:0 0 0 10px rgba(52,152,219,0)}100%{box-shadow:0 0 0 0 rgba(52,152,219,0)}}
-#helpBtnMorph{display:none;position:fixed;top:12px;right:12px;z-index:9999;background:var(--accent);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;cursor:pointer;animation:helpPulse 2s ease-out 2;pointer-events:none;opacity:0.9}
-#helpBtnMorph.hide{animation:none;opacity:0;transition:opacity 0.4s}
+/* ? 按钮飞行动画（关闭 README 后从 modal 飞到 header 右上角） */
+#helpFlyClone{position:fixed;z-index:99999;background:var(--accent);color:#fff;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;pointer-events:none;white-space:nowrap;transition:left 0.6s cubic-bezier(0.22,0.61,0.36,1),top 0.6s cubic-bezier(0.22,0.61,0.36,1),opacity 0.5s,transform 0.6s cubic-bezier(0.22,0.61,0.36,1)}
+@keyframes helpBtnPulse{0%,100%{box-shadow:0 0 0 0 rgba(52,152,219,0.5)}50%{box-shadow:0 0 0 12px rgba(52,152,219,0)}}
+#helpBtnPulsing{animation:helpBtnPulse 1.4s ease-out 3 !important}
+
+/* ===== 界面引导 Tour ===== */
+.tour-overlay{display:none;position:fixed;inset:0;z-index:99998}
+.tour-overlay.active{display:block}
+.tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:0;transition:opacity 0.3s}
+.tour-spotlight{position:fixed;z-index:1;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,0.55);transition:all 0.35s cubic-bezier(0.22,0.61,0.36,1);pointer-events:none}
+.tour-step{position:fixed;z-index:2;background:#fff;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:20px 22px;max-width:440px;min-width:360px;transition:left 0.35s cubic-bezier(0.22,0.61,0.36,1),top 0.35s cubic-bezier(0.22,0.61,0.36,1);font-family:var(--font-sans)}
+.tour-step::before{content:'';position:absolute;width:14px;height:14px;background:#fff;transform:rotate(45deg)}
+.tour-step.arrow-top::before{bottom:-7px;left:50%;margin-left:-7px}
+.tour-step.arrow-bottom::before{top:-7px;left:50%;margin-left:-7px}
+.tour-step.arrow-left::before{right:-7px;top:50%;margin-top:-7px}
+.tour-step.arrow-right::before{left:-7px;top:50%;margin-top:-7px}
+.tour-step .ts-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;margin-bottom:10px}
+.tour-step .ts-title{font-size:14px;font-weight:700;color:var(--primary);margin-bottom:6px}
+.tour-step .ts-desc{font-size:11.5px;line-height:1.7;color:var(--text-secondary);margin-bottom:14px}
+.tour-step .ts-skiplabel{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;margin-bottom:12px;white-space:nowrap}
+.tour-step .ts-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tour-step .ts-actions button{padding:7px 18px;border-radius:var(--radius);font-size:11.5px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:inherit;white-space:nowrap;line-height:1.2}
+.tour-step .ts-actions .ts-next{background:var(--accent);color:#fff}
+.tour-step .ts-actions .ts-next:hover{background:#2980B9}
+.tour-step .ts-actions .ts-skip{background:transparent;color:var(--text-muted);padding:7px 10px}
+.tour-step .ts-actions .ts-skip:hover{color:var(--text)}
+.tour-step .ts-actions .ts-prev{background:#f0f4f8;color:var(--text-secondary)}
+.tour-step .ts-actions .ts-prev:hover{background:#e2e8f0}
+.tour-dots{display:flex;gap:5px;align-items:center}
+.tour-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all 0.2s}
+.tour-dot.active{background:var(--accent);width:20px;border-radius:10px}
+.tour-welcome{font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.7}
+.tour-welcome .tw-icon{font-size:36px;display:block;margin-bottom:8px}
+/* 引导中禁止 body 滚动 */
+body.tour-active{overflow:hidden}
 .help-tabs{display:flex;border-bottom:1px solid var(--border);background:#fff;padding:0 24px;gap:0}
 .help-tab{padding:10px 20px;font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;transition:all 0.15s;white-space:nowrap}
 .help-tab:hover{color:var(--text)}
@@ -442,6 +473,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   <div class="header-actions">
     <span class="std-ref" style="margin-right:4px">IEC 60364-5-52 / GB/T 16895.6-2014</span>
     <button onclick="openHelp()" style="font-size:14px;padding:5px 10px" title="使用帮助">?</button>
+    <button onclick="restartTour()" style="font-size:10px;padding:3px 8px" title="新手指引" class="ha-calc-only">&#128161; 指引</button>
     <button onclick="showReportDrawer()" class="ha-calc-only">&#128196; 详细报告</button>
     <button onclick="exportExcel()" class="ha-calc-only">&#8681; 导出Excel</button>
   </div>
@@ -3405,33 +3437,59 @@ calcProtection=function(){_origCalcPR();updateVerifyChips();};
 function openHelp(){
   document.getElementById('helpOverlay').classList.add('open');
   document.body.style.overflow='hidden';
-  // 同步 checkbox 状态
   const chk=document.getElementById('chk-noAutoHelp');
   if(chk)chk.checked=localStorage.getItem('noAutoHelp')==='1';
 }
 function closeHelp(){
+  const chk=document.getElementById('chk-noAutoHelp');
+  const willMorph=chk&&chk.checked;
   document.getElementById('helpOverlay').classList.remove('open');
   document.body.style.overflow='';
-  // 首次关闭：显示 pulse 指引指向 ? 按钮
-  showHelpHint();
+  if(willMorph&&!_helpFlyShown){
+    _helpFlyShown=true;
+    setTimeout(()=>flyToHelpBtn(),200);
+  }
+  // 关闭 README 后启动界面引导（首次访问，tour 未完成）
+  if(localStorage.getItem('tourCompleted')!=='1'&&!_tourActive){
+    setTimeout(()=>startTour(), 800);
+  }
 }
 function toggleAutoHelp(){
   const chk=document.getElementById('chk-noAutoHelp');
   localStorage.setItem('noAutoHelp',chk.checked?'1':'0');
 }
-// 首次关闭帮助后，短暂显示指引指向右上角 ? 按钮
-let _helpHintShown=false;
-function showHelpHint(){
-  if(_helpHintShown||localStorage.getItem('noAutoHelp')==='1') return;
-  _helpHintShown=true;
-  const btn=document.getElementById('helpBtnMorph');
-  if(!btn){ // create once
-    const el=document.createElement('div');
-    el.id='helpBtnMorph';
-    el.textContent='下次点这里 → ?';
-    document.body.appendChild(el);
-    setTimeout(()=>el.classList.add('hide'), 4000);
-  }
+// ==== 飞行动画：从 modal [不再显示] 按钮飞到 header [?] 按钮 ====
+let _helpFlyShown=false;
+function flyToHelpBtn(){
+  // 获取 "不再自动显示" label 的位置
+  const noAutoLabel=document.querySelector('#chk-noAutoHelp').closest('label');
+  if(!noAutoLabel) return;
+  const srcRect=noAutoLabel.getBoundingClientRect();
+  // 获取 header [?] 按钮位置
+  const helpBtns=document.querySelectorAll('.header-actions button');
+  let helpBtn=null;
+  helpBtns.forEach(b=>{if(b.textContent.trim()==='?')helpBtn=b;});
+  if(!helpBtn) return;
+  const dstRect=helpBtn.getBoundingClientRect();
+  // 创建飞行克隆元素
+  const clone=document.createElement('div');
+  clone.id='helpFlyClone';
+  clone.textContent='不再显示';
+  clone.style.left=srcRect.left+'px';
+  clone.style.top=srcRect.top+'px';
+  document.body.appendChild(clone);
+  // 触发动画：飞向目标
+  requestAnimationFrame(()=>{
+    clone.style.left=dstRect.left+'px';
+    clone.style.top=dstRect.top+'px';
+    clone.style.transform='scale(0.6)';
+    clone.style.opacity='0.4';
+  });
+  // 飞行到位后：移除 clone，高亮 ? 按钮
+  setTimeout(()=>{
+    if(clone.parentNode)clone.remove();
+    if(helpBtn){helpBtn.id='helpBtnPulsing';setTimeout(()=>helpBtn.removeAttribute('id'),4200);}
+  },650);
 }
 // 首次打开自动弹窗
 function initAutoHelp(){
@@ -3439,15 +3497,114 @@ function initAutoHelp(){
     setTimeout(()=>openHelp(), 400);
   }
 }
-// ESC to close
 function switchHelpTab(tab){
   document.querySelectorAll('.help-tab').forEach(t=>t.classList.toggle('active',t.dataset.htab===tab));
   document.querySelectorAll('.help-content').forEach(c=>c.style.display='none');
   const target=document.getElementById('hc-'+tab);
   if(target)target.style.display='';
 }
-// ESC to close
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeHelp();});
+
+// ============================================================
+// 界面引导 TOUR（首次使用）
+// ============================================================
+const TOUR_STEPS=[
+  {target:null, title:'欢迎使用 CableSizer Pro', desc:'基于 IEC 60364-5-52 / GB/T 16895.6-2014 的低压电缆载流量计算与选型系统。接下来用 5 步快速了解界面布局。', arrow:'none', isWelcome:true},
+  {target:'.stepper', title:'① 参数输入向导', desc:'通过 4 个步骤完成参数输入：<br><b>基本</b> → <b>环境</b> → <b>负载</b> → <b>保护</b><br>可随时点击步骤标签切换。', arrow:'bottom', pos:'below'},
+  {target:'.method-grid:first-of-type', title:'② 选择敷设方式', desc:'第一步选择电缆的敷设方式，<br>分为「土壤中」和「空气中」两大类。<br>系统根据选择自动匹配 IEC 标准查表。', arrow:'right', pos:'right'},
+  {target:'#btn-calc', title:'③ 点击计算选型', desc:'参数填写完毕后，<br>点击此按钮进行完整计算。<br>任意参数变更也会自动触发计算。', arrow:'top', pos:'above', padding:30},
+  {target:'.summary-row', title:'④ 查看计算结果', desc:'结果区域展示推荐截面、载荷率<br>和电压降。点击下方 Tab 可切换查看<br>载流量分解、短路校验等详细信息。', arrow:'top', pos:'above'},
+  {target:'.header-actions', title:'⑤ 导出与帮助', desc:'点击 <b>?</b> 可随时查看完整使用帮助。<br>点击 <b>导出Excel</b> 生成计算报告。<br>点击 <b>详细报告</b> 查看方案对比。', arrow:'bottom', pos:'below'},
+];
+let _tourIdx=0,_tourActive=false;
+function _findTarget(sel){if(!sel)return null;const el=document.querySelector(sel);return el&&el.offsetParent!==null?el:null;}
+function _getTourAnchor(targetEl,pos,pad){
+  const r=targetEl.getBoundingClientRect();pad=pad||16;
+  if(pos==='below') return{x:r.left+r.width/2,y:r.bottom+pad,arrow:'arrow-top'};
+  if(pos==='above') return{x:r.left+r.width/2,y:r.top-pad,arrow:'arrow-bottom'};
+  if(pos==='right') return{x:r.right+pad,y:r.top+r.height/2,arrow:'arrow-left'};
+  if(pos==='left')  return{x:r.left-pad,y:r.top+r.height/2,arrow:'arrow-right'};
+  // center
+  return{x:window.innerWidth/2,y:window.innerHeight/3,arrow:'arrow-top'};
+}
+function _getOrCreateOverlay(){
+  let ov=document.getElementById('tourOverlay');
+  if(!ov){
+    ov=document.createElement('div');ov.id='tourOverlay';ov.className='tour-overlay';
+    ov.innerHTML='<div class="tour-backdrop"></div><div class="tour-spotlight" id="tourSpot"></div><div class="tour-step" id="tourStep"></div>';
+    document.body.appendChild(ov);
+  }
+  return ov;
+}
+function _renderTourStep(){
+  const step=TOUR_STEPS[_tourIdx];
+  const ov=_getOrCreateOverlay();
+  const spot=document.getElementById('tourSpot');
+  const card=document.getElementById('tourStep');
+  let prevBtn='',nextLabel='下一步 →';
+  if(_tourIdx>0)prevBtn=`<button class="ts-prev" onclick="prevTour()">← 上一步</button>`;
+  if(_tourIdx===TOUR_STEPS.length-1)nextLabel='完成 ✓';
+
+  if(step.isWelcome){
+    // Welcome: full-screen center, no spotlight
+    spot.style.display='none';
+    card.className='tour-step';
+    card.style.left='50%';card.style.top='30%';card.style.transform='translate(-50%,-50%)';
+    card.innerHTML=`<span class="tw-icon">🏗️</span><div class="ts-title">${step.title}</div><div class="tour-welcome">${step.desc}</div><label class="ts-skiplabel"><input type="checkbox" id="chk-skipTour" onchange="toggleSkipTour()"> 下次不再显示</label><div class="ts-actions"><div class="tour-dots" style="margin-right:auto">${TOUR_STEPS.map((_,i)=>`<div class="tour-dot${i===_tourIdx?' active':''}"></div>`).join('')}</div><button class="ts-skip" onclick="skipTour()">跳过</button><button class="ts-next" onclick="nextTour()">开始引导 →</button></div>`;
+    return;
+  }
+
+  const target=_findTarget(step.target);
+  if(!target){nextTour();return;}
+  const tr=target.getBoundingClientRect();
+  // Spotlight
+  spot.style.display='';spot.style.left=(tr.left-6)+'px';spot.style.top=(tr.top-6)+'px';
+  spot.style.width=(tr.width+12)+'px';spot.style.height=(tr.height+12)+'px';
+  // Card position
+  const anchor=_getTourAnchor(target,step.pos,step.padding||16);
+  card.className='tour-step '+step.arrow;
+  card.style.left=Math.max(10,Math.min(window.innerWidth-450,anchor.x-220))+'px';
+  card.style.top=Math.max(10,Math.min(window.innerHeight-200,anchor.y-(step.pos==='above'?180:0)))+'px';
+  card.style.transform='none';
+  card.innerHTML=`<div class="ts-num">${_tourIdx}</div><div class="ts-title">${step.title}</div><div class="ts-desc">${step.desc}</div><div class="ts-actions">${prevBtn}<div class="tour-dots" style="margin-right:auto">${TOUR_STEPS.map((_,i)=>`<div class="tour-dot${i===_tourIdx?' active':''}"></div>`).join('')}</div><button class="ts-skip" onclick="skipTour()">跳过</button><button class="ts-next" onclick="nextTour()">${nextLabel}</button></div>`;
+}
+function startTour(){
+  if(localStorage.getItem('tourCompleted')==='1') return;
+  if(_tourActive) return;
+  _tourActive=true;_tourIdx=0;
+  document.body.classList.add('tour-active');
+  _getOrCreateOverlay().classList.add('active');
+  _renderTourStep();
+}
+function nextTour(){
+  if(_tourIdx<TOUR_STEPS.length-1){_tourIdx++;_renderTourStep();}
+  else{finishTour();}
+}
+function prevTour(){
+  if(_tourIdx>0){_tourIdx--;_renderTourStep();}
+}
+function skipTour(){finishTour();}
+function finishTour(){
+  _tourActive=false;
+  document.body.classList.remove('tour-active');
+  const ov=document.getElementById('tourOverlay');if(ov)ov.classList.remove('active');
+  const chk=document.getElementById('chk-skipTour');
+  if(chk&&chk.checked)localStorage.setItem('tourCompleted','1');
+}
+function toggleSkipTour(){
+  const chk=document.getElementById('chk-skipTour');
+  if(chk)localStorage.setItem('tourCompleted',chk.checked?'1':'0');
+}
+// 提供手动重新触发入口（从 ? 按钮旁调用）
+function restartTour(){
+  localStorage.removeItem('tourCompleted');
+  _tourIdx=0;_tourActive=false;
+  document.body.classList.remove('tour-active');
+  const ov=document.getElementById('tourOverlay');if(ov)ov.classList.remove('active');
+  setTimeout(()=>startTour(),300);
+}
+// 窗口大小变化时更新 tour 位置
+window.addEventListener('resize',()=>{if(_tourActive)_renderTourStep();});
 
 // ===== JS Tooltip (body-level, avoids overflow:hidden clipping) =====
 (function(){
@@ -3471,6 +3628,12 @@ initAmpSourceOptions();
 updateUI();
 renderHistory();
 initAutoHelp();
+// 如果 README 不会自动弹出（已设置不再显示），但仍需检查 tour
+setTimeout(()=>{
+  if(localStorage.getItem('noAutoHelp')==='1'&&localStorage.getItem('tourCompleted')!=='1'){
+    startTour();
+  }
+},600);
 </script>
 <!-- ===== Help / README Modal ===== -->
 <div class="help-overlay" id="helpOverlay" onclick="if(event.target===this)closeHelp()">
