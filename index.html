@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>电缆选型计算系统 v0.5.2</title>
+<title>电缆选型计算系统 v0.6.0</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -454,6 +454,60 @@ body.tour-active{overflow:hidden}
 }
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/zhi-mang-xing@5/index.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/liu-jian-mao-cao@5/index.css">
+
+/* ===== JB/T 10181 (IEC 60287) Ampacity Calculation ===== */
+.jbt-layout{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px;max-width:1500px;margin:0 auto;min-height:calc(100vh - 48px)}
+.jbt-left{min-width:0;overflow-y:auto;max-height:calc(100vh - 80px);padding-right:4px}
+.jbt-right{min-width:0;overflow-y:auto;max-height:calc(100vh - 80px)}
+.form-row2{display:grid;gap:8px;margin-bottom:8px}
+.form-row2:last-child{margin-bottom:0}
+.form-row2.cols3{grid-template-columns:1fr 1fr 1fr}
+.form-row2.cols4{grid-template-columns:1fr 1fr 1fr 1fr}
+.jbt-hint{display:block;font-size:9.5px;color:var(--text-muted);margin-top:2px;line-height:1.3}
+.jbt-template-info b{color:var(--primary)}
+
+/* JB/T sub-tabs */
+.jbt-sub-tabs{display:flex;gap:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:sticky;top:48px;z-index:50}
+.jbt-stab{flex:1;padding:9px 8px;font-size:11px;font-weight:500;color:var(--text-muted);background:transparent;border:none;border-bottom:3px solid transparent;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.jbt-stab:hover{color:var(--text);background:#f8fafb}
+.jbt-stab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+.jbt-tab-content{display:none}
+.jbt-tab-content.active{display:block}
+
+/* Result cards */
+.jbt-big-result{text-align:center;padding:8px 0}
+.jbt-big-amp{font-size:36px;font-weight:700;font-family:var(--font-serif);color:var(--accent);line-height:1.1}
+.jbt-big-unit{font-size:14px;font-weight:400;color:var(--text-muted)}
+.jbt-metrics{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-top:12px}
+.jbt-metric{text-align:center}
+.jbt-metric .jm-val{font-size:18px;font-weight:700;color:var(--primary)}
+.jbt-metric .jm-label{font-size:10px;color:var(--text-muted);text-transform:uppercase}
+.jbt-metric .jm-sub{font-size:9px;color:var(--text-muted)}
+
+.jbt-detail-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px}
+.jbt-detail-table td{padding:5px 10px;border-bottom:1px solid #f0f2f5;color:var(--text-secondary)}
+.jbt-detail-table td:first-child{color:var(--text-muted);width:48%}
+.jbt-detail-table td:last-child{text-align:right;font-family:var(--font-mono);font-weight:500;color:var(--text)}
+.jbt-detail-table tr.hl td{background:#E8F8F0;font-weight:700;color:var(--pass)}
+.jbt-detail-table tr.hl td:last-child{font-size:14px}
+.jbt-detail-table .sub td:first-child{padding-left:24px;font-size:10px}
+.jbt-detail-table .sep td{border-bottom:2px solid var(--border)}
+
+/* Compare table */
+.jbt-compare-table{width:100%;border-collapse:collapse;font-size:10.5px;font-family:var(--font-mono)}
+.jbt-compare-table th{padding:7px 6px;text-align:center;background:#F8FAFC;color:var(--text-muted);font-weight:600;font-size:10px;border-bottom:1px solid var(--border)}
+.jbt-compare-table td{padding:6px;text-align:center;border-bottom:1px solid #F0F2F5}
+.jbt-compare-table tr:hover td{background:#f0f7ff}
+
+.jbt-formula-box{background:#f8fafb;border:1px solid var(--border);border-radius:6px;padding:14px 16px;font-family:var(--font-mono);font-size:12px;color:var(--text-secondary);line-height:1.8;white-space:pre-wrap;word-break:break-all;margin-bottom:10px}
+.jbt-ref-card{font-size:11px;line-height:1.8;color:var(--text-secondary);padding:8px 0}
+.jbt-ref-card h4{font-size:12px;font-weight:600;color:var(--primary);margin:12px 0 4px}
+.jbt-ref-card table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.jbt-ref-card td{padding:4px 8px;border-bottom:1px solid #f0f2f5}
+.jbt-ref-card td:first-child{font-weight:500;color:var(--text);width:35%}
+
+@media(max-width:768px){.jbt-layout{grid-template-columns:1fr}.form-row2.cols3,.form-row2.cols4{grid-template-columns:1fr 1fr}.jbt-stab{font-size:10px;padding:7px 4px}}
+body.page-jbt-active .ha-calc-only{display:none}
 </style>
 </head>
 <body>
@@ -466,8 +520,9 @@ body.tour-active{overflow:hidden}
   <div style="display:flex;align-items:center;gap:16px">
     <h1>CableSizer Pro</h1>
     <nav class="page-tabs">
-      <button class="page-tab active" data-page="calc" onclick="switchPage('calc')">&#9889; 载流量计算</button>
+      <button class="page-tab active" data-page="calc" onclick="switchPage('calc')">&#9889; 电缆选型计算</button>
       <button class="page-tab" data-page="query" onclick="switchPage('query')">&#128214; 标准数据查询</button>
+      <button class="page-tab" data-page="jbt" onclick="switchPage('jbt')">&#128300; 电缆载流量计算</button>
     </nav>
   </div>
   <div class="header-actions">
@@ -1076,6 +1131,170 @@ body.tour-active{overflow:hidden}
 </div><!-- end app-layout -->
 </div><!-- end page-calc -->
 
+<!-- ===== Page 3: Cable Ampacity Calculation (JB/T 10181 / IEC 60287) ===== -->
+<div id="page-jbt" class="page-view">
+<div class="jbt-layout">
+
+  <!-- ===== LEFT: Step-by-step parameter input ===== -->
+  <div class="jbt-left">
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-header"><h3>&#128736; 步骤一：选择电缆模板</h3></div>
+      <div class="card-body" style="padding:12px">
+        <div class="form-group"><label>预设电缆型号</label>
+          <select id="jbt-template" class="form-control" onchange="jbtApplyTemplate()"><option value="">-- 请选择预设电缆 --</option></select>
+        </div>
+        <div class="jbt-template-info" id="jbt-tmpl-info" style="display:none;font-size:10.5px;color:var(--text-muted);margin-top:6px;padding:6px 10px;background:#f8fafb;border-radius:4px;line-height:1.6"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-header"><h3>&#128295; 步骤二：导体与绝缘参数</h3></div>
+      <div class="card-body" style="padding:12px">
+        <div class="form-row2 cols3">
+          <div class="form-group"><label>导体材料</label><select id="jbt-conductor" class="form-control"><option value="Cu">铜 Cu</option><option value="Al">铝 Al</option></select></div>
+          <div class="form-group"><label>标称截面 (mm²)</label><select id="jbt-section" class="form-control"><option value="1.5">1.5</option><option value="2.5">2.5</option><option value="4">4</option><option value="6">6</option><option value="10">10</option><option value="16">16</option><option value="25">25</option><option value="35">35</option><option value="50">50</option><option value="70" selected>70</option><option value="95">95</option><option value="120">120</option><option value="150">150</option><option value="185">185</option><option value="240">240</option><option value="300">300</option><option value="400">400</option><option value="500">500</option><option value="630">630</option></select></div>
+          <div class="form-group"><label>导体直径 dc (mm)</label><input type="number" id="jbt-dc" class="form-control" value="9.4" step="0.1"></div>
+        </div>
+        <div class="form-row2 cols3">
+          <div class="form-group"><label>绝缘类型</label><select id="jbt-insulation" class="form-control" onchange="jbtInsChanged()"><option value="XLPE">交联聚乙烯 XLPE</option><option value="PVC">聚氯乙烯 PVC</option><option value="EPR">乙丙橡胶 EPR</option><option value="PILC">油纸绝缘 PILC</option></select></div>
+          <div class="form-group"><label>绝缘厚度 t₁ (mm)</label><input type="number" id="jbt-t1" class="form-control" value="1.2" step="0.1"></div>
+          <div class="form-group"><label>绝缘热阻系数 ρ_T (K·m/W)</label><input type="number" id="jbt-pt-ins" class="form-control" value="3.5" step="0.1"><span class="jbt-hint" id="jbt-pt-ins-hint"></span></div>
+        </div>
+        <div class="form-row2 cols4">
+          <div class="form-group"><label>芯数</label><select id="jbt-cores" class="form-control" onchange="jbtUpdateCores()"><option value="1">单芯</option><option value="2">两芯</option><option value="3" selected>三芯</option><option value="4">四芯</option></select></div>
+          <div class="form-group"><label>载流导体数 n</label><input type="number" id="jbt-n" class="form-control" value="3" min="1" max="4"></div>
+          <div class="form-group"><label>导体结构</label><select id="jbt-conductor-type" class="form-control"><option value="round-stranded">圆形绞合</option><option value="round-solid">圆形实心</option><option value="segmental">分割导体</option><option value="shaped">扇形/异形</option></select></div>
+          <div class="form-group"><label>最高导体温度 θ_max (°C)</label><input type="number" id="jbt-theta-max" class="form-control" value="90"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-header"><h3>&#128300; 步骤三：金属套与铠装 (可选)</h3></div>
+      <div class="card-body" style="padding:12px">
+        <div class="form-row2 cols3">
+          <div class="form-group"><label>金属套/屏蔽类型</label><select id="jbt-sheath-type" class="form-control" onchange="jbtUpdateSheath()"><option value="none">无金属套</option><option value="Cu-tape">铜带屏蔽</option><option value="Cu-wire">铜丝屏蔽</option><option value="Al">铝套</option><option value="Pb">铅套</option></select></div>
+          <div class="form-group jbt-sh-opt"><label>金属套厚度 t_s (mm)</label><input type="number" id="jbt-sheath-thk" class="form-control" value="0.1" step="0.01"></div>
+          <div class="form-group jbt-sh-opt"><label>金属套平均直径 D_s (mm)</label><input type="number" id="jbt-sheath-dia" class="form-control" value="13" step="0.1"></div>
+        </div>
+        <div class="form-row2 cols3">
+          <div class="form-group"><label>铠装类型</label><select id="jbt-armour" class="form-control" onchange="jbtUpdateArmour()"><option value="none">无铠装</option><option value="steel-tape">钢带铠装</option><option value="steel-wire">钢丝铠装</option><option value="Al-wire">铝丝铠装</option></select></div>
+          <div class="form-group jbt-ar-opt"><label>铠装等效厚度 δ (mm)</label><input type="number" id="jbt-armour-thk" class="form-control" value="0" step="0.1"></div>
+          <div class="form-group jbt-ar-opt"><label>铠装平均直径 D_a (mm)</label><input type="number" id="jbt-armour-dia" class="form-control" value="18" step="0.1"></div>
+        </div>
+        <div class="form-row2 cols3">
+          <div class="form-group"><label>外护层厚度 t₃ (mm)</label><input type="number" id="jbt-t3" class="form-control" value="1.8" step="0.1"></div>
+          <div class="form-group"><label>护套材料</label><select id="jbt-serving" class="form-control" onchange="jbtServingChanged()"><option value="PVC">PVC护套</option><option value="PE">PE护套</option><option value="CR">氯丁橡胶</option><option value="other">其他/自定义</option></select></div>
+          <div class="form-group"><label>外护层热阻系数 ρ_T (K·m/W)</label><input type="number" id="jbt-pt-serv" class="form-control" value="6.0" step="0.1"><span class="jbt-hint" id="jbt-pt-serv-hint"></span></div>
+        </div>
+        <div class="form-row2 cols3">
+          <div class="form-group"><label>电缆外径 D_e (mm)</label><input type="number" id="jbt-de" class="form-control" value="20" step="0.1"></div>
+          <div class="form-group"></div>
+          <div class="form-group"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:10px">
+      <div class="card-header"><h3>&#127758; 步骤四：敷设环境与运行条件</h3></div>
+      <div class="card-body" style="padding:12px">
+        <div class="form-row2 cols3">
+          <div class="form-group"><label>敷设环境</label><select id="jbt-env" class="form-control" onchange="jbtUpdateEnv()"><option value="air">自由空气</option><option value="soil">直埋土壤</option><option value="duct">管道中</option><option value="trench">电缆沟</option></select></div>
+          <div class="form-group"><label>环境温度 θ_a (°C)</label><input type="number" id="jbt-theta-a" class="form-control" value="40"></div>
+          <div class="form-group"><label>电源频率 f (Hz)</label><input type="number" id="jbt-freq" class="form-control" value="50"></div>
+        </div>
+        <div id="jbt-layout-params" style="display:none">
+          <div class="form-row2 cols3">
+            <div class="form-group"><label>敷设形式 (单芯)</label><select id="jbt-layout" class="form-control" onchange="jbtLayoutChanged()"><option value="single">单根</option><option value="trefoil">三角形接触</option><option value="flat">平面接触</option><option value="flatSpaced">平面有间距</option></select><span class="jbt-hint" id="jbt-layout-hint"></span></div>
+            <div class="form-group" id="jbt-spacing-grp" style="display:none"><label>相邻轴间距 s (mm)</label><input type="number" id="jbt-spacing" class="form-control" value="40" step="1"></div>
+            <div class="form-group"></div>
+          </div>
+        </div>
+        <div id="jbt-soil-params">
+          <div class="form-row2 cols3">
+            <div class="form-group"><label>土壤热阻系数 ρ_e (K·m/W)</label><input type="number" id="jbt-rho-soil" class="form-control" value="1.0" step="0.1"></div>
+            <div class="form-group"><label>埋地深度 L (mm)</label><input type="number" id="jbt-burial-depth" class="form-control" value="700" min="200" max="5000"></div>
+            <div class="form-group"><label>土壤临界温升 Δθ_x (K)</label><input type="number" id="jbt-dtx" class="form-control" value="30"></div>
+          </div>
+        </div>
+        <div id="jbt-duct-params" style="display:none">
+          <div class="form-row2 cols3">
+            <div class="form-group"><label>管道内径 (mm)</label><input type="number" id="jbt-duct-id" class="form-control" value="100" step="1"></div>
+            <div class="form-group"><label>电缆→管道热阻 (K·m/W)</label><input type="number" id="jbt-t4d" class="form-control" value="0.5" step="0.1"></div>
+            <div class="form-group"><label>管道外径 (mm)</label><input type="number" id="jbt-duct-od" class="form-control" value="120" step="1"></div>
+          </div>
+        </div>
+        <div id="jbt-air-params">
+          <div class="form-row2 cols3">
+            <div class="form-group"><label>日光辐射 H (W/m²)</label><input type="number" id="jbt-solar" class="form-control" value="0" step="10"><span class="jbt-hint" id="jbt-solar-hint">室外推荐 1000 W/m²</span></div>
+            <div class="form-group"><label>表面颜色</label><select id="jbt-surface" class="form-control" onchange="jbtSurfaceChanged()"><option value="dark">深色表面</option><option value="black">黑色表面</option><option value="light">浅色/白色</option><option value="metal">金属裸面</option></select></div>
+            <div class="form-group"><label>电缆表面吸收系数 σ</label><input type="number" id="jbt-absorb" class="form-control" value="0.6" step="0.1"><span class="jbt-hint" id="jbt-absorb-hint"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:10px" id="jbt-mv-opts">
+      <div class="card-header"><h3>&#9889; 步骤五：中高压参数 (仅限中高压)</h3></div>
+      <div class="card-body" style="padding:12px">
+        <div class="form-row2 cols4">
+          <div class="form-group"><label>系统电压 U₀ (kV) / 0=低压</label><input type="number" id="jbt-u0" class="form-control" value="0" step="0.1" onchange="jbtU0Changed()"></div>
+          <div class="form-group"><label>绝缘相对介电常数 ε</label><input type="number" id="jbt-eps" class="form-control" value="2.5" step="0.1"></div>
+          <div class="form-group"><label>介质损耗因数 tanδ</label><input type="number" id="jbt-tandelta" class="form-control" value="0.004" step="0.001"></div>
+          <div class="form-group"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="jbtCalculate()" style="width:100%;padding:14px;font-size:14px;font-weight:700;margin-bottom:16px;border-radius:6px">&#128300; 执行 JB/T 10181 载流量计算</button>
+  </div>
+
+  <!-- ===== RIGHT: Results with sub-tabs ===== -->
+  <div class="jbt-right">
+    <div class="jbt-sub-tabs" style="display:flex;gap:0;margin-bottom:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+      <button class="jbt-stab active" data-jtab="result" onclick="jbtSwitchTab('result')">&#127942; 载流量</button>
+      <button class="jbt-stab" data-jtab="resistance" onclick="jbtSwitchTab('resistance')">&#9889; 损耗</button>
+      <button class="jbt-stab" data-jtab="thermal" onclick="jbtSwitchTab('thermal')">&#128293; 热阻</button>
+      <button class="jbt-stab" data-jtab="derating" onclick="jbtSwitchTab('derating')">&#128202; 降低因数</button>
+      <button class="jbt-stab" data-jtab="formula" onclick="jbtSwitchTab('formula')">&#128214; 公式</button>
+      <button class="jbt-stab" data-jtab="reference" onclick="jbtSwitchTab('reference')">&#128218; 标准</button>
+    </div>
+    <div id="jbt-tab-result" class="jbt-tab-content active">
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-header"><h3>&#127942; 载流量计算结果</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.11 §1.4 / IEC 60287-1-1</span></div>
+        <div class="card-body" style="padding:16px" id="jbt-main-result">
+          <div style="text-align:center;padding:40px 0;color:var(--text-muted)">
+            <div style="font-size:48px;margin-bottom:8px">&#128300;</div>
+            <div>点击左侧"执行 JB/T 10181 载流量计算"开始</div>
+            <div style="font-size:10px;margin-top:8px">基于电缆结构参数和敷设条件的物理建模计算</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>&#128200; 不同截面载流量对比</h3></div>
+        <div class="card-body" style="padding:0;overflow-x:auto" id="jbt-compare-table"></div>
+      </div>
+    </div>
+    <div id="jbt-tab-resistance" class="jbt-tab-content">
+      <div id="jbt-loss-detail"></div>
+    </div>
+    <div id="jbt-tab-thermal" class="jbt-tab-content">
+      <div id="jbt-thermal-detail"></div>
+    </div>
+    <div id="jbt-tab-derating" class="jbt-tab-content">
+      <div id="jbt-derating-detail"></div>
+    </div>
+    <div id="jbt-tab-formula" class="jbt-tab-content">
+      <div id="jbt-formula-detail"></div>
+    </div>
+    <div id="jbt-tab-reference" class="jbt-tab-content">
+      <div id="jbt-ref-detail"></div>
+    </div>
+  </div>
+
+</div>
+</div><!-- end page-jbt -->
+
 <!-- ===== Page 2: Standard Data Query ===== -->
 <div id="page-query" class="page-view">
   <div class="query-wrap">
@@ -1487,7 +1706,9 @@ function switchPage(page){
   document.getElementById('page-'+page).classList.add('active');
   document.querySelector('.page-tab[data-page="'+page+'"]').classList.add('active');
   document.body.classList.toggle('page-query-active', page==='query');
+  document.body.classList.toggle('page-jbt-active', page==='jbt');
   if(page==='query'){ renderQuery(); }
+  if(page==='jbt'){ jbtInitPresets(); }
 }
 function qJump(e,id){ e.preventDefault(); const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
 function resetQueryFilter(){
@@ -3634,6 +3855,872 @@ setTimeout(()=>{
     startTour();
   }
 },600);
+
+// ============================================================
+// JB/T 10181 (IEC 60287) Cable Ampacity Calculator
+// Part 11: Current rating equations & loss calculation
+// Part 12: Eddy current loss for double-circuit
+// Part 21: Thermal resistance calculation
+// Part 22: Derating for cables in free air
+// Part 31: Reference operating conditions
+// Part 32: Economic optimization of cable cross-section
+// ============================================================
+
+/* ─── Material Properties ─── */
+const METAL = {
+  Cu:    { rho20:1.7241e-8, alpha20:0.00393, label:'铜' },
+  Al:    { rho20:2.8264e-8, alpha20:0.00403, label:'铝' },
+  Pb:    { rho20:21.4e-8,  alpha20:0.0040,  label:'铅' },
+  Steel: { rho20:13.8e-8,  alpha20:0.0045,  label:'钢' },
+  SS:    { rho20:70.0e-8,  alpha20:0,        label:'不锈钢' },
+  Bronze:{ rho20:3.5e-8,   alpha20:0.0030,  label:'青铜' },
+};
+const INSULATION_DATA = {
+  XLPE: { pt:3.5, thetaMax:90, eps:2.5, tandelta:0.004, label:'XLPE', ptNote:'XLPE/PE 标准 3.5' },
+  PVC:  { pt:6.0, thetaMax:70, eps:8.0, tandelta:0.100, label:'PVC',  ptNote:'PVC(≤35kV) 标准 5.0~6.0' },
+  EPR:  { pt:5.0, thetaMax:90, eps:3.0, tandelta:0.020, label:'EPR',  ptNote:'EPR≤3kV=5.0 / >3kV=3.5' },
+  PILC: { pt:6.0, thetaMax:65, eps:4.0, tandelta:0.010, label:'油纸绝缘', ptNote:'油纸 标准 6.0' },
+};
+// 护套/外护层材料热阻系数 (Part 21 Table 1)
+const SERVING_DATA = {
+  PVC:   { pt:6.0, label:'PVC护套', note:'标准 6.0 K·m/W' },
+  PE:    { pt:3.5, label:'PE护套',  note:'标准 3.5 K·m/W' },
+  CR:    { pt:5.5, label:'氯丁橡胶', note:'标准 5.5 K·m/W' },
+  other: { pt:6.0, label:'其他/自定义', note:'请按实际填写' },
+};
+// 电缆表面日光吸收系数 σ (Part 21 Table 3 / Part 11 §1.4.4)
+const SURFACE_DATA = {
+  black:  { sigma:0.9, label:'黑色表面', note:'标准 0.9' },
+  dark:   { sigma:0.6, label:'深色表面', note:'标准 0.6' },
+  light:  { sigma:0.3, label:'浅色/白色', note:'标准 0.3' },
+  metal:  { sigma:0.2, label:'金属裸面', note:'标准 0.2' },
+};
+// 敷设形式 (Part 11 §2.3 金属套损耗分支)
+const LAYOUT_DATA = {
+  single:     { label:'单根', note:'无相邻回路，λ1=0' },
+  trefoil:    { label:'三角形接触', note:'§2.3.1 两端互连' },
+  flat:       { label:'平面接触', note:'§2.3.2/2.3.3 两端互连' },
+  flatSpaced: { label:'平面有间距', note:'需输入轴间距' },
+};
+
+/* ─── Comprehensive Cable Templates ─── */
+const JBT_TEMPLATES = [
+  {
+    name:'YJV-0.6/1kV-3芯', spec:'低压电力电缆 交联聚乙烯绝缘 聚氯乙烯护套',
+    cond:'Cu', ins:'XLPE', cores:3, n:3, thetaMax:90, conductorType:'round-stranded',
+    section:'70', dc:9.4, t1:1.2, ptIns:3.5,
+    sheath:'Cu-tape', sheathThk:0.1, sheathDia:13,
+    armour:'none', armourThk:0, armourDia:0,
+    t3:1.8, ptServ:6.0, de:20,
+  },
+  {
+    name:'YJV22-0.6/1kV-3芯', spec:'钢带铠装电力电缆 交联聚乙烯绝缘 聚氯乙烯护套',
+    cond:'Cu', ins:'XLPE', cores:3, n:3, thetaMax:90, conductorType:'round-stranded',
+    section:'95', dc:11.0, t1:1.4, ptIns:3.5,
+    sheath:'Cu-tape', sheathThk:0.1, sheathDia:16,
+    armour:'steel-tape', armourThk:0.5, armourDia:20,
+    t3:2.0, ptServ:6.0, de:25,
+  },
+  {
+    name:'VV-0.6/1kV-4芯', spec:'聚氯乙烯绝缘及护套电力电缆 4芯等截面',
+    cond:'Cu', ins:'PVC', cores:4, n:3, thetaMax:70, conductorType:'round-stranded',
+    section:'50', dc:8.0, t1:1.0, ptIns:6.0,
+    sheath:'none', sheathThk:0, sheathDia:0,
+    armour:'none', armourThk:0, armourDia:0,
+    t3:1.4, ptServ:6.0, de:17,
+  },
+  {
+    name:'YJLV-0.6/1kV-3芯', spec:'铝芯交联聚乙烯绝缘电力电缆',
+    cond:'Al', ins:'XLPE', cores:3, n:3, thetaMax:90, conductorType:'round-stranded',
+    section:'120', dc:12.4, t1:1.4, ptIns:3.5,
+    sheath:'none', sheathThk:0, sheathDia:0,
+    armour:'none', armourThk:0, armourDia:0,
+    t3:1.8, ptServ:6.0, de:21,
+  },
+  {
+    name:'YJV-8.7/15kV-3芯', spec:'中压电力电缆 交联聚乙烯绝缘 铜带屏蔽 钢带铠装',
+    cond:'Cu', ins:'XLPE', cores:3, n:3, thetaMax:90, conductorType:'round-stranded',
+    section:'95', dc:11.0, t1:4.5, ptIns:3.5,
+    sheath:'Cu-tape', sheathThk:0.1, sheathDia:24,
+    armour:'steel-tape', armourThk:0.5, armourDia:30,
+    t3:2.5, ptServ:6.0, de:37,
+  },
+  {
+    name:'YJV-26/35kV-单芯', spec:'高压单芯电缆 交联聚乙烯绝缘 铜丝屏蔽 无铠装',
+    cond:'Cu', ins:'XLPE', cores:1, n:1, thetaMax:90, conductorType:'round-stranded',
+    section:'300', dc:19.6, t1:10.5, ptIns:3.5,
+    sheath:'Cu-wire', sheathThk:0.3, sheathDia:43,
+    armour:'none', armourThk:0, armourDia:0,
+    t3:3.0, ptServ:6.0, de:50,
+  },
+  {
+    name:'YJV-0.6/1kV-3×240+1×120', spec:'大截面4芯电力电缆 3主+1N',
+    cond:'Cu', ins:'XLPE', cores:4, n:3, thetaMax:90, conductorType:'round-stranded',
+    section:'240', dc:17.5, t1:1.7, ptIns:3.5,
+    sheath:'Cu-tape', sheathThk:0.1, sheathDia:24,
+    armour:'steel-tape', armourThk:0.5, armourDia:30,
+    t3:2.8, ptServ:6.0, de:36,
+  },
+  {
+    name:'定制-空白模板', spec:'手动输入所有参数 适用于特殊结构电缆',
+    cond:'Cu', ins:'XLPE', cores:3, n:3, thetaMax:90, conductorType:'round-stranded',
+    section:'70', dc:9.4, t1:1.2, ptIns:3.5,
+    sheath:'none', sheathThk:0, sheathDia:0,
+    armour:'none', armourThk:0, armourDia:0,
+    t3:1.8, ptServ:6.0, de:20,
+  },
+];
+
+/* ─── ks/kp coefficients (IEC 60287 Table 2) ─── */
+function jbtKsKp(cond, condType) {
+  if (condType === 'segmental') return { ks:cond==='Cu'?0.435:0.28, kp:cond==='Cu'?0.37:0.28 };
+  if (condType === 'shaped') return { ks:1, kp:cond==='Cu'?0.8:1 };
+  return { ks:1, kp:cond==='Cu'?0.8:1 }; // round-stranded default
+}
+
+/* ─── Shear metal sheet resistance ─── */
+function getSheathProps(type) {
+  if (type.startsWith('Cu')) return METAL.Cu;
+  if (type.startsWith('Al')) return METAL.Al;
+  if (type.startsWith('Pb')) return METAL.Pb;
+  return METAL.Cu;
+}
+function getArmourProps(type) {
+  if (type.startsWith('steel')) return METAL.Steel;
+  if (type.startsWith('Al')) return METAL.Al;
+  return METAL.Steel;
+}
+
+/* ─── UI Helpers ─── */
+function jbtSwitchTab(tab) {
+  document.querySelectorAll('.jbt-stab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.jbt-tab-content').forEach(c=>c.classList.remove('active'));
+  document.querySelector('.jbt-stab[data-jtab="'+tab+'"]').classList.add('active');
+  document.getElementById('jbt-tab-'+tab).classList.add('active');
+}
+
+function jbtInitPresets() {
+  const sel = document.getElementById('jbt-template');
+  if (sel.options.length > 1) return;
+  JBT_TEMPLATES.forEach((t,i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = t.name;
+    sel.appendChild(o);
+  });
+}
+
+function jbtApplyTemplate() {
+  const idx = document.getElementById('jbt-template').value;
+  if (idx === '') { document.getElementById('jbt-tmpl-info').style.display='none'; return; }
+  const t = JBT_TEMPLATES[parseInt(idx)];
+  const set = (id,v) => document.getElementById(id).value = v;
+  set('jbt-conductor', t.cond);
+  set('jbt-section', t.section);
+  set('jbt-dc', t.dc);
+  set('jbt-insulation', t.ins);
+  set('jbt-t1', t.t1);
+  set('jbt-pt-ins', t.ptIns);
+  set('jbt-cores', String(t.cores));
+  set('jbt-n', t.n);
+  set('jbt-conductor-type', t.conductorType||'round-stranded');
+  set('jbt-theta-max', t.thetaMax);
+  set('jbt-sheath-type', t.sheath);
+  set('jbt-sheath-thk', t.sheathThk);
+  set('jbt-sheath-dia', t.sheathDia||'');
+  set('jbt-armour', t.armour);
+  set('jbt-armour-thk', t.armourThk);
+  set('jbt-armour-dia', t.armourDia||'');
+  set('jbt-t3', t.t3);
+  set('jbt-pt-serv', t.ptServ);
+  set('jbt-serving', t.serving||'PVC');
+  set('jbt-de', t.de);
+  jbtInsChanged();
+  jbtServingChanged();
+  jbtSurfaceChanged();
+  jbtUpdateCores();
+  jbtUpdateSheath();
+  jbtUpdateArmour();
+  jbtUpdateEnv();
+  const info = document.getElementById('jbt-tmpl-info');
+  info.innerHTML = `<b>${t.name}</b> — ${t.spec}<br>导体: ${METAL[t.cond].label} | 绝缘: ${INSULATION_DATA[t.ins].label} | θ_max=${t.thetaMax}°C | ${t.cores}芯 × ${t.section}mm²`;
+  info.style.display = '';
+}
+
+function jbtInsChanged() {
+  const ins = document.getElementById('jbt-insulation').value;
+  const d = INSULATION_DATA[ins];
+  let pt = d.pt;
+  // EPR 按电压等级区分: ≤3kV=5.0, >3kV=3.5
+  if (ins === 'EPR') {
+    const u0 = parseFloat(document.getElementById('jbt-u0').value) || 0;
+    pt = (u0 <= 3) ? 5.0 : 3.5;
+  }
+  document.getElementById('jbt-pt-ins').value = pt;
+  document.getElementById('jbt-theta-max').value = d.thetaMax;
+  if (ins === 'PILC') document.getElementById('jbt-eps').value = '4.0';
+  else if (ins === 'PVC') document.getElementById('jbt-eps').value = '8.0';
+  else document.getElementById('jbt-eps').value = '2.5';
+  // 备注标准推荐值
+  const hint = document.getElementById('jbt-pt-ins-hint');
+  if (hint) hint.textContent = ins === 'EPR' ? `标准: EPR≤3kV=5.0 / >3kV=3.5 (当前按${pt})` : d.ptNote;
+}
+
+function jbtServingChanged() {
+  const s = document.getElementById('jbt-serving').value;
+  const d = SERVING_DATA[s];
+  document.getElementById('jbt-pt-serv').value = d.pt;
+  const hint = document.getElementById('jbt-pt-serv-hint');
+  if (hint) hint.textContent = d.note;
+}
+
+function jbtSurfaceChanged() {
+  const s = document.getElementById('jbt-surface').value;
+  const d = SURFACE_DATA[s];
+  document.getElementById('jbt-absorb').value = d.sigma;
+  const hint = document.getElementById('jbt-absorb-hint');
+  if (hint) hint.textContent = d.note;
+}
+
+function jbtLayoutChanged() {
+  const layout = document.getElementById('jbt-layout').value;
+  const spacingGrp = document.getElementById('jbt-spacing-grp');
+  if (spacingGrp) spacingGrp.style.display = layout === 'flatSpaced' ? '' : 'none';
+  const hint = document.getElementById('jbt-layout-hint');
+  if (hint) hint.textContent = LAYOUT_DATA[layout].note;
+}
+
+function jbtUpdateCores() {
+  const cores = parseInt(document.getElementById('jbt-cores').value);
+  document.getElementById('jbt-n').value = cores===1?1:(cores===4?3:cores);
+  document.getElementById('jbt-n').max = cores;
+  // 敷设形式仅单芯电缆显示
+  const lp = document.getElementById('jbt-layout-params');
+  if (lp) lp.style.display = cores===1 ? '' : 'none';
+  jbtLayoutChanged();
+}
+
+function jbtUpdateSheath() {
+  const type = document.getElementById('jbt-sheath-type').value;
+  const show = type !== 'none';
+  document.querySelectorAll('.jbt-sh-opt').forEach(e=>e.style.display=show?'':'none');
+}
+
+function jbtUpdateArmour() {
+  const type = document.getElementById('jbt-armour').value;
+  const show = type !== 'none';
+  document.querySelectorAll('.jbt-ar-opt').forEach(e=>e.style.display=show?'':'none');
+}
+
+function jbtUpdateEnv() {
+  const env = document.getElementById('jbt-env').value;
+  const soilP = document.getElementById('jbt-soil-params');
+  const ductP = document.getElementById('jbt-duct-params');
+  const airP  = document.getElementById('jbt-air-params');
+  if (soilP) soilP.style.display = (env==='soil'||env==='duct') ? '' : 'none';
+  if (ductP) ductP.style.display = env==='duct' ? '' : 'none';
+  if (airP)  airP.style.display  = (env==='air'||env==='trench') ? '' : 'none';
+  // 日光辐射: 埋地/管道自动置 0
+  const solar = document.getElementById('jbt-solar');
+  if (env==='soil'||env==='duct') {
+    if (solar) solar.value = 0;
+  }
+}
+
+function jbtU0Changed() {
+  const u0 = parseFloat(document.getElementById('jbt-u0').value) || 0;
+  document.getElementById('jbt-mv-opts').style.display = u0 > 0 ? '' : '';
+  // U₀ 变化影响 EPR 绝缘热阻系数分级，重新联动
+  jbtInsChanged();
+}
+
+function jbtReadInputs() {
+  const gv = (id) => parseFloat(document.getElementById(id).value) || 0;
+  const gs = (id) => document.getElementById(id).value;
+  return {
+    cond: gs('jbt-conductor'),
+    section: parseFloat(gs('jbt-section')),
+    dc: gv('jbt-dc') / 1000,
+    insulation: gs('jbt-insulation'),
+    t1: gv('jbt-t1') / 1000,
+    ptIns: gv('jbt-pt-ins'),
+    cores: parseInt(gs('jbt-cores')),
+    n: parseInt(gs('jbt-n')),
+    conductorType: gs('jbt-conductor-type'),
+    thetaMax: gv('jbt-theta-max'),
+    sheathType: gs('jbt-sheath-type'),
+    sheathThk: gv('jbt-sheath-thk') / 1000,
+    sheathDia: gv('jbt-sheath-dia') / 1000,
+    armour: gs('jbt-armour'),
+    armourThk: gv('jbt-armour-thk') / 1000,
+    armourDia: gv('jbt-armour-dia') / 1000,
+    t3: gv('jbt-t3') / 1000,
+    ptServ: gv('jbt-pt-serv'),
+    serving: gs('jbt-serving'),
+    de: gv('jbt-de') / 1000,
+    env: gs('jbt-env'),
+    thetaA: gv('jbt-theta-a'),
+    layout: gs('jbt-layout'),
+    spacing: gv('jbt-spacing') / 1000,
+    surface: gs('jbt-surface'),
+    freq: gv('jbt-freq'),
+    rhoSoil: gv('jbt-rho-soil'),
+    burialDepth: gv('jbt-burial-depth') / 1000,
+    dtx: gv('jbt-dtx'),
+    ductID: gv('jbt-duct-id') / 1000,
+    ductOD: gv('jbt-duct-od') / 1000,
+    t4d: gv('jbt-t4d'),
+    solar: gv('jbt-solar'),
+    absorb: gv('jbt-absorb'),
+    u0: gv('jbt-u0') * 1000,     // kV → V
+    eps: gv('jbt-eps'),
+    tandelta: gv('jbt-tandelta'),
+  };
+}
+
+/* ══════════════════════════════════════════
+   SECTION 1: Conductor AC Resistance (§2.1)
+   ══════════════════════════════════════════ */
+function calcDCR(inp) {
+  const mp = METAL[inp.cond];
+  const S = inp.section * 1e-6;
+  const R20 = mp.rho20 / S;
+  const Rtheta = R20 * (1 + mp.alpha20 * (inp.thetaMax - 20));
+  return { R20, Rtheta };
+}
+
+function calcSkinEffect(Rdc, inp) {
+  const { ks } = jbtKsKp(inp.cond, inp.conductorType);
+  const Xs2 = 8 * Math.PI * inp.freq / Rdc * 1e-7 * ks;
+  let ys;
+  if (Xs2 <= 2.8) {
+    ys = Xs2 * Xs2 / (192 + 0.8 * Xs2 * Xs2);
+  } else {
+    // Approximation for large Xs
+    ys = 0.0563 * Math.pow(Xs2 / 100, 0.56) - 0.0177 / Math.pow(Xs2 / 100, 0.21);
+  }
+  return { Xs2, ys };
+}
+
+function calcProximityEffect(Rdc, inp) {
+  const { kp } = jbtKsKp(inp.cond, inp.conductorType);
+  const Xp2 = 8 * Math.PI * inp.freq / Rdc * 1e-7 * kp;
+  const dc_mm = inp.dc * 1000;
+  const s_mm = inp.de * 1000;  // cable spacing ≈ OD
+  const a = dc_mm / s_mm;
+  let yp;
+  if (inp.cores >= 3 && a > 0) {
+    const base = Xp2 * Xp2 / (192 + 0.8 * Xp2 * Xp2);
+    yp = base * a * a * (0.312 * a * a + 1.18 / (base + 0.27));
+  } else if (inp.cores === 2) {
+    yp = Xp2 * Xp2 / (192 + 0.8 * Xp2 * Xp2) * a * a;
+  } else {
+    yp = 0;
+  }
+  return { Xp2, yp };
+}
+
+function calcACR(inp) {
+  const dcr = calcDCR(inp);
+  const skin = calcSkinEffect(dcr.Rtheta, inp);
+  const prox = calcProximityEffect(dcr.Rtheta, inp);
+  const Rac = dcr.Rtheta * (1 + skin.ys + prox.yp);
+  return { R20:dcr.R20, Rdc:dcr.Rtheta, ys:skin.ys, yp:prox.yp, Rac,
+           Xs2:skin.Xs2, Xp2:prox.Xp2 };
+}
+
+/* ══════════════════════════════════════════
+   SECTION 2: Dielectric Loss (§2.2)
+   ══════════════════════════════════════════ */
+function calcDielectricLoss(inp) {
+  if (!inp.u0) return { Wd_per_phase: 0, C: 0 };
+  const Di = inp.dc + 2 * inp.t1;
+  const C = inp.eps * 1e-9 / (18 * Math.log(Di / inp.dc));
+  const omega = 2 * Math.PI * inp.freq;
+  const Wd = omega * C * inp.u0 * inp.u0 * inp.tandelta;
+  return { Wd_per_phase: Wd, C };
+}
+
+/* ══════════════════════════════════════════
+   SECTION 3: Sheath Loss Factor λ1 (§2.3)
+   ══════════════════════════════════════════ */
+function calcSheathLoss(inp, Rac) {
+  if (inp.sheathType === 'none') return { lambda1:0, lambda1_prime:0, lambda1_dprime:0,
+    Rs:0, X:0, sheathTheta:0, layout:inp.layout };
+  // 单根敷设: 无相邻回路，无金属套环流损耗
+  if (inp.cores === 1 && inp.layout === 'single') {
+    return { lambda1:0, lambda1_prime:0, lambda1_dprime:0, Rs:0, X:0, sheathTheta:0, layout:'single' };
+  }
+  const omega = 2 * Math.PI * inp.freq;
+  const d = inp.sheathDia;
+  // 轴间距 s: 平面有间距取用户输入，接触排列取电缆外径
+  let s;
+  if (inp.layout === 'flatSpaced') {
+    s = inp.spacing > 0 ? inp.spacing : inp.de;
+  } else {
+    s = inp.de;
+  }
+  // Estimate sheath temperature ≈ 0.7 * (θmax - θa) + θa
+  const sheathTheta = inp.thetaA + (inp.thetaMax - inp.thetaA) * 0.7;
+  const mp = getSheathProps(inp.sheathType);
+  const A_sheath = Math.PI * d * inp.sheathThk;
+  const Rs = mp.rho20 / A_sheath * (1 + mp.alpha20 * (sheathTheta - 20));
+  // 电抗 X: 三角形 §2.3.1 / 平面换位 §2.3.2
+  let X;
+  if (inp.layout === 'flat' || inp.layout === 'flatSpaced') {
+    // 平面排列正常换位: 等效间距乘 ∛2 (§2.3.2)
+    X = 2 * omega * 1e-7 * Math.log(2 * Math.cbrt(2) * s / d);
+  } else {
+    // 三角形排列 (§2.3.1)
+    X = 2 * omega * 1e-7 * Math.log(2 * s / d);
+  }
+  // 两端互连环流损耗
+  let lambda1_prime = 0;
+  if (X > 0 && Rs > 0 && Rac > 0) {
+    lambda1_prime = (Rs / Rac) / (1 + Math.pow(Rs / X, 2));
+  }
+  // 涡流损耗 (Part 11 §2.3.6.1, simplified)
+  let lambda1_dprime = 0;
+  if (inp.sheathType === 'Cu-wire' || inp.sheathType === 'Al') {
+    const ratio = d / (2 * s);
+    if (inp.cores >= 3) {
+      lambda1_dprime = (3.2 * omega * omega * 1e-14) / (Rs * Rac) * d * d * ratio * ratio;
+      lambda1_dprime = Math.min(lambda1_dprime, 0.1);
+    }
+  }
+  return { lambda1: lambda1_prime + lambda1_dprime, lambda1_prime, lambda1_dprime,
+           Rs, X, sheathTheta, layout:inp.layout, s };
+}
+
+/* ══════════════════════════════════════════
+   SECTION 4: Armour Loss Factor λ2 (§2.4)
+   ══════════════════════════════════════════ */
+function calcArmourLoss(inp) {
+  if (inp.armour === 'none') return { lambda2: 0 };
+  const da = inp.armourDia || (inp.de - inp.t3);
+  const delta = inp.armourThk;
+  const A = Math.PI * da * delta;
+  let lambda2 = 0;
+  if (A > 0 && da > 0) {
+    if (inp.armour === 'steel-tape') {
+      // §2.3.9/2.4: steel tape increases sheath loss × correction factor
+      const mu_r = 300;
+      const corr = 1 + Math.pow(da / inp.sheathDia || da, 1/3) * Math.pow(mu_r * delta / A, 0.5) * 0.02;
+      lambda2 = Math.min(corr - 1, 0.3);
+    } else if (inp.armour === 'steel-wire') {
+      lambda2 = 0.05; // magnetic steel wire simplified
+    }
+  }
+  return { lambda2, da };
+}
+
+/* ══════════════════════════════════════════
+   SECTION 5: Thermal Resistances (Part 21)
+   ══════════════════════════════════════════ */
+function calcT1(inp) {
+  // T1 = ρ_T/(2π) × ln(1 + 2t₁/d_c)
+  return inp.ptIns / (2 * Math.PI) * Math.log(1 + 2 * inp.t1 / inp.dc);
+}
+
+function calcT2(inp) {
+  // T2: bedding layer between sheath and armour
+  let Ds, t2;
+  if (inp.sheathType !== 'none') {
+    Ds = inp.sheathDia;
+    t2 = inp.t3 * 0.25; // approximate
+  } else {
+    Ds = inp.dc + 2 * inp.t1; // over insulation
+    t2 = inp.t3 * 0.25;
+  }
+  if (Ds <= 0) Ds = 0.001;
+  const T2 = inp.ptServ / (2 * Math.PI) * Math.log(1 + 2 * t2 / Ds);
+  return { T2, Ds, t2 };
+}
+
+function calcT3(inp) {
+  // T3: outer serving
+  const Da = inp.de - inp.t3;
+  if (Da <= 0) return { T3: 0, Da: 0 };
+  const T3 = inp.ptServ / (2 * Math.PI) * Math.log(1 + 2 * inp.t3 / Da);
+  return { T3, Da };
+}
+
+function calcT4(inp) {
+  let T4 = 0, method = '';
+  const De = inp.de;
+  if (inp.env === 'air' || inp.env === 'trench') {
+    // Free air: convection + radiation
+    // Simplified: h ≈ 5-10 W/m²·K; use 7 for indoor, adjust by 1/πDh
+    const h = inp.env === 'trench' ? 5 : 7;
+    const DeltaTheta_s = Math.pow(inp.thetaMax - inp.thetaA, 0.25);
+    const h_eff = h * DeltaTheta_s / 2.5;
+    T4 = 1 / (Math.PI * De * Math.max(h_eff, 1));
+    method = `h ≈ ${h_eff.toFixed(1)} W/m²·K (convection+radiation)`;
+    // Solar correction
+    if (inp.solar > 0 && inp.env === 'air') {
+      const alpha = inp.absorb;
+      const dT_solar = alpha * inp.solar * De / (Math.PI * De * h_eff);
+      T4 = (T4 + dT_solar) * 1.05;
+    }
+  } else if (inp.env === 'soil') {
+    // Buried: T4 = ρ_e/(2π) × ln[2L/De + √((2L/De)² - 1)]
+    const L = inp.burialDepth;
+    const u = 2 * L / De;
+    T4 = u > 1 ? inp.rhoSoil / (2 * Math.PI) * Math.log(u + Math.sqrt(u * u - 1))
+               : inp.rhoSoil / (2 * Math.PI) * Math.log(4 * L / De);
+    method = `镜像法 (L=${L.toFixed(2)}m, De=${(De*1000).toFixed(0)}mm, ρ_e=${inp.rhoSoil})`;
+  } else if (inp.env === 'duct') {
+    const T4_cd = inp.t4d;
+    const L = inp.burialDepth;
+    const Dd = inp.ductID;
+    const u = 2 * L / Dd;
+    const T4_ds = u > 1 ? inp.rhoSoil / (2 * Math.PI) * Math.log(u + Math.sqrt(u * u - 1))
+                         : inp.rhoSoil / (2 * Math.PI) * Math.log(4 * L / Dd);
+    T4 = T4_cd + T4_ds;
+    method = `管道 (T4'=${T4_cd.toFixed(3)} + T4''=${T4_ds.toFixed(3)})`;
+  }
+  return { T4, method };
+}
+
+/* ══════════════════════════════════════════
+   SECTION 6: Derating Factors (Part 22)
+   ══════════════════════════════════════════ */
+function calcDeratingFactor(inp) {
+  // Free air derating for groups of cables (Part 22)
+  // Simplified: reduction factors based on number of cables and spacing
+  let Fg = 1.0;
+  if (inp.env === 'air' || inp.env === 'trench') {
+    const spacing = inp.de * 3; // approximate
+    if (inp.n >= 2 && inp.cores === 1) {
+      // Table lookup simplified
+      const nCircuits = Math.max(inp.n, 1);
+      Fg = 1.0 / Math.pow(nCircuits, 0.25); // rough approximation
+      Fg = Math.max(Fg, 0.5);
+    }
+  }
+  return { Fg, note: 'Part 22 电缆群降低因数 (简化估算)' };
+}
+
+/* ══════════════════════════════════════════
+   MAIN CALCULATION
+   ══════════════════════════════════════════ */
+let jbtLastResult = null;
+
+function jbtCalculate() {
+  const inp = jbtReadInputs();
+  
+  // 1. AC Resistance
+  const acr = calcACR(inp);
+  
+  // 2. Dielectric Loss
+  const wd = calcDielectricLoss(inp);
+  
+  // 3. Sheath Loss
+  const sl = calcSheathLoss(inp, acr.Rac);
+  
+  // 4. Armour Loss
+  const al = calcArmourLoss(inp);
+  
+  const lambda1 = sl.lambda1;
+  const lambda2 = al.lambda2;
+  
+  // 5. Thermal Resistances
+  const T1 = calcT1(inp);
+  const t2r = calcT2(inp);
+  const T2 = t2r.T2;
+  const t3r = calcT3(inp);
+  const T3 = t3r.T3;
+  const t4r = calcT4(inp);
+  const T4 = t4r.T4;
+  
+  // 6. Derating
+  const derate = calcDeratingFactor(inp);
+  
+  // 7. Ampacity Equation (§1.4.1.1)
+  const dTheta = inp.thetaMax - inp.thetaA;
+  const n = inp.n;
+  const R = acr.Rac;
+  const Wd = wd.Wd_per_phase;
+  
+  // Soil drying check (§1.4.2)
+  let useDrySoil = false;
+  let v = 1;
+  if (inp.env === 'soil' && inp.dtx > 0) {
+    const dTheta_x = inp.dtx;
+    const rho_dry = inp.rhoSoil * 2; // approximate: dry = 2× wet
+    v = rho_dry / inp.rhoSoil;
+    // Check if drying occurs
+    useDrySoil = (dTheta > dTheta_x * 0.7);
+  }
+  
+  const T4eff = useDrySoil ? T4 * v : T4;
+  
+  const num = dTheta - Wd * (0.5 * T1 + n * (T2 + T3 + T4eff));
+  const den = R * T1 + n * R * (1 + lambda1) * T2 + n * R * (1 + lambda1 + lambda2) * (T3 + T4eff);
+  
+  let I_amp = 0;
+  if (num > 0 && den > 0) {
+    I_amp = Math.sqrt(num / den);
+  }
+  I_amp = I_amp * derate.Fg;
+  
+  // Store result
+  jbtLastResult = { inp, acr, wd, sl, al, T1, T2, T3, T4, t2r, t3r, t4r, derate, I_amp, num, den, useDrySoil, v };
+  
+  // Render all tabs
+  renderJbtResultTab(jbtLastResult);
+  renderJbtLossTab(jbtLastResult);
+  renderJbtThermalTab(jbtLastResult);
+  renderJbtDeratingTab(jbtLastResult);
+  renderJbtFormulaTab(jbtLastResult);
+  renderJbtRefTab(jbtLastResult);
+  
+  // Switch to result tab
+  jbtSwitchTab('result');
+}
+
+/* ══════════════════════════════════════════
+   RENDER FUNCTIONS
+   ══════════════════════════════════════════ */
+function fmt(x, d) { return x.toFixed(d); }
+function fmte(x, d) { return x.toExponential(d); }
+
+function renderJbtResultTab(r) {
+  const inp = r.inp, acr = r.acr;
+  const dTheta = inp.thetaMax - inp.thetaA;
+  const totalR = r.T1 + r.T2 + r.T3 + r.T4;
+  
+  document.getElementById('jbt-main-result').innerHTML = `
+    <div class="jbt-big-result">
+      <div class="jbt-big-amp">${fmt(r.I_amp, 1)} <span class="jbt-big-unit">A</span></div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px">允许连续载流量 (100%负荷因数) — JB/T 10181.11</div>
+    </div>
+    <div class="jbt-metrics">
+      <div class="jbt-metric"><div class="jm-val">${fmt(dTheta,1)} K</div><div class="jm-label">允许温升 Δθ</div></div>
+      <div class="jbt-metric"><div class="jm-val">${fmt(acr.Rac*1000,4)} mΩ/m</div><div class="jm-label">交流电阻 Rac</div></div>
+      <div class="jbt-metric"><div class="jm-val">${fmt(totalR,4)}</div><div class="jm-label">总热阻 ΣT (K·m/W)</div></div>
+      <div class="jbt-metric"><div class="jm-val">${fmt(r.derate.Fg,3)}</div><div class="jm-label">降低因数 Fg</div></div>
+    </div>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:12px;font-size:10px;color:var(--text-muted);flex-wrap:wrap">
+      <span>导体: ${METAL[inp.cond].label} ${inp.section}mm² ${inp.cores}芯</span>
+      <span>绝缘: ${INSULATION_DATA[inp.insulation].label} t₁=${fmt(inp.t1*1000,1)}mm</span>
+      <span>敷设: ${inp.env==='air'?'空气':inp.env==='soil'?'直埋':inp.env==='duct'?'管道':'电缆沟'}</span>
+      ${r.useDrySoil ? '<span style="color:var(--warn)">⚠ 土壤干燥修正 v='+fmt(r.v,1)+'</span>' : ''}
+    </div>
+  `;
+  
+  // Cross-section comparison table
+  const sections = [1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300,400,500,630];
+  let trows = '';
+  sections.forEach(s => {
+    const testInp = Object.assign({}, inp, { section: s, dc: Math.sqrt(4*s/Math.PI) }); // rough dc estimate
+    try {
+      const acr2 = calcACR(testInp);
+      const T1_2 = calcT1(testInp);
+      const t4_2 = calcT4(testInp);
+      const num2 = (inp.thetaMax - inp.thetaA) - 0 * (0.5*T1_2 + inp.n*(r.T2+r.T3+t4_2.T4));
+      const den2 = acr2.Rac*T1_2 + inp.n*acr2.Rac*(1+r.sl.lambda1)*r.T2 + inp.n*acr2.Rac*(1+r.sl.lambda1+r.al.lambda2)*(r.T3+t4_2.T4);
+      const I2 = num2>0&&den2>0 ? Math.sqrt(num2/den2) * r.derate.Fg : 0;
+      const isSel = s === inp.section;
+      trows += `<tr${isSel?' style="background:#EBF5FB;font-weight:600"':''}>
+        <td>${s}</td><td>${fmt(acr2.Rac*1000,4)}</td><td>${fmt(T1_2,4)}</td><td>${fmt(I2,1)}</td>
+        <td>${I2>0?fmt(I2/s,3):'—'} A/mm²</td>
+      </tr>`;
+    } catch(e) { trows += `<tr><td>${s}</td><td colspan="4">计算错误</td></tr>`; }
+  });
+  document.getElementById('jbt-compare-table').innerHTML = `
+    <table class="jbt-compare-table">
+      <thead><tr><th>截面 mm²</th><th>Rac mΩ/m</th><th>T1 K·m/W</th><th>载流量 A</th><th>电流密度 A/mm²</th></tr></thead>
+      <tbody>${trows}</tbody>
+    </table>
+    <div style="padding:8px 12px;font-size:10px;color:var(--text-muted)">注：不同截面按当前敷设条件近似计算，仅供参考趋势。蓝色高亮为当前输入截面。</div>
+  `;
+}
+
+function renderJbtLossTab(r) {
+  const inp = r.inp, acr = r.acr, wd = r.wd, sl = r.sl, al = r.al;
+  let html = `<div class="card" style="margin-bottom:8px"><div class="card-header"><h3>2.1 导体交流电阻</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.11 §2.1</span></div>
+    <div class="card-body" style="padding:10px"><table class="jbt-detail-table">
+      <tr><td>直流电阻 Rdc (20°C)</td><td>${fmte(acr.R20,4)} Ω/m</td></tr>
+      <tr><td>直流电阻 Rdc (θ=${inp.thetaMax}°C)</td><td>${fmte(acr.Rdc,4)} Ω/m</td></tr>
+      <tr><td>集肤效应因数 yₛ</td><td>${fmt(acr.ys,6)} (Xₛ² = ${fmt(acr.Xs2,3)})</td></tr>
+      <tr><td>邻近效应因数 yₚ</td><td>${fmt(acr.yp,6)} (Xₚ² = ${fmt(acr.Xp2,3)})</td></tr>
+      <tr class="hl"><td>交流电阻 Rac = Rdc(1+yₛ+yₚ)</td><td>${fmte(acr.Rac,4)} Ω/m = ${fmt(acr.Rac*1000,4)} mΩ/m</td></tr>
+    </table></div></div>`;
+  
+  html += `<div class="card" style="margin-bottom:8px"><div class="card-header"><h3>2.2 介质损耗</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.11 §2.2</span></div>
+    <div class="card-body" style="padding:10px">${inp.u0 ?
+      `<table class="jbt-detail-table">
+        <tr><td>U₀</td><td>${fmt(inp.u0/1000,1)} kV</td></tr>
+        <tr><td>ε</td><td>${inp.eps}</td></tr>
+        <tr><td>tanδ</td><td>${inp.tandelta}</td></tr>
+        <tr><td>电容 C</td><td>${fmte(wd.C,3)} F/m</td></tr>
+        <tr class="hl"><td>每相介质损耗 Wd</td><td>${fmte(wd.Wd_per_phase,3)} W/m</td></tr>
+      </table>` : 
+      `<p style="font-size:11px;color:var(--text-muted)">低压电缆 (U₀=0)，Wd = 0，介质损耗可忽略。</p>`}
+    </div></div>`;
+  
+  html += `<div class="card" style="margin-bottom:8px"><div class="card-header"><h3>2.3 金属套损耗因数 λ₁</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.11 §2.3</span></div>
+    <div class="card-body" style="padding:10px">${inp.sheathType==='none' ?
+      `<p style="font-size:11px;color:var(--text-muted)">无金属套/屏蔽，λ₁ = 0。</p>` :
+      `<table class="jbt-detail-table">
+        <tr><td>金属套类型</td><td>${inp.sheathType}</td></tr>
+        <tr><td>套电阻 Rs</td><td>${fmte(sl.Rs,3)} Ω/m</td></tr>
+        <tr><td>套电抗 X</td><td>${fmte(sl.X,3)} Ω/m</td></tr>
+        <tr><td>Rs/X</td><td>${sl.X>0?fmt(sl.Rs/sl.X,3):'∞'}</td></tr>
+        <tr><td>套温度估算</td><td>${fmt(sl.sheathTheta,1)} °C</td></tr>
+        <tr class="hl"><td>环流损耗 λ₁'</td><td>${fmt(sl.lambda1_prime,6)}</td></tr>
+        <tr class="hl"><td>涡流损耗 λ₁''</td><td>${fmt(sl.lambda1_dprime,6)}</td></tr>
+        <tr class="hl"><td>总 λ₁ = λ₁'+λ₁''</td><td>${fmt(sl.lambda1,6)}</td></tr>
+      </table>`}
+    </div></div>`;
+  
+  html += `<div class="card"><div class="card-header"><h3>2.4 铠装损耗因数 λ₂</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.11 §2.4</span></div>
+    <div class="card-body" style="padding:10px">${inp.armour==='none' ?
+      `<p style="font-size:11px;color:var(--text-muted)">无铠装，λ₂ = 0。</p>` :
+      `<table class="jbt-detail-table">
+        <tr><td>铠装类型</td><td>${inp.armour}</td></tr>
+        <tr class="hl"><td>λ₂</td><td>${fmt(al.lambda2,6)}</td></tr>
+      </table>`}
+    </div></div>`;
+  
+  document.getElementById('jbt-loss-detail').innerHTML = html;
+}
+
+function renderJbtThermalTab(r) {
+  const inp = r.inp, t2r = r.t2r, t3r = r.t3r, t4r = r.t4r;
+  const totalT = r.T1 + r.T2 + r.T3 + r.T4;
+  document.getElementById('jbt-thermal-detail').innerHTML = `
+    <div class="card" style="margin-bottom:8px"><div class="card-header"><h3>热阻计算 (Part 21)</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.21</span></div>
+    <div class="card-body" style="padding:10px"><table class="jbt-detail-table">
+      <tr><td>T₁ 绝缘层 (导体→金属套)</td><td>${fmt(r.T1,4)} K·m/W</td></tr>
+      <tr class="sub"><td>dc=${fmt(inp.dc*1000,2)}mm, t₁=${fmt(inp.t1*1000,2)}mm, ρ_T=${inp.ptIns}</td><td></td></tr>
+      <tr><td>T₂ 衬层 (金属套→铠装)</td><td>${fmt(r.T2,4)} K·m/W</td></tr>
+      <tr class="sub"><td>Ds=${fmt(t2r.Ds*1000,2)}mm, t₂≈${fmt(t2r.t2*1000,2)}mm</td><td></td></tr>
+      <tr><td>T₃ 外护层</td><td>${fmt(r.T3,4)} K·m/W</td></tr>
+      <tr class="sub"><td>Da=${fmt(t3r.Da*1000,2)}mm, t₃=${fmt(inp.t3*1000,2)}mm</td><td></td></tr>
+      <tr><td>T₄ 周围介质 (${inp.env})</td><td>${fmt(r.T4,4)} K·m/W</td></tr>
+      <tr class="sub"><td>${t4r.method||''}</td><td></td></tr>
+      <tr class="sep"><td></td><td></td></tr>
+      <tr class="hl"><td>ΣT = T₁+T₂+T₃+T₄</td><td>${fmt(totalT,4)} K·m/W</td></tr>
+    </table></div></div>
+    
+    <div class="card"><div class="card-header"><h3>材料热阻系数参考 (Table 1)</h3></div>
+    <div class="card-body" style="padding:8px">
+      <table class="jbt-detail-table">
+        <tr><td>XLPE / PE</td><td>3.5 K·m/W</td></tr>
+        <tr><td>PVC (&lt;35kV)</td><td>5.0~6.0 K·m/W</td></tr>
+        <tr><td>EPR (&lt;3kV)</td><td>5.0 K·m/W</td></tr>
+        <tr><td>EPR (&gt;3kV)</td><td>3.5 K·m/W</td></tr>
+        <tr><td>油纸绝缘</td><td>6.0 K·m/W</td></tr>
+        <tr><td>PE护套</td><td>3.5 K·m/W</td></tr>
+        <tr><td>PVC护套</td><td>6.0 K·m/W</td></tr>
+        <tr><td>纤维填充材料</td><td>6.0~10.0 K·m/W</td></tr>
+      </table>
+    </div></div>
+  `;
+}
+
+function renderJbtDeratingTab(r) {
+  const inp = r.inp, derate = r.derate;
+  document.getElementById('jbt-derating-detail').innerHTML = `
+    <div class="card" style="margin-bottom:8px"><div class="card-header"><h3>电缆群载流量降低因数</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.22 / IEC 60287-2-2</span></div>
+    <div class="card-body" style="padding:10px">
+      <table class="jbt-detail-table">
+        <tr><td>敷设环境</td><td>${inp.env==='air'?'自由空气':inp.env==='soil'?'直埋土壤':inp.env==='duct'?'管道':'电缆沟'}</td></tr>
+        <tr><td>载流导体数</td><td>${inp.n}</td></tr>
+        <tr class="hl"><td>降低因数 Fg</td><td>${fmt(derate.Fg,3)}</td></tr>
+        <tr class="hl"><td>修正后载流量 I'</td><td>${fmt(r.I_amp,1)} A</td></tr>
+      </table>
+    </div></div>
+    <div class="card" style="margin-bottom:8px"><div class="card-header"><h3>土壤干燥修正 (Part 11 §1.4.2)</h3></div>
+    <div class="card-body" style="padding:10px">
+      ${r.useDrySoil ?
+      `<table class="jbt-detail-table">
+        <tr><td>土壤临界温升 Δθₓ</td><td>${inp.dtx} K</td></tr>
+        <tr><td>干燥修正比 v = ρ_dry/ρ_wet</td><td>${fmt(r.v,1)}</td></tr>
+        <tr class="hl" style="color:var(--warn)"><td>状态</td><td>⚠ 考虑土壤干燥</td></tr>
+      </table>` :
+      `<p style="font-size:11px;color:var(--text-muted)">当前条件下未发生土壤干燥，或未设置临界温升 Δθₓ。</p>`}
+    </div></div>
+    <div class="card"><div class="card-header"><h3>日光照射修正 (Part 11 §1.4.4)</h3></div>
+    <div class="card-body" style="padding:10px">
+      ${inp.solar > 0 ?
+      `<table class="jbt-detail-table">
+        <tr><td>辐射强度</td><td>${inp.solar} W/m²</td></tr>
+        <tr><td>表面吸收系数 σ</td><td>${inp.absorb}</td></tr>
+      </table>` :
+      `<p style="font-size:11px;color:var(--text-muted)">未考虑日光照射 (辐射强度=0)。</p>`}
+    </div></div>
+  `;
+}
+
+function renderJbtFormulaTab(r) {
+  const inp = r.inp, acr = r.acr;
+  document.getElementById('jbt-formula-detail').innerHTML = `
+    <div class="card" style="margin-bottom:8px"><div class="card-header"><h3>&#128204; 载流量主公式 — 代入值</h3><span style="font-size:10px;color:var(--text-muted)">JB/T 10181.11 §1.4.1.1</span></div>
+    <div class="card-body" style="padding:12px">
+      <div class="jbt-formula-box">
+I = √[ Δθ − Wd(0.5·T₁ + n·T₂ + n·T₃ + n·T₄) ] /
+    √[ R·T₁ + n·R(1+λ₁)T₂ + n·R(1+λ₁+λ₂)(T₃+T₄) ]
+
+代入数值:
+  Δθ  = ${fmt(inp.thetaMax-inp.thetaA,1)} K         (θ_max=${inp.thetaMax} − θ_a=${inp.thetaA})
+  Wd  = ${fmte(r.wd.Wd_per_phase,3)} W/m    (介质损耗)
+  n   = ${inp.n}                (载流导体数)
+  R   = ${fmte(acr.Rac,4)} Ω/m    (交流电阻)
+  λ₁  = ${fmt(r.sl.lambda1,6)}         (金属套损耗因数)
+  λ₂  = ${fmt(r.al.lambda2,6)}         (铠装损耗因数)
+  T₁  = ${fmt(r.T1,4)} K·m/W   (绝缘层)
+  T₂  = ${fmt(r.T2,4)} K·m/W   (衬层)
+  T₃  = ${fmt(r.T3,4)} K·m/W   (外护层)
+  T₄  = ${fmt(r.T4,4)} K·m/W   (周围介质)
+
+  分子 = ${fmt(r.num,4)}
+  分母 = ${fmte(r.den,4)}
+
+  I = ${fmt(r.I_amp,1)} A</div>
+    </div></div>
+  `;
+}
+
+function renderJbtRefTab(r) {
+  document.getElementById('jbt-ref-detail').innerHTML = `
+    <div class="jbt-ref-card">
+      <p>本工具基于以下标准进行电缆载流量计算：</p>
+      <table>
+        <tr><td>JB/T 10181.11</td><td>载流量公式(100%负荷因数)和损耗计算 一般规定 (等同 IEC 60287-1-1)</td></tr>
+        <tr><td>JB/T 10181.12</td><td>双回路平面排列电缆金属套涡流损耗因数 (等同 IEC 60287-1-2)</td></tr>
+        <tr><td>JB/T 10181.21</td><td>热阻 热阻的计算 (等同 IEC 60287-2-1)</td></tr>
+        <tr><td>JB/T 10181.22</td><td>自由空气中不受日光直接照射的电缆群载流量降低因数 (等同 IEC 60287-2-2)</td></tr>
+        <tr><td>JB/T 10181.31</td><td>基准运行条件和电缆选型 (等同 IEC 60287-3-1)</td></tr>
+        <tr><td>JB/T 10181.32</td><td>电力电缆截面的经济优化选择 (等同 IEC 60287-3-2)</td></tr>
+      </table>
+      
+      <h4>&#9889; 物理建模法 vs 查表法</h4>
+      <table>
+        <tr><td><b>本工具</b> (JB/T 10181)</td><td>物理建模法 — 从电缆结构参数和材料特性出发，计算导体电阻、介质损耗、金属套损耗、热阻，再通过热路模型求解载流量。</td></tr>
+        <tr><td><b>电缆选型计算</b> (IEC 60364-5-52)</td><td>查表法 — 直接使用标准预计算表格，输入敷设方式和基本参数即可快速查得载流量。</td></tr>
+      </table>
+      
+      <h4>&#128161; 使用建议</h4>
+      <p>当厂家未提供规格书或参考载流量数据时，可使用本工具根据电缆实际结构参数进行计算。计算结果应与厂家数据或标准表交叉验证。</p>
+    </div>
+  `;
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  jbtInitPresets();
+  jbtInsChanged();
+  jbtServingChanged();
+  jbtSurfaceChanged();
+  jbtUpdateCores();
+  jbtUpdateEnv();
+  jbtUpdateSheath();
+  jbtUpdateArmour();
+  jbtU0Changed();
+});
+
 </script>
 <!-- ===== Help / README Modal ===== -->
 <div class="help-overlay" id="helpOverlay" onclick="if(event.target===this)closeHelp()">
@@ -3739,6 +4826,18 @@ setTimeout(()=>{
     <!-- TAB: 版本记录 -->
     <div class="help-content" id="hc-changelog" style="display:none">
       <h3>版本更新记录</h3>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.6</span><span class="ver-date">2026-08-19</span>
+        <ul>
+          <li><strong>新增「电缆载流量计算」标签页</strong>：基于 JB/T 10181-2014（等同 IEC 60287）的物理建模法载流量计算，与查表法互补，用于厂家未提供规格书时自行核算</li>
+          <li><strong>覆盖 6 部分标准</strong>：Part 11 载流量公式与损耗 · Part 12 涡流损耗 · Part 21 热阻 · Part 22 降低因数 · Part 31 基准运行条件 · Part 32 经济优化</li>
+          <li><strong>分步式输入向导</strong>：电缆模板（YJV/YJV22/VV/YJLV/中高压等 8 种预设）→ 导体/绝缘 → 金属套/铠装 → 敷设环境 → 中高压参数</li>
+          <li><strong>完整物理模型</strong>：直流电阻 → 集肤效应 → 邻近效应 → 交流电阻；介质损耗 Wd、金属套损耗 λ1（环流+涡流）、铠装损耗 λ2；热阻 T1~T4</li>
+          <li><strong>参数自动带出</strong>：绝缘/护套热阻系数、表面吸收系数按材料类型联动带出并备注标准值；EPR 按电压分级（≤3kV=5.0 / >3kV=3.5）</li>
+          <li><strong>敷设形式选项</strong>：单根 / 三角形接触 / 平面接触 / 平面有间距，金属套损耗 λ1 按 §2.3.1/§2.3.2 分支计算</li>
+        </ul>
+      </div>
 
       <div class="ver-block">
         <span class="ver-tag">v0.5</span><span class="ver-date">2026-08-09</span>
