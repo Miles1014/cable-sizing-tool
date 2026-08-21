@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>电缆选型计算系统 v0.6.0</title>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<title>电缆选型计算系统 v0.6.1</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -266,6 +266,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 .alert-card.alert-pass{background:var(--pass-light);border:1px solid rgba(46,172,104,0.2);color:var(--pass)}
 .alert-card .alert-icon{font-size:14px;flex-shrink:0;margin-top:1px}
 .alert-card strong{font-weight:600}
+.spec-note{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;border-radius:var(--radius);margin-bottom:12px;font-size:12px;line-height:1.5;background:#FEF5E7;border:1px solid rgba(239,159,39,0.35);color:#BA7517}
 
 /* ===== Right Panel: Comparison ===== */
 .comparison-table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
@@ -526,7 +527,7 @@ body.page-jbt-active .ha-calc-only{display:none}
     </nav>
   </div>
   <div class="header-actions">
-    <span class="std-ref" style="margin-right:4px">IEC 60364-5-52 / GB/T 16895.6-2014</span>
+    <span class="std-ref" id="stdRef" style="margin-right:4px">IEC 60364-5-52 / GB/T 16895.6-2014</span>
     <button onclick="openHelp()" style="font-size:14px;padding:5px 10px" title="使用帮助">?</button>
     <button onclick="restartTour()" style="font-size:10px;padding:3px 8px" title="新手指引" class="ha-calc-only">&#128161; 指引</button>
     <button onclick="showReportDrawer()" class="ha-calc-only">&#128196; 详细报告</button>
@@ -541,6 +542,19 @@ body.page-jbt-active .ha-calc-only{display:none}
 
 <!-- ======== LEFT PANEL: Parameter Input ======== -->
 <div class="left-panel">
+  <!-- 参考标准选择（顶层维度） -->
+  <div class="card" style="overflow:visible;margin-bottom:10px">
+    <div class="card-body" style="padding:12px">
+      <div class="form-group">
+        <label class="form-label">参考标准 <span class="tip" data-tip="低压选型依据 IEC 60364-5-52 / GB/T 16895.6；中压选型依据 IEC 60502-2。切换后敷设方式、绝缘类型、修正系数体系将联动变化。">?</span></label>
+        <select class="form-control" id="refStandard" onchange="onStandardChange()">
+          <option value="lv" selected>低压 · IEC 60364-5-52 / GB/T 16895.6</option>
+          <option value="mv">中压 · IEC 60502-2</option>
+        </select>
+        <div class="form-hint" id="hint-standard" style="font-size:10px;color:var(--text-muted);margin-top:3px"></div>
+      </div>
+    </div>
+  </div>
   <!-- Stepper -->
   <div class="stepper">
     <div class="step-item active" data-step="1"><span class="step-num">1</span>基本</div>
@@ -555,6 +569,7 @@ body.page-jbt-active .ha-calc-only{display:none}
     <div class="card-body" style="padding:12px">
       <!-- Step 1: 基本参数 -->
       <div class="step-panel active" id="sp-1">
+        <div id="sp1-lv">
         <div class="form-section">
           <div class="section-label">敷设方式 <span class="tip" data-tip="按IEC 60364-5-52分类，查表方法根据芯数自动匹配">?</span></div>
           <div style="font-size:10px;font-weight:600;color:var(--text-muted);margin-bottom:4px;margin-top:8px">土壤中</div>
@@ -663,10 +678,87 @@ body.page-jbt-active .ha-calc-only{display:none}
             </select>
           </div>
         </div>
+        </div>
+        <div id="sp1-mv" style="display:none">
+          <div class="form-section">
+            <div class="section-label">敷设环境 <span class="tip" data-tip="对应 IEC 60502-2 载流量表：直埋/管道/空气。">?</span></div>
+            <div class="method-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:10px">
+              <div class="method-card">
+                <input type="radio" name="mvEnv" id="mv-direct" value="direct" checked onchange="mvEnvChanged()">
+                <label for="mv-direct">
+                  <div class="mc-icon"><svg viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#ECF0F3" rx="2"/><line x1="4" y1="10" x2="24" y2="10" stroke="#8B7355" stroke-width="1" stroke-dasharray="3 1"/><rect x="9" y="14" width="10" height="5" rx="2.5" fill="#3498DB" opacity="0.8"/></svg></div>
+                  <span class="mc-code">直埋</span>
+                  <span class="mc-name">土壤中</span>
+                </label>
+              </div>
+              <div class="method-card">
+                <input type="radio" name="mvEnv" id="mv-duct" value="duct" onchange="mvEnvChanged()">
+                <label for="mv-duct">
+                  <div class="mc-icon"><svg viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#ECF0F3" rx="2"/><line x1="4" y1="10" x2="24" y2="10" stroke="#8B7355" stroke-width="1" stroke-dasharray="3 1"/><circle cx="14" cy="16" r="4" fill="none" stroke="#1E2A3A" stroke-width="1.2"/><circle cx="14" cy="16" r="1.8" fill="#3498DB" opacity="0.8"/></svg></div>
+                  <span class="mc-code">管道</span>
+                  <span class="mc-name">单孔管槽</span>
+                </label>
+              </div>
+              <div class="method-card">
+                <input type="radio" name="mvEnv" id="mv-air" value="air" onchange="mvEnvChanged()">
+                <label for="mv-air">
+                  <div class="mc-icon"><svg viewBox="0 0 28 28"><line x1="4" y1="22" x2="24" y2="22" stroke="#1E2A3A" stroke-width="1" stroke-dasharray="3 1"/><circle cx="9" cy="15" r="3" fill="none" stroke="#1E2A3A" stroke-width="1.2"/><circle cx="9" cy="15" r="1.4" fill="#3498DB" opacity="0.8"/><circle cx="19" cy="15" r="3" fill="none" stroke="#1E2A3A" stroke-width="1.2"/><circle cx="19" cy="15" r="1.4" fill="#3498DB" opacity="0.8"/></svg></div>
+                  <span class="mc-code">空气</span>
+                  <span class="mc-name">自由空气</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-hint" style="margin-top:6px" id="mv-hint-tableRef">查表: B.2~B.9（按芯数/排列/铠装自动匹配列）</div>
+          </div>
+          <div class="form-section" style="margin-top:14px">
+            <div class="section-label">电缆参数</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">绝缘类型</label>
+                <select class="form-control" id="mvInsulation" onchange="autoCalc()">
+                  <option value="XLPE">XLPE (交联聚乙烯)</option>
+                  <option value="EPR" disabled>EPR (后续支持)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">导体材料</label>
+                <select class="form-control" id="mvConductor" onchange="autoCalc()">
+                  <option value="Cu">铜 (Cu)</option>
+                  <option value="Al">铝 (Al)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">电缆芯数</label>
+                <select class="form-control" id="mvCableType" onchange="mvCableTypeChanged()">
+                  <option value="three">三芯电缆</option>
+                  <option value="single">单芯电缆</option>
+                </select>
+              </div>
+              <div class="form-group" id="mv-armour-grp">
+                <label class="form-label">铠装</label>
+                <select class="form-control" id="mvArmoured" onchange="autoCalc()">
+                  <option value="unarm">非铠装</option>
+                  <option value="arm">铠装</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group" id="mv-arr-grp" style="display:none">
+              <label class="form-label">单芯排列方式</label>
+              <select class="form-control" id="mvArrangement" onchange="autoCalc()">
+                <option value="trefoil">三叶形 (三角形)</option>
+                <option value="flat-touch">平面相互接触</option>
+                <option value="flat-spaced">平面有间距</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Step 2: 环境条件 -->
       <div class="step-panel" id="sp-2" style="display:none">
+        <div id="sp2-lv">
         <div class="form-section">
           <div class="section-label">温度条件</div>
           <div class="form-group" id="grp-ambient">
@@ -743,6 +835,73 @@ body.page-jbt-active .ha-calc-only{display:none}
           <div class="form-hint" id="hint-groupLimit" style="display:none;color:var(--warn);font-size:10px;margin-top:2px"></div>
           <div class="form-hint" style="font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-top:4px"><span id="groupFactorVal">Cg=1.000</span></div>
           <div class="form-hint" id="hint-cgSource" style="display:none;font-size:10px;color:var(--text-muted);margin-top:3px;line-height:1.5"></div>
+        </div>
+        </div>
+        <div id="sp2-mv" style="display:none">
+          <div class="form-section">
+            <div class="section-label">环境条件</div>
+            <div id="mv-burial-params">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">土壤温度 (°C) <span class="tip" data-tip="中压基准土壤温度20°C，非基准值按表B.11修正">?</span></label>
+                  <input type="number" class="form-control" id="mvSoilTemp" value="20" min="10" max="50" oninput="autoCalc()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">土壤热阻率 (K·m/W) <span class="tip" data-tip="中压基准1.5 K·m/W，非基准值按表B.14~B.17修正">?</span></label>
+                  <input type="number" class="form-control" id="mvSoilRes" value="1.5" step="0.1" min="0.5" max="3" oninput="autoCalc()">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">埋深 (m) <span class="tip" data-tip="基准0.8m，非基准值按表B.12/B.13修正">?</span></label>
+                  <input type="number" class="form-control" id="mvDepth" value="0.8" step="0.05" min="0.5" max="3" oninput="autoCalc()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">并列回路数</label>
+                  <select class="form-control" id="mvCircuits" onchange="autoCalc()">
+                    <option value="1">1 回路</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">回路间距</label>
+                <select class="form-control" id="mvSpacing" onchange="autoCalc()">
+                  <option value="touching">触碰</option>
+                  <option value="d200">200 mm</option>
+                  <option value="d400">400 mm</option>
+                  <option value="d600">600 mm</option>
+                  <option value="d800">800 mm</option>
+                </select>
+              </div>
+            </div>
+            <div id="mv-air-params" style="display:none">
+              <div class="form-group">
+                <label class="form-label">空气温度 (°C) <span class="tip" data-tip="中压基准空气温度30°C，非基准值按表B.10修正">?</span></label>
+                <input type="number" class="form-control" id="mvAirTemp" value="30" min="20" max="60" oninput="autoCalc()">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">托盘/梯架数</label>
+                  <select class="form-control" id="mvTrays" onchange="autoCalc()">
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">每层回路数</label>
+                  <select class="form-control" id="mvPerLayer" onchange="autoCalc()">
+                    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="9">9</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">排列</label>
+                <select class="form-control" id="mvAirSpacing" onchange="autoCalc()">
+                  <option value="touching">相互触碰</option>
+                  <option value="spaced">有间距</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -874,6 +1033,7 @@ body.page-jbt-active .ha-calc-only{display:none}
     <!-- Ampacity Detail -->
     <div class="detail-panel active" id="dp-ampacity">
       <div id="amp-alert"></div>
+      <div class="spec-note" id="spec-note" style="display:none"></div>
       <div class="formula-block">
         <div class="formula-title">载流量分解计算</div>
         <div class="formula-line">
@@ -899,6 +1059,12 @@ body.page-jbt-active .ha-calc-only{display:none}
           <span class="fl-value" id="f-ks">--</span>
           <span class="fl-desc" id="f-ks-desc"></span>
           <span class="fl-ref" title="IEC 60364-5-52 表B.52.16">T</span>
+        </div>
+        <div class="formula-line" id="f-cd-row" style="display:none">
+          <span class="fl-name">埋深修正 K<sub>d</sub></span>
+          <span class="fl-value">--</span>
+          <span class="fl-desc">IEC 60502-2 表B.12/B.13</span>
+          <span class="fl-ref" title="IEC 60502-2 表B.12/B.13">T</span>
         </div>
         <div class="formula-line" id="f-groups-row" style="display:none">
           <span class="fl-name">并联组数 N</span>
@@ -1112,8 +1278,10 @@ body.page-jbt-active .ha-calc-only{display:none}
   <div class="right-tab-content" id="rt-history">
     <div style="padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:#FAFBFC">
       <button class="btn" onclick="saveCurrentRecord()" style="padding:4px 12px;font-size:10px;font-weight:600;background:var(--accent);color:#fff;border-color:var(--accent)" id="btn-save-record">&#10010; 保存当前方案</button>
-      <div style="display:flex;gap:4px">
-        <button class="btn" onclick="exportHistoryExcel()" style="padding:3px 8px;font-size:9px">导出Excel</button>
+      <div style="display:flex;gap:6px;align-items:center">
+        <label style="font-size:10px;color:var(--text-muted);white-space:nowrap"><input type="checkbox" id="chk-all" onchange="toggleAllRecords(this)" style="vertical-align:middle"> 全选</label>
+        <button class="btn" onclick="exportSelectedExcel()" id="btn-export-selected" style="padding:3px 8px;font-size:9px">导出选中(0)</button>
+        <button class="btn" onclick="exportHistoryExcel()" style="padding:3px 8px;font-size:9px">导出全部</button>
         <button class="btn" onclick="clearHistory()" style="padding:3px 8px;font-size:9px;color:var(--fail)">清空</button>
       </div>
     </div>
@@ -1306,6 +1474,14 @@ body.page-jbt-active .ha-calc-only{display:none}
       </div>
       <div class="qf-controls">
         <div class="qf-field">
+          <label>标准</label>
+          <select id="qf-standard" class="form-control" onchange="onStandardFilterChange()">
+            <option value="all" selected>全部</option>
+            <option value="lv">低压 IEC 60364-5-52</option>
+            <option value="mv">中压 IEC 60502-2</option>
+          </select>
+        </div>
+        <div class="qf-field">
           <label>敷设方式</label>
           <select id="qf-method" class="form-control" onchange="renderQuery()">
             <option value="all">全部</option>
@@ -1352,6 +1528,8 @@ body.page-jbt-active .ha-calc-only{display:none}
       <a href="#qsec-temp" onclick="qJump(event,'qsec-temp')">② 温度修正 Ct</a>
       <a href="#qsec-group" onclick="qJump(event,'qsec-group')">③ 群敷修正 Cg</a>
       <a href="#qsec-soil" onclick="qJump(event,'qsec-soil')">④ 土壤热阻 Cs</a>
+      <a href="#qsec-spec" onclick="qJump(event,'qsec-spec')">⑤ 多芯规范补充</a>
+      <a href="#qsec-mv" onclick="qJump(event,'qsec-mv')">⑥ 中压 IEC 60502-2</a>
     </div>
 
     <!-- Data sections rendered by JS -->
@@ -1520,8 +1698,161 @@ function getGroupTableKey(m,cableType,arrangement){
   }
 }
 const SOIL_F={0.5:1.28,0.7:1.20,1.0:1.18,1.5:1.10,2.0:1.05,2.5:1.00,3.0:0.96,3.5:0.93,4.0:0.89,5.0:0.83,6.0:0.78,7.0:0.74};
+
+// ============================================================
+// 多芯电缆技术规范 · 补充载流量（IEC 60364-5-52 补充）
+// 标准表多芯(列3)载流量上限 300mm²，以下大截面数据引用自「多芯电缆技术规范」，
+// 作为 IEC 60364-5-52 的补充供选型使用。
+// 参考条件：空气 30°C / 直埋 土壤 20°C · 热阻 1.5 K·m/W（与 IEC 60502-2 一致）。
+// 直埋值并入 D2 表（基准 2.5 K·m/W）时按 SOIL_F[1.5] 归一化折算。
+// ============================================================
+const SPEC_AMPACITY={
+  name:'多芯电缆技术规范',
+  standard:'IEC 60364-5-52（补充）',
+  ins:'XLPE',
+  air:{   // 空气中 30°C → 映射 E/F（桥架/托盘/梯架）
+    Cu:{400:696},
+    Al:{400:552,430:594}
+  },
+  direct:{ // 直埋 土壤20°C · 1.5 K·m/W → 映射 D2
+    Cu:{400:541},
+    Al:{430:465}
+  }
+};
+// 补充数据对应的敷设方式：空气→EF，直埋→D2
+function specEnvFor(tableRef){
+  if(tableRef==='D2') return 'direct';
+  if(tableRef==='EF') return 'air';
+  return null;
+}
+// 取补充表（直埋值归一化到 D2 基准 2.5 K·m/W）
+function getSpecTable(env,cond){
+  const g=SPEC_AMPACITY[env];
+  if(!g) return null;
+  const t=g[cond];
+  if(!t) return null;
+  if(env==='direct'){
+    const f=SOIL_F[1.5]||1.10;
+    const out={};
+    Object.keys(t).forEach(s=>out[s]=Math.round(t[s]/f*10)/10);
+    return out;
+  }
+  return t;
+}
+// 判断某截面是否为补充（规范）数据：仅多芯三芯 XLPE，且方法为 E/F 或 D2
+function isSpecSection(tableRef,ins,cond,colKey,section){
+  if(ins!=='XLPE'||colKey!=='3') return false;
+  const env=specEnvFor(tableRef);
+  if(!env) return false;
+  const g=SPEC_AMPACITY[env];
+  return !!(g && g[cond] && g[cond][section]!==undefined);
+}
+// 载流量结果页备注：被引用截面来自多芯电缆技术规范时提示
+function updateSpecNote(section, tableRef, ins, cond, colKey){
+  const key=getAmpSource();
+  const isSpec=(key==='standard') && isSpecSection(tableRef,ins,cond,colKey,section);
+  const note=document.getElementById('spec-note');
+  if(note){
+    if(isSpec){
+      let txt='⚠️ 此数据引用自多芯电缆技术规范（IEC 60364-5-52 补充），非标准表 B.52.x 载流量数据。';
+      if(specEnvFor(tableRef)==='direct') txt+=' 直埋值已按 D2 基准(2.5 K·m/W)归一化，经土壤修正后还原至 1.5 K·m/W 基准值。';
+      note.textContent=txt;
+      note.style.display='flex';
+    }else{
+      note.style.display='none';
+    }
+  }
+  const src=document.getElementById('ps-source');
+  if(src && key==='standard'){
+    src.textContent=isSpec?'标准 IEC + 多芯电缆技术规范（补充）':'标准 IEC';
+    src.style.color=isSpec?'var(--warn)':'var(--accent)';
+  }
+}
 const SECTIONS=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300,400,500,630];
 const METHOD_NAMES={D1:'埋地管道',D2:'直埋',PT:'有孔托盘',ST:'无孔托盘',LD:'梯架',TR:'电缆沟'};
+
+// ============================================================
+// MEDIUM VOLTAGE DATA (IEC 60502-2 Annex B) — 中压选型数据
+// 参考条件: 导体90°C, 空气30°C, 土壤20°C, 埋深0.8m, 土壤热阻1.5 K·m/W
+// ============================================================
+// 载流量表 B.2/B.3/B.6/B.7 (XLPE, MVP 阶段；EPR B.4/B.5/B.8/B.9 后续)
+// 单芯 7 列: direct_trefoil/direct_flat_spaced/duct_trefoil/duct_flat_touch/air_trefoil/air_flat_touch/air_flat_spaced
+// 三芯 6 列: direct_unarm/duct_unarm/air_unarm/direct_arm/duct_arm/air_arm
+const MV_AMPACITY_TABLES={
+  single:{XLPE:{
+    Cu:{
+      direct_trefoil:{16:109,25:140,35:166,50:196,70:239,95:285,120:323,150:361,185:406,240:469,300:526,400:590},
+      direct_flat_spaced:{16:113,25:144,35:172,50:203,70:246,95:293,120:332,150:366,185:410,240:470,300:524,400:572},
+      duct_trefoil:{16:103,25:132,35:157,50:186,70:227,95:271,120:308,150:343,185:387,240:447,300:504,400:564},
+      duct_flat_touch:{16:104,25:133,35:159,50:188,70:229,95:274,120:311,150:347,185:391,240:453,300:510,400:571},
+      air_trefoil:{16:125,25:163,35:198,50:238,70:296,95:361,120:417,150:473,185:543,240:641,300:735,400:845},
+      air_flat_touch:{16:128,25:167,35:203,50:243,70:303,95:369,120:426,150:481,185:550,240:647,300:739,400:837},
+      air_flat_spaced:{16:150,25:196,35:238,50:286,70:356,95:434,120:500,150:559,185:637,240:745,300:846,400:938}
+    },
+    Al:{
+      direct_trefoil:{16:84,25:108,35:129,50:152,70:186,95:221,120:252,150:281,185:317,240:367,300:414,400:470},
+      direct_flat_spaced:{16:88,25:112,35:134,50:157,70:192,95:229,120:260,150:288,185:324,240:373,300:419,400:466},
+      duct_trefoil:{16:80,25:102,35:122,50:144,70:176,95:210,120:240,150:267,185:303,240:351,300:397,400:451},
+      duct_flat_touch:{16:81,25:103,35:123,50:146,70:178,95:213,120:242,150:271,185:307,240:356,300:402,400:457},
+      air_trefoil:{16:97,25:127,35:154,50:184,70:230,95:280,120:324,150:368,185:424,240:502,300:577,400:673},
+      air_flat_touch:{16:99,25:130,35:157,50:189,70:236,95:287,120:332,150:376,185:432,240:511,300:586,400:676},
+      air_flat_spaced:{16:116,25:153,35:185,50:222,70:278,95:338,120:391,150:440,185:504,240:593,300:677,400:769}
+    }
+  }},
+  three:{XLPE:{
+    Cu:{
+      direct_unarm:{16:101,25:129,35:153,50:181,70:221,95:262,120:298,150:334,185:377,240:434,300:489,400:553},
+      duct_unarm:{16:87,25:112,35:133,50:158,70:193,95:231,120:264,150:297,185:336,240:390,300:441,400:501},
+      air_unarm:{16:109,25:142,35:170,50:204,70:253,95:304,120:351,150:398,185:455,240:531,300:606,400:696},
+      direct_arm:{16:101,25:129,35:154,50:181,70:220,95:263,120:298,150:332,185:374,240:431,300:482,400:541},
+      duct_arm:{16:88,25:112,35:134,50:158,70:194,95:232,120:264,150:296,185:335,240:387,300:435,400:492},
+      air_arm:{16:110,25:143,35:172,50:205,70:253,95:307,120:352,150:397,185:453,240:529,300:599,400:683}
+    },
+    Al:{
+      direct_unarm:{16:78,25:100,35:119,50:140,70:171,95:203,120:232,150:260,185:294,240:340,300:384,400:438},
+      duct_unarm:{16:67,25:87,35:103,50:122,70:150,95:179,120:205,150:231,185:262,240:305,300:346,400:398},
+      air_unarm:{16:84,25:110,35:132,50:158,70:196,95:236,120:273,150:309,185:355,240:415,300:475,400:552},
+      direct_arm:{16:78,25:100,35:119,50:140,70:171,95:204,120:232,150:259,185:293,240:338,300:380,400:432},
+      duct_arm:{16:68,25:87,35:104,50:123,70:150,95:180,120:206,150:231,185:262,240:304,300:343,400:393},
+      air_arm:{16:85,25:111,35:133,50:159,70:196,95:238,120:274,150:309,185:354,240:415,300:472,400:545}
+    }
+  }}
+};
+
+// 温度修正 B.10(空气)/B.11(土壤) — 导体最高温度 90°C
+const MV_TEMP_AIR={20:1.08,25:1.04,30:1.00,35:0.96,40:0.91,45:0.87,50:0.82,55:0.76,60:0.71};
+const MV_TEMP_GND={10:1.07,15:1.04,20:1.00,25:0.96,30:0.93,35:0.89,40:0.85,45:0.80,50:0.76};
+
+// 埋深修正 B.12(直埋)/B.13(管道) — 基准 0.8m
+// 说明: 标准按「单芯≤185 / 单芯>185 / 三芯」三列，MVP 合并单芯为「≤185」列(差异约0.01~0.02)
+const MV_DEPTH_DIRECT={single:{0.5:1.04,0.6:1.02,0.8:1.00,1.0:0.98,1.25:0.96,1.5:0.95,1.75:0.94,2.0:0.93,2.5:0.91,3.0:0.90},three:{0.5:1.04,0.6:1.03,0.8:1.00,1.0:0.98,1.25:0.96,1.5:0.95,1.75:0.94,2.0:0.93,2.5:0.91,3.0:0.90}};
+const MV_DEPTH_DUCT={single:{0.5:1.04,0.6:1.02,0.8:1.00,1.0:0.98,1.25:0.96,1.5:0.95,1.75:0.94,2.0:0.93,2.5:0.91,3.0:0.90},three:{0.5:1.03,0.6:1.02,0.8:1.00,1.0:0.99,1.25:0.97,1.5:0.96,1.75:0.95,2.0:0.94,2.5:0.93,3.0:0.92}};
+
+// 土壤热阻修正 B.14(单芯直埋)/B.15(单芯管道)/B.16(三芯直埋)/B.17(三芯管道) — 基准 1.5 K·m/W
+// 结构: [截面] → {热阻值: 系数}
+const MV_SOIL_SINGLE_DIRECT={16:{0.7:1.29,0.8:1.24,0.9:1.19,1.0:1.15,1.5:1.00,2.0:0.89,2.5:0.82,3.0:0.75},25:{0.7:1.30,0.8:1.25,0.9:1.20,1.0:1.16,1.5:1.00,2.0:0.89,2.5:0.81,3.0:0.75},35:{0.7:1.30,0.8:1.25,0.9:1.21,1.0:1.16,1.5:1.00,2.0:0.89,2.5:0.81,3.0:0.75},50:{0.7:1.32,0.8:1.26,0.9:1.21,1.0:1.16,1.5:1.00,2.0:0.89,2.5:0.81,3.0:0.74},70:{0.7:1.33,0.8:1.27,0.9:1.22,1.0:1.17,1.5:1.00,2.0:0.89,2.5:0.81,3.0:0.74},95:{0.7:1.34,0.8:1.28,0.9:1.22,1.0:1.18,1.5:1.00,2.0:0.89,2.5:0.80,3.0:0.74},120:{0.7:1.34,0.8:1.28,0.9:1.22,1.0:1.18,1.5:1.00,2.0:0.88,2.5:0.80,3.0:0.74},150:{0.7:1.35,0.8:1.28,0.9:1.23,1.0:1.18,1.5:1.00,2.0:0.88,2.5:0.80,3.0:0.74},185:{0.7:1.35,0.8:1.29,0.9:1.23,1.0:1.18,1.5:1.00,2.0:0.88,2.5:0.80,3.0:0.74},240:{0.7:1.36,0.8:1.29,0.9:1.23,1.0:1.18,1.5:1.00,2.0:0.88,2.5:0.80,3.0:0.73},300:{0.7:1.36,0.8:1.30,0.9:1.24,1.0:1.19,1.5:1.00,2.0:0.88,2.5:0.80,3.0:0.73},400:{0.7:1.37,0.8:1.30,0.9:1.24,1.0:1.19,1.5:1.00,2.0:0.88,2.5:0.79,3.0:0.73}};
+const MV_SOIL_SINGLE_DUCT={16:{0.7:1.20,0.8:1.17,0.9:1.14,1.0:1.11,1.5:1.00,2.0:0.92,2.5:0.85,3.0:0.79},25:{0.7:1.21,0.8:1.17,0.9:1.14,1.0:1.12,1.5:1.00,2.0:0.91,2.5:0.85,3.0:0.79},35:{0.7:1.21,0.8:1.18,0.9:1.15,1.0:1.12,1.5:1.00,2.0:0.91,2.5:0.84,3.0:0.79},50:{0.7:1.21,0.8:1.18,0.9:1.15,1.0:1.12,1.5:1.00,2.0:0.91,2.5:0.84,3.0:0.78},70:{0.7:1.22,0.8:1.19,0.9:1.15,1.0:1.12,1.5:1.00,2.0:0.91,2.5:0.84,3.0:0.78},95:{0.7:1.23,0.8:1.19,0.9:1.16,1.0:1.13,1.5:1.00,2.0:0.91,2.5:0.84,3.0:0.78},120:{0.7:1.23,0.8:1.20,0.9:1.16,1.0:1.13,1.5:1.00,2.0:0.91,2.5:0.84,3.0:0.78},150:{0.7:1.24,0.8:1.20,0.9:1.16,1.0:1.13,1.5:1.00,2.0:0.91,2.5:0.83,3.0:0.78},185:{0.7:1.24,0.8:1.20,0.9:1.17,1.0:1.13,1.5:1.00,2.0:0.91,2.5:0.83,3.0:0.78},240:{0.7:1.25,0.8:1.21,0.9:1.17,1.0:1.14,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},300:{0.7:1.25,0.8:1.21,0.9:1.17,1.0:1.14,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},400:{0.7:1.25,0.8:1.21,0.9:1.17,1.0:1.14,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77}};
+const MV_SOIL_THREE_DIRECT={16:{0.7:1.23,0.8:1.19,0.9:1.16,1.0:1.13,1.5:1.00,2.0:0.91,2.5:0.84,3.0:0.78},25:{0.7:1.24,0.8:1.20,0.9:1.16,1.0:1.13,1.5:1.00,2.0:0.91,2.5:0.84,3.0:0.78},35:{0.7:1.25,0.8:1.21,0.9:1.17,1.0:1.13,1.5:1.00,2.0:0.91,2.5:0.83,3.0:0.78},50:{0.7:1.25,0.8:1.21,0.9:1.17,1.0:1.14,1.5:1.00,2.0:0.91,2.5:0.83,3.0:0.77},70:{0.7:1.26,0.8:1.21,0.9:1.18,1.0:1.14,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},95:{0.7:1.26,0.8:1.22,0.9:1.18,1.0:1.14,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},120:{0.7:1.26,0.8:1.22,0.9:1.18,1.0:1.14,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},150:{0.7:1.27,0.8:1.22,0.9:1.18,1.0:1.15,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},185:{0.7:1.27,0.8:1.23,0.9:1.18,1.0:1.15,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},240:{0.7:1.28,0.8:1.23,0.9:1.19,1.0:1.15,1.5:1.00,2.0:0.90,2.5:0.83,3.0:0.77},300:{0.7:1.28,0.8:1.23,0.9:1.19,1.0:1.15,1.5:1.00,2.0:0.90,2.5:0.82,3.0:0.77},400:{0.7:1.28,0.8:1.23,0.9:1.19,1.0:1.15,1.5:1.00,2.0:0.90,2.5:0.82,3.0:0.76}};
+const MV_SOIL_THREE_DUCT={16:{0.7:1.12,0.8:1.11,0.9:1.09,1.0:1.08,1.5:1.00,2.0:0.94,2.5:0.89,3.0:0.84},25:{0.7:1.14,0.8:1.12,0.9:1.10,1.0:1.08,1.5:1.00,2.0:0.94,2.5:0.89,3.0:0.84},35:{0.7:1.14,0.8:1.12,0.9:1.10,1.0:1.08,1.5:1.00,2.0:0.94,2.5:0.88,3.0:0.84},50:{0.7:1.14,0.8:1.12,0.9:1.10,1.0:1.08,1.5:1.00,2.0:0.94,2.5:0.88,3.0:0.84},70:{0.7:1.15,0.8:1.13,0.9:1.11,1.0:1.09,1.5:1.00,2.0:0.94,2.5:0.88,3.0:0.83},95:{0.7:1.15,0.8:1.13,0.9:1.11,1.0:1.09,1.5:1.00,2.0:0.94,2.5:0.88,3.0:0.83},120:{0.7:1.15,0.8:1.13,0.9:1.11,1.0:1.09,1.5:1.00,2.0:0.93,2.5:0.88,3.0:0.83},150:{0.7:1.16,0.8:1.13,0.9:1.11,1.0:1.09,1.5:1.00,2.0:0.93,2.5:0.88,3.0:0.83},185:{0.7:1.16,0.8:1.14,0.9:1.11,1.0:1.09,1.5:1.00,2.0:0.93,2.5:0.87,3.0:0.83},240:{0.7:1.16,0.8:1.14,0.9:1.12,1.0:1.10,1.5:1.00,2.0:0.93,2.5:0.87,3.0:0.82},300:{0.7:1.17,0.8:1.14,0.9:1.12,1.0:1.10,1.5:1.00,2.0:0.93,2.5:0.87,3.0:0.82},400:{0.7:1.17,0.8:1.14,0.9:1.12,1.0:1.10,1.5:1.00,2.0:0.92,2.5:0.86,3.0:0.81}};
+
+// 群敷(成组)系数 B.18~B.23 — 结构: [回路数] → {间距: 系数}
+// B.18 三芯直埋成组 / B.19 单芯直埋成组 / B.20 三芯管道成组 / B.21 单芯管道成组
+const MV_GROUP_18={2:{touching:0.80,d200:0.86,d400:0.90,d600:0.92,d800:0.94},3:{touching:0.69,d200:0.77,d400:0.82,d600:0.86,d800:0.89},4:{touching:0.62,d200:0.72,d400:0.79,d600:0.83,d800:0.87},5:{touching:0.57,d200:0.68,d400:0.76,d600:0.81,d800:0.85},6:{touching:0.54,d200:0.65,d400:0.74,d600:0.80,d800:0.84},7:{touching:0.51,d200:0.63,d400:0.72,d600:0.78,d800:0.83},8:{touching:0.49,d200:0.61,d400:0.71,d600:0.78},9:{touching:0.47,d200:0.60,d400:0.70,d600:0.77},10:{touching:0.46,d200:0.59,d400:0.69},11:{touching:0.45,d200:0.57,d400:0.69},12:{touching:0.43,d200:0.56,d400:0.68}};
+const MV_GROUP_19={2:{touching:0.73,d200:0.83,d400:0.88,d600:0.90,d800:0.92},3:{touching:0.60,d200:0.73,d400:0.79,d600:0.83,d800:0.86},4:{touching:0.54,d200:0.68,d400:0.75,d600:0.80,d800:0.84},5:{touching:0.49,d200:0.63,d400:0.72,d600:0.78,d800:0.82},6:{touching:0.46,d200:0.61,d400:0.70,d600:0.76,d800:0.81},7:{touching:0.43,d200:0.58,d400:0.68,d600:0.75,d800:0.80},8:{touching:0.41,d200:0.57,d400:0.67,d600:0.74},9:{touching:0.39,d200:0.55,d400:0.66,d600:0.73},10:{touching:0.37,d200:0.54,d400:0.65},11:{touching:0.36,d200:0.53,d400:0.64},12:{touching:0.35,d200:0.52,d400:0.64}};
+const MV_GROUP_20={2:{touching:0.85,d200:0.88,d400:0.92,d600:0.94,d800:0.95},3:{touching:0.75,d200:0.80,d400:0.85,d600:0.88,d800:0.91},4:{touching:0.69,d200:0.75,d400:0.82,d600:0.86,d800:0.89},5:{touching:0.65,d200:0.72,d400:0.79,d600:0.84,d800:0.87},6:{touching:0.62,d200:0.69,d400:0.77,d600:0.83,d800:0.87},7:{touching:0.59,d200:0.67,d400:0.76,d600:0.82,d800:0.86},8:{touching:0.57,d200:0.65,d400:0.75,d600:0.81},9:{touching:0.55,d200:0.64,d400:0.74,d600:0.80},10:{touching:0.54,d200:0.63,d400:0.73},11:{touching:0.52,d200:0.62,d400:0.73},12:{touching:0.51,d200:0.61,d400:0.72}};
+const MV_GROUP_21={2:{touching:0.78,d200:0.85,d400:0.89,d600:0.91,d800:0.93},3:{touching:0.66,d200:0.75,d400:0.81,d600:0.85,d800:0.88},4:{touching:0.59,d200:0.70,d400:0.77,d600:0.82,d800:0.86},5:{touching:0.55,d200:0.66,d400:0.74,d600:0.80,d800:0.84},6:{touching:0.51,d200:0.64,d400:0.72,d600:0.78,d800:0.83},7:{touching:0.48,d200:0.61,d400:0.71,d600:0.77,d800:0.82},8:{touching:0.46,d200:0.60,d400:0.70,d600:0.76},9:{touching:0.44,d200:0.58,d400:0.69,d600:0.76},10:{touching:0.43,d200:0.57,d400:0.68},11:{touching:0.42,d200:0.56,d400:0.67},12:{touching:0.40,d200:0.55,d400:0.67}};
+// B.22 空气中多芯成组 — 结构: [敷设][排列] → [托盘数] → {电缆数: 系数}
+const MV_GROUP_22={
+  perf:{touching:{1:{1:1.00,2:0.88,3:0.82,4:0.79,6:0.76,9:0.73},2:{1:1.00,2:0.87,3:0.80,4:0.77,6:0.73,9:0.68},3:{1:1.00,2:0.86,3:0.79,4:0.76,6:0.71,9:0.66}},spaced:{1:{1:1.00,2:1.00,3:0.98,4:0.95,6:0.91},2:{1:1.00,2:0.99,3:0.96,4:0.92,6:0.87},3:{1:1.00,2:0.98,3:0.95,4:0.91,6:0.85}}},
+  perfV:{touching:{1:{1:1.00,2:0.88,3:0.82,4:0.78,6:0.73,9:0.72},2:{1:1.00,2:0.88,3:0.81,4:0.76,6:0.71,9:0.70}},spaced:{1:{1:1.00,2:0.91,3:0.89,4:0.88,6:0.87},2:{1:1.00,2:0.91,3:0.88,4:0.87,6:0.85}}},
+  ladder:{touching:{1:{1:1.00,2:0.87,3:0.82,4:0.80,6:0.79,9:0.78},2:{1:1.00,2:0.86,3:0.80,4:0.78,6:0.76,9:0.73},3:{1:1.00,2:0.85,3:0.79,4:0.76,6:0.73,9:0.70}},spaced:{1:{1:1.00,2:1.00,3:1.00,4:1.00,6:1.00},2:{1:1.00,2:0.99,3:0.98,4:0.97,6:0.96},3:{1:1.00,2:0.98,3:0.97,4:0.96,6:0.93}}}
+};
+// B.23 空气中单芯成组 — 结构: [敷设][排列] → [托盘数] → {三相回路数: 系数}
+const MV_GROUP_23={
+  perf:{touching:{1:{1:0.98,2:0.91,3:0.87},2:{1:0.96,2:0.87,3:0.81},3:{1:0.95,2:0.85,3:0.78}},spaced:{1:{1:1.00,2:0.97,3:0.96},2:{1:0.98,2:0.93,3:0.89},3:{1:0.97,2:0.90,3:0.86}}},
+  ladder:{touching:{1:{1:1.00,2:0.98,3:0.96},2:{1:0.97,2:0.93,3:0.89},3:{1:0.96,2:0.92,3:0.86}},spaced:{1:{1:1.00,2:1.00,3:1.00},2:{1:0.97,2:0.95,3:0.93},3:{1:0.96,2:0.94,3:0.90}}},
+  perfV:{touching:{1:{1:1.00,2:0.91,3:0.89},2:{1:1.00,2:0.90,3:0.86}}}
+};
 
 // ============================================================
 // BUILT-IN VENDOR AMPACITY (内置厂家库)
@@ -1682,7 +2013,22 @@ function calcTempCorrection(T_ambient, isUnderground){
 function getBaseAmpacityTable(tableRef, ins, cond, colKey, isUnderground){
   const stdTable=(AMPACITY_TABLES[tableRef]?.[ins]?.[cond]?.[colKey])||{};
   const key=getAmpSource();
-  if(key==='standard') return Object.keys(stdTable).length?stdTable:null;
+  if(key==='standard'){
+    if(!Object.keys(stdTable).length) return null;
+    // 补充：多芯三芯 XLPE 大截面（多芯电缆技术规范）→ 并入 E/F(空气)/D2(直埋)
+    if(ins==='XLPE' && colKey==='3'){
+      const env=specEnvFor(tableRef);
+      if(env){
+        const spec=getSpecTable(env,cond);
+        if(spec){
+          const merged=Object.assign({},stdTable);
+          Object.keys(spec).forEach(s=>{merged[s]=spec[s];});
+          return merged;
+        }
+      }
+    }
+    return stdTable;
+  }
   const vendor=VENDOR_AMPACITY[key];
   if(!vendor) return null;
   // 厂家数据须与当前绝缘/导体一致（onAmpSourceChange 已锁定，此处兜底校验）
@@ -1693,6 +2039,427 @@ function getBaseAmpacityTable(tableRef, ins, cond, colKey, isUnderground){
   if(!vTable) return null;
   // 返回厂家原始标称值（参考环温=vendor.refTemp），不做归一化
   return vTable;
+}
+
+// ============================================================
+// MEDIUM VOLTAGE (IEC 60502-2) — 中压选型逻辑
+// ============================================================
+function getStandard(){
+  const el=document.getElementById('refStandard');
+  return el?el.value:'lv';
+}
+function onStandardChange(){
+  const isMV=getStandard()==='mv';
+  const sp1lv=document.getElementById('sp1-lv');
+  const sp1mv=document.getElementById('sp1-mv');
+  const sp2lv=document.getElementById('sp2-lv');
+  const sp2mv=document.getElementById('sp2-mv');
+  if(sp1lv)sp1lv.style.display=isMV?'none':'';
+  if(sp1mv)sp1mv.style.display=isMV?'':'none';
+  if(sp2lv)sp2lv.style.display=isMV?'none':'';
+  if(sp2mv)sp2mv.style.display=isMV?'':'none';
+  if(isMV){mvEnvChanged();mvCableTypeChanged();}
+  goToStep(1);
+  const hint=document.getElementById('hint-standard');
+  if(hint)hint.textContent=isMV?'中压选型 · IEC 60502-2（XLPE，3.6/6~18/30 kV）':'低压选型 · IEC 60364-5-52 / GB/T 16895.6';
+  const stdRef=document.getElementById('stdRef');
+  if(stdRef)stdRef.textContent=isMV?'IEC 60502-2:2014':'IEC 60364-5-52 / GB/T 16895.6-2014';
+  autoCalc();
+}
+function mvEnvChanged(){
+  const env=document.querySelector('input[name="mvEnv"]:checked')?document.querySelector('input[name="mvEnv"]:checked').value:'direct';
+  const burial=document.getElementById('mv-burial-params');
+  const air=document.getElementById('mv-air-params');
+  if(burial)burial.style.display=(env==='air')?'none':'';
+  if(air)air.style.display=(env==='air')?'':'none';
+  autoCalc();
+}
+function mvCableTypeChanged(){
+  const t=document.getElementById('mvCableType')?document.getElementById('mvCableType').value:'three';
+  const arr=document.getElementById('mv-arr-grp');
+  const arm=document.getElementById('mv-armour-grp');
+  if(arr)arr.style.display=(t==='single')?'':'none';
+  if(arm)arm.style.display=(t==='three')?'':'none';
+  autoCalc();
+}
+// 中压取列键：单芯(直埋三叶/直埋平面间距/管道三叶/管道平面接触/空气三叶/空气平面接触/空气平面间距)；三芯(环境×铠装)
+function mvGetColKey(env,cableType,arrangement,armoured){
+  if(cableType==='single'){
+    if(env==='direct')return arrangement==='trefoil'?'direct_trefoil':'direct_flat_spaced';
+    if(env==='duct')return arrangement==='trefoil'?'duct_trefoil':'duct_flat_touch';
+    if(arrangement==='trefoil')return 'air_trefoil';
+    if(arrangement==='flat-touch')return 'air_flat_touch';
+    return 'air_flat_spaced';
+  }
+  return env+(armoured==='arm'?'_arm':'_unarm');
+}
+function mvTempCorrection(T,isUnderground){
+  const tmax=90,refTemp=isUnderground?20:30;
+  if(T>=tmax)return 0;
+  return Math.sqrt((tmax-T)/(tmax-refTemp));
+}
+// 中压群敷系数：直埋/管道→B.18~21；空气→B.22(多芯)/B.23(单芯)
+function mvCalcGroup(){
+  const env=document.querySelector('input[name="mvEnv"]:checked')?document.querySelector('input[name="mvEnv"]:checked').value:'direct';
+  const cableType=document.getElementById('mvCableType')?document.getElementById('mvCableType').value:'three';
+  if(env==='air'){
+    const trays=parseInt(document.getElementById('mvTrays')?document.getElementById('mvTrays').value:1)||1;
+    const perLayer=parseInt(document.getElementById('mvPerLayer')?document.getElementById('mvPerLayer').value:1)||1;
+    const spacing=document.getElementById('mvAirSpacing')?document.getElementById('mvAirSpacing').value:'touching';
+    const table=cableType==='three'?MV_GROUP_22:MV_GROUP_23;
+    const method=table.perf;
+    const arrTable=method[spacing]||method.touching;
+    const trayRow=arrTable[trays]||arrTable[1];
+    if(!trayRow)return 1;
+    if(trayRow[perLayer]!==undefined)return trayRow[perLayer];
+    // 每层电缆数超出标准列(1/2/3/4/6/9)：线性插值
+    const v=interp(perLayer,trayRow);
+    return isFinite(v)?v:1;
+  }
+  const circuits=parseInt(document.getElementById('mvCircuits')?document.getElementById('mvCircuits').value:1)||1;
+  if(circuits<=1)return 1;
+  const spacing=document.getElementById('mvSpacing')?document.getElementById('mvSpacing').value:'touching';
+  const table=(env==='direct')?(cableType==='three'?MV_GROUP_18:MV_GROUP_19):(cableType==='three'?MV_GROUP_20:MV_GROUP_21);
+  let row=table[circuits];
+  if(!row){
+    // 回路数超出标准表(≤12)：取最大回路数（最保守）
+    const keys=Object.keys(table).map(Number).sort((a,b)=>a-b);
+    row=table[keys[keys.length-1]];
+  }
+  if(!row)return 1;
+  if(row[spacing]!==undefined)return row[spacing];
+  // 间距超出该回路数范围：取最保守系数（最小值）
+  const vals=Object.values(row);
+  return vals.length?Math.min(...vals):1;
+}
+// 中压土壤热阻修正：按代表截面 95mm² 查 B.14~17（截面间差异<0.02）
+function mvCalcSoil(env,cableType){
+  const soilRes=parseFloat(document.getElementById('mvSoilRes')?document.getElementById('mvSoilRes').value:1.5)||1.5;
+  if(Math.abs(soilRes-1.5)<0.01)return 1;
+  let table;
+  if(cableType==='single')table=(env==='direct')?MV_SOIL_SINGLE_DIRECT:MV_SOIL_SINGLE_DUCT;
+  else table=(env==='direct')?MV_SOIL_THREE_DIRECT:MV_SOIL_THREE_DUCT;
+  const row=table[95]||table[120];
+  return interp(soilRes,row);
+}
+// 中压埋深修正：B.12(直埋)/B.13(管道)
+function mvCalcDepth(env,cableType){
+  const depth=parseFloat(document.getElementById('mvDepth')?document.getElementById('mvDepth').value:0.8)||0.8;
+  if(Math.abs(depth-0.8)<0.01)return 1;
+  const table=(env==='direct')?MV_DEPTH_DIRECT:MV_DEPTH_DUCT;
+  const key=cableType==='single'?'single':'three';
+  return interp(depth,table[key]);
+}
+// 中压选型计算
+function mvDoCalc(){
+  const env=document.querySelector('input[name="mvEnv"]:checked')?document.querySelector('input[name="mvEnv"]:checked').value:'direct';
+  const ins=document.getElementById('mvInsulation')?document.getElementById('mvInsulation').value:'XLPE';
+  const cond=document.getElementById('mvConductor')?document.getElementById('mvConductor').value:'Cu';
+  const cableType=document.getElementById('mvCableType')?document.getElementById('mvCableType').value:'three';
+  const arrangement=document.getElementById('mvArrangement')?document.getElementById('mvArrangement').value:'trefoil';
+  const armoured=document.getElementById('mvArmoured')?document.getElementById('mvArmoured').value:'unarm';
+  const IB=parseFloat(document.getElementById('designCurrent').value);
+  const groups=Math.max(1,parseInt(document.getElementById('parallelGroups').value)||1);
+  syncMvGroupCount(groups); // 兜底联动：并联组数=并列回路数（覆盖切标准/加载记录等路径）
+  const IbEff=IB/groups;
+
+  const colKey=mvGetColKey(env,cableType,arrangement,armoured);
+  const table=MV_AMPACITY_TABLES[cableType]?.[ins]?.[cond]?.[colKey];
+  const envName={direct:'直埋',duct:'管道',air:'空气'}[env];
+  document.getElementById('ps-method').textContent='中压 '+envName+' → B.2~B.9/'+colKey;
+  const srcEl=document.getElementById('ps-source');if(srcEl){srcEl.textContent='IEC 60502-2';srcEl.style.color='var(--accent)';}
+  document.getElementById('ps-cable').textContent=ins+' / '+(cond==='Cu'?'铜':'铝')+' / '+(cableType==='three'?'三芯':'单芯');
+  document.getElementById('ps-cores').textContent=(cableType==='three'?'三芯':(arrangement==='trefoil'?'单芯三叶形':'单芯平面'));
+  document.getElementById('ps-groups').textContent=groups>1?groups+'组并联':'1组';
+  document.getElementById('ps-current').textContent=IB?(IB+' A'+(groups>1?' ('+groups+'组×'+(IB/groups).toFixed(1)+'A)':'')):'-- A';
+
+  if(!IB||IB<=0){document.getElementById('hint-baseAmp').textContent='';return;}
+  if(!table){showToast('中压 '+envName+' / '+(cond==='Cu'?'铜':'铝')+' / '+(cableType==='three'?'三芯':'单芯')+' 无载流量数据','fail');return;}
+
+  let Ct=1,Cd=1,Cs=1,Cg=1;
+  if(env==='air'){
+    const at=parseInt(document.getElementById('mvAirTemp')?document.getElementById('mvAirTemp').value:30)||30;
+    Ct=mvTempCorrection(at,false);
+    Cg=mvCalcGroup();
+  }else{
+    const st=parseInt(document.getElementById('mvSoilTemp')?document.getElementById('mvSoilTemp').value:20)||20;
+    Ct=mvTempCorrection(st,true);
+    Cd=mvCalcDepth(env,cableType);
+    Cs=mvCalcSoil(env,cableType);
+    Cg=mvCalcGroup();
+  }
+  const total=Ct*Cd*Cs*Cg;
+  const reqBase=IbEff/total;
+  document.getElementById('ps-derating').textContent=total.toFixed(3);
+  document.getElementById('hint-baseAmp').textContent='需基准载流量 ≥ '+Math.round(reqBase*10)/10+' A /回路 (综合系数'+total.toFixed(3)+(groups>1?', '+groups+'组并联':'')+')';
+  document.getElementById('hint-baseAmp').className='form-hint live-value';
+
+  const secs=Object.keys(table).map(Number).sort((a,b)=>a-b);
+  const alts=[];
+  let firstAdequate=null;
+  for(const s of secs){
+    const base=table[s];
+    const corr=base*total;
+    const loadRatio=Math.round(IbEff/corr*1000)/10;
+    const margin=(corr-IbEff)/IbEff*100;
+    let st='ng';if(loadRatio<=90)st='ok';else if(loadRatio<=100)st='mg';
+    const price=getPrice(cond,ins,s);
+    alts.push({s,base,corr:Math.round(corr*10)/10,margin:Math.round(margin*10)/10,loadRatio,st,price:price!==null?price:null,costLabel:price!==null?'¥'+price.toFixed(1)+'/m':'--'});
+    if(!firstAdequate&&corr>=IbEff)firstAdequate=alts[alts.length-1];
+  }
+  if(alts.length===0){showToast('中压无有效数据','fail');return;}
+
+  // 描述构建（适配中压）
+  let tempDesc='',groupDesc='',soilDesc='';
+  if(env==='air'){
+    tempDesc='空气'+(parseInt(document.getElementById('mvAirTemp')?document.getElementById('mvAirTemp').value:30)||30)+'°C';
+    const trays=parseInt(document.getElementById('mvTrays')?document.getElementById('mvTrays').value:1)||1;
+    const perLayer=parseInt(document.getElementById('mvPerLayer')?document.getElementById('mvPerLayer').value:1)||1;
+    const sp=document.getElementById('mvAirSpacing')?document.getElementById('mvAirSpacing').value:'touching';
+    groupDesc=trays+'层, 每层'+perLayer+'回路'+(sp==='spaced'?'(有间距)':'(触碰)');
+  }else{
+    tempDesc='土壤'+(parseInt(document.getElementById('mvSoilTemp')?document.getElementById('mvSoilTemp').value:20)||20)+'°C';
+    const circuits=parseInt(document.getElementById('mvCircuits')?document.getElementById('mvCircuits').value:1)||1;
+    const sp=document.getElementById('mvSpacing')?document.getElementById('mvSpacing').value:'touching';
+    soilDesc=(parseFloat(document.getElementById('mvSoilRes')?document.getElementById('mvSoilRes').value:1.5)||1.5).toFixed(1)+' K·m/W, 埋深'+(parseFloat(document.getElementById('mvDepth')?document.getElementById('mvDepth').value:0.8)||0.8).toFixed(2)+'m';
+    groupDesc=circuits+'回路, 间距'+(circuits<=1?'--':sp);
+  }
+
+  // 推荐逻辑
+  let recommended=null,recs=[];
+  if(firstAdequate){
+    const optMin=firstAdequate;
+    let optRec=null;
+    for(const a of alts){if(a.margin>=10&&a.margin<=35){optRec=a;break;}if(a.margin>=10&&!optRec)optRec=a;}
+    if(!optRec)optRec=optMin;
+    let optEco=null,bestValue=Infinity;
+    for(const a of alts){if(a.margin>=0&&a.price!==null&&a.price<bestValue){bestValue=a.price;optEco=a;}}
+    if(!optEco)optEco=optRec;
+    recs=[];
+    const addedSections=new Set();
+    const addRec=(a,label,styleClass,priority)=>{if(!addedSections.has(a.s)){addedSections.add(a.s);recs.push({...a,label,styleClass,priority});}};
+    addRec(optRec,'推荐选型','best',0);
+    addRec(optMin,'最小满足','min',1);
+    if(optEco.s!==optRec.s&&optEco.s!==optMin.s)addRec(optEco,'经济方案','eco',2);
+    recs.sort((a,b)=>a.s-b.s);
+    recommended=optRec;
+  }else{
+    recommended=alts[alts.length-1];
+    recs=[{...recommended,label:'截面不足','styleClass':'ng',priority:0}];
+  }
+
+  // shown 集合（推荐附近±4 + 不前不足对照）
+  const showSet=new Set();
+  for(const r of recs)showSet.add(r.s);
+  const recIdx=alts.findIndex(a=>a.s===recommended.s);
+  for(let i=Math.max(0,recIdx-4);i<=Math.min(alts.length-1,recIdx+4);i++)showSet.add(alts[i].s);
+  const firstBelow=alts.findIndex(a=>a.margin>=0);
+  if(firstBelow>0)showSet.add(alts[firstBelow-1].s);
+  const shown=alts.filter(a=>showSet.has(a.s));
+  shown.sort((a,b)=>a.s-b.s);
+
+  // 并联组数推荐
+  const maxAdequate=alts.filter(a=>a.st!=='ng');
+  let maxCorrected=maxAdequate.length>0?maxAdequate[maxAdequate.length-1].corr:0;
+  let recommendedGroups=1;
+  if(IB>0&&alts.length>0){
+    const effectiveMax=maxCorrected>0?maxCorrected:alts[alts.length-1].corr;
+    if(effectiveMax>0){
+      recommendedGroups=Math.ceil(IB/(effectiveMax*0.95));
+      if(recommendedGroups<1)recommendedGroups=1;
+      if(maxCorrected===0)maxCorrected=effectiveMax;
+    }
+  }
+  const groupRecEl=document.getElementById('hint-groups');
+  if(groupRecEl){
+    if(recommendedGroups>1||groups>1){
+      const currentGroups=parseInt(document.getElementById('parallelGroups').value)||1;
+      const perCableStr=currentGroups>1?' | 每组: <strong>'+(IB/currentGroups).toFixed(1)+' A</strong>':'';
+      groupRecEl.innerHTML=(recommendedGroups>1
+        ?'<span class="rec-badge">推荐 '+recommendedGroups+' 组</span> (最大单根载流量 '+Math.round(maxCorrected)+' A)'
+        :'')+perCableStr;
+      groupRecEl.style.display='block';
+      const btnApply=document.getElementById('btn-applyGroups');if(btnApply)btnApply.style.display=recommendedGroups>1?'inline-block':'none';
+    }else{
+      groupRecEl.style.display='none';
+      const btnApply=document.getElementById('btn-applyGroups');if(btnApply)btnApply.style.display='none';
+    }
+  }
+
+  // ===== RENDER =====
+  const rec=recommended;
+  const recCorr=rec.corr,recBase=rec.base;
+  const multiSections=recs.map(r=>r.s+'mm²').join(' | ');
+  document.getElementById('sc-section').innerHTML='<div class="sc-label">推荐截面</div><div class="sc-value" style="font-size:20px">'+multiSections+'<span class="sc-unit"></span></div>';
+  document.getElementById('sc-section').className='summary-card highlight';
+  document.getElementById('ps-iz').textContent=Math.round(recCorr*groups*10)/10+' A'+(groups>1?' ('+Math.round(recCorr*10)/10+'×'+groups+')':'');
+  const mClass=rec.loadRatio<=90?'pass':rec.loadRatio<=100?'warn':'fail';
+  document.getElementById('sc-margin').innerHTML='<div class="sc-label">载荷率</div><div class="sc-value">'+rec.loadRatio+'<span class="sc-unit"> %</span></div>';
+  document.getElementById('sc-margin').className='summary-card '+mClass;
+
+  // 公式详情
+  document.getElementById('f-i0').textContent=recBase;
+  document.getElementById('f-kt').textContent=Ct.toFixed(2);
+  const fktDesc=document.getElementById('f-kt-desc');if(fktDesc)fktDesc.textContent=tempDesc;
+  const fkg=document.getElementById('f-kg');if(fkg)fkg.textContent=Cg.toFixed(2);
+  const fkgDesc=document.getElementById('f-kg-desc');if(fkgDesc)fkgDesc.textContent=groupDesc;
+  if(env!=='air'){
+    const fksRow=document.getElementById('f-ks-row');if(fksRow)fksRow.style.display='';
+    const fks=document.getElementById('f-ks');if(fks)fks.textContent=Cs.toFixed(2);
+    const fksDesc=document.getElementById('f-ks-desc');if(fksDesc)fksDesc.textContent=soilDesc;
+  }else{
+    const fksRow=document.getElementById('f-ks-row');if(fksRow)fksRow.style.display='none';
+  }
+  // 埋深 Cd（中压新增；行存在时才更新）
+  const fCdRow=document.getElementById('f-cd-row');
+  if(fCdRow){
+    if(env!=='air'){
+      fCdRow.style.display='';
+      const fcds=fCdRow.querySelector('.fl-value');if(fcds)fcds.textContent=Cd.toFixed(2);
+    }else fCdRow.style.display='none';
+  }
+  if(groups>1){
+    const fgr=document.getElementById('f-groups-row');if(fgr)fgr.style.display='';
+    const fg=document.getElementById('f-groups');if(fg)fg.textContent=groups;
+    const fgDesc=document.getElementById('f-groups-desc');if(fgDesc)fgDesc.textContent=IbEff.toFixed(1)+' A /回路';
+  }else{
+    const fgr=document.getElementById('f-groups-row');if(fgr)fgr.style.display='none';
+  }
+  // 公式：中压 Iz0 × Ct × Cd × Cs × Cg × N；空气无 Cd/Cs
+  const IzTotal=recCorr*groups;
+  let formulaParts=[recBase, Cg.toFixed(2)];
+  if(env!=='air')formulaParts.splice(1,0,Ct.toFixed(2),Cd.toFixed(2),Cs.toFixed(2));
+  else formulaParts.splice(1,0,Ct.toFixed(2));
+  if(groups>1)formulaParts.push(groups);
+  const fiz=document.getElementById('f-iz-formula');if(fiz)fiz.textContent=formulaParts.join(' × ')+' = '+Math.round(IzTotal*10)/10+' A';
+  const fib=document.getElementById('f-ib');if(fib)fib.textContent=IB+(groups>1?' (÷'+groups+'组 = '+IbEff.toFixed(1)+'A/回路)':'');
+  const freq=document.getElementById('f-req');if(freq)freq.textContent=Math.round(reqBase*10)/10;
+
+  // Alert（载荷率超100% 提示 + 推荐并联）
+  const alertEl=document.getElementById('amp-alert');
+  if(alertEl){
+    if(rec.loadRatio>100){
+      const grpHint=recommendedGroups>1?' 或采用 '+recommendedGroups+' 组并联（单根 '+Math.round(maxCorrected)+'A × '+recommendedGroups+'）':'';
+      alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>载流量不满足</strong>：最大可用截面 '+rec.s+'mm² 修正后载流量 '+Math.round(recCorr)+'A < 设计电流 '+IB+'A（载荷率 '+rec.loadRatio+'% 超 100%）。建议增大截面至超出表中范围'+grpHint+'。</span></div>';
+    }else if(rec.loadRatio>90){
+      alertEl.innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span><strong>载荷率偏高</strong>：推荐截面 '+rec.s+'mm² 载荷率 '+rec.loadRatio+'%，接近满载。建议考虑上一级截面。</span></div>';
+    }else{
+      alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>满足要求</strong>：推荐 '+rec.s+'mm²，修正后载流量 '+Math.round(recCorr)+'A，载荷率 '+rec.loadRatio+'%。</span></div>';
+    }
+  }
+
+  // 方案对比表
+  let html='';
+  for(let idx=0;idx<shown.length;idx++){
+    const a=shown[idx];
+    const isBest=recs.some(r=>r.s===a.s&&r.styleClass==='best');
+    const isMin=recs.some(r=>r.s===a.s&&r.styleClass==='min');
+    const isEco=recs.some(r=>r.s===a.s&&r.styleClass==='eco');
+    const isNg=recs.some(r=>r.s===a.s&&r.styleClass==='ng');
+    let label='';
+    if(isBest)label='<span class="badge-rec badge-best">★ 推荐</span>';
+    else if(isMin)label='<span class="badge-rec badge-min">最小</span>';
+    else if(isEco)label='<span class="badge-rec badge-eco">经济</span>';
+    else if(isNg)label='<span class="badge-rec badge-ng">不足</span>';
+    const isSelected=(a.s===rec.s);
+    const rowClass=(isSelected?'selected':'')+(isBest||isMin||isEco||isNg?' recommended':'');
+    const ratioDisplay=a.loadRatio>999?'>999%':a.loadRatio+'%';
+    html+='<tr class="'+rowClass+'" data-section="'+a.s+'" onclick="mvSelectSection('+a.s+')"><td>'+label+'</td><td>'+a.s+' mm²</td><td>'+a.corr+' A</td><td style="color:'+(a.loadRatio<=90?'var(--pass)':a.loadRatio<=100?'var(--warn)':'var(--fail)')+'">'+ratioDisplay+'</td><td><span class="status-pip '+a.st+'"></span></td></tr>';
+  }
+  const compBody=document.getElementById('comp-body');if(compBody)compBody.innerHTML=html;
+
+  // 电缆规格卡（中压暂无完整规格数据，隐藏；后续接入）
+  const ci=document.getElementById('cable-info');if(ci)ci.style.display='none';
+
+  // 保存上下文供方案对比表行点击切换
+  mvLastCalcCtx={alts,shown,recs,recommended,Ct,Cd,Cs,Cg,total,IB,IbEff,groups,tempDesc,groupDesc,soilDesc,isUnderground:env!=='air',cond,ins,cableType,env,arrangement,armoured};
+}
+
+// 中压方案对比表行点击切换 — 复用 selectSection 渲染逻辑但适配中压公式与上下文
+function mvSelectSection(section){
+  if(!mvLastCalcCtx)return;
+  const {alts,recs,recommended,Ct,Cd,Cs,Cg,IB,IbEff,groups,tempDesc,groupDesc,soilDesc,isUnderground,cond,ins}=mvLastCalcCtx;
+  const a=alts.find(x=>x.s===section);
+  if(!a)return;
+
+  // 高亮选中行
+  document.querySelectorAll('#comp-body tr').forEach(tr=>{
+    tr.classList.remove('selected');
+    if(parseInt(tr.dataset.section)===section)tr.classList.add('selected');
+  });
+
+  // 摘要卡：截面 + 载荷率 + 实际载流量
+  const isRec=(section===recommended.s);
+  document.getElementById('sc-section').innerHTML='<div class="sc-label">'+(isRec?'推荐截面':'查看截面')+'</div><div class="sc-value">'+section+'<span class="sc-unit"> mm²</span></div>';
+  document.getElementById('sc-section').className=isRec?'summary-card highlight':'summary-card';
+  const mClass=a.loadRatio<=90?'pass':a.loadRatio<=100?'warn':'fail';
+  document.getElementById('sc-margin').innerHTML='<div class="sc-label">载荷率</div><div class="sc-value">'+a.loadRatio+'<span class="sc-unit"> %</span></div>';
+  document.getElementById('sc-margin').className='summary-card '+mClass;
+  document.getElementById('ps-iz').textContent=Math.round(a.corr*groups*10)/10+' A'+(groups>1?' ('+Math.round(a.corr*10)/10+'×'+groups+')':'');
+
+  // 公式详情
+  document.getElementById('f-i0').textContent=a.base;
+  document.getElementById('f-kt').textContent=Ct.toFixed(2);
+  const fktDesc=document.getElementById('f-kt-desc');if(fktDesc)fktDesc.textContent=tempDesc;
+  const fkg=document.getElementById('f-kg');if(fkg)fkg.textContent=Cg.toFixed(2);
+  const fkgDesc=document.getElementById('f-kg-desc');if(fkgDesc)fkgDesc.textContent=groupDesc;
+  if(isUnderground){
+    const fksRow=document.getElementById('f-ks-row');if(fksRow)fksRow.style.display='';
+    const fks=document.getElementById('f-ks');if(fks)fks.textContent=Cs.toFixed(2);
+    const fksDesc=document.getElementById('f-ks-desc');if(fksDesc)fksDesc.textContent=soilDesc;
+    const fcdRow=document.getElementById('f-cd-row');if(fcdRow){
+      fcdRow.style.display='';
+      const fcds=fcdRow.querySelector('.fl-value');if(fcds)fcds.textContent=Cd.toFixed(2);
+    }
+  }else{
+    const fksRow=document.getElementById('f-ks-row');if(fksRow)fksRow.style.display='none';
+    const fcdRow=document.getElementById('f-cd-row');if(fcdRow)fcdRow.style.display='none';
+  }
+  if(groups>1){
+    const fgr=document.getElementById('f-groups-row');if(fgr)fgr.style.display='';
+    const fg=document.getElementById('f-groups');if(fg)fg.textContent=groups;
+    const fgDesc=document.getElementById('f-groups-desc');if(fgDesc)fgDesc.textContent=IbEff.toFixed(1)+' A /回路';
+  }else{
+    const fgr=document.getElementById('f-groups-row');if(fgr)fgr.style.display='none';
+  }
+  // 中压公式：I₀ × Ct × Cd × Cs × Cg × N（空气无 Cd/Cs）
+  const IzTotal=a.corr*groups;
+  let fp=[a.base, Cg.toFixed(2)];
+  if(isUnderground)fp.splice(1,0,Ct.toFixed(2),Cd.toFixed(2),Cs.toFixed(2));
+  else fp.splice(1,0,Ct.toFixed(2));
+  if(groups>1)fp.push(groups);
+  document.getElementById('f-iz-formula').textContent=fp.join(' × ')+' = '+Math.round(IzTotal*10)/10+' A';
+
+  // Alert
+  const alertEl=document.getElementById('amp-alert');
+  if(alertEl){
+    if(a.loadRatio>100){
+      alertEl.innerHTML='<div class="alert-card alert-fail"><span class="alert-icon">&#10007;</span><span><strong>'+section+'mm² 不满足</strong>：修正后载流量 '+a.corr+'A < 设计电流 '+IB+'A，载荷率 '+a.loadRatio+'%。需选择更大截面。</span></div>';
+    }else if(a.loadRatio>90){
+      alertEl.innerHTML='<div class="alert-card alert-warn"><span class="alert-icon">&#9888;</span><span><strong>'+section+'mm² 载荷率偏高</strong>：修正后 '+a.corr+'A，载荷率 '+a.loadRatio+'%。'+(isRec?'':'推荐选用 '+recommended.s+'mm²。')+'</span></div>';
+    }else{
+      alertEl.innerHTML='<div class="alert-card alert-pass"><span class="alert-icon">&#10003;</span><span><strong>'+section+'mm² 满足要求</strong>：修正后 '+a.corr+'A，载荷率 '+a.loadRatio+'%。'+(isRec?' (推荐选型)':'')+'</span></div>';
+    }
+  }
+
+  // 电缆规格卡（中压暂无，隐藏）
+  const ci=document.getElementById('cable-info');if(ci)ci.style.display='none';
+
+  // 并联组数跟随选中截面更新
+  const groupsHint=document.getElementById('hint-groups');
+  if(groupsHint){
+    const aCorr=a.corr;
+    if(aCorr>0&&IB>0){
+      const recGroups=Math.max(1,Math.ceil(IB/(aCorr*0.95)));
+      const perCableStr=groups>1?' | 每组: <strong>'+(IB/groups).toFixed(1)+' A</strong>':'';
+      groupsHint.innerHTML=(recGroups>1
+        ?'<span class="rec-badge">推荐 '+recGroups+' 组</span> (该截面修正后 '+Math.round(aCorr)+' A/回路)'
+        :'')+perCableStr;
+      groupsHint.style.display=(recGroups>1||groups>1)?'block':'none';
+      groupsHint.className='form-hint recommend';
+      document.getElementById('btn-applyGroups').style.display=recGroups>1?'inline-block':'none';
+    }
+  }
 }
 
 // ============================================================
@@ -1712,11 +2479,29 @@ function switchPage(page){
 }
 function qJump(e,id){ e.preventDefault(); const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
 function resetQueryFilter(){
+  document.getElementById('qf-standard').value='all';
   document.getElementById('qf-method').value='all';
   document.getElementById('qf-ins').value='all';
   document.getElementById('qf-cond').value='all';
   document.getElementById('qf-source').value='all';
   document.getElementById('qf-keyword').value='';
+  onStandardFilterChange();
+}
+// 标准筛选联动：切换标准时调整其余筛选条件选项
+function onStandardFilterChange(){
+  const std=document.getElementById('qf-standard').value;
+  const methodSel=document.getElementById('qf-method');
+  const insSel=document.getElementById('qf-ins');
+  const sourceField=document.getElementById('qf-source').closest('.qf-field');
+  if(std==='mv'){
+    methodSel.innerHTML='<option value="all">全部</option><option value="direct">直埋</option><option value="duct">管道</option><option value="air">空气</option>';
+    insSel.innerHTML='<option value="all">全部</option><option value="XLPE">XLPE (90°C)</option>';
+    if(sourceField)sourceField.style.display='none';
+  }else{
+    methodSel.innerHTML='<option value="all">全部</option><option value="D1">D1 埋地管道</option><option value="D2">D2 直埋</option><option value="EF">E/F 桥架·托盘·梯架</option><option value="G">G 槽盒</option>';
+    insSel.innerHTML='<option value="all">全部</option><option value="XLPE">XLPE (90°C)</option>';
+    if(sourceField)sourceField.style.display='';
+  }
   renderQuery();
 }
 
@@ -2005,8 +2790,145 @@ function renderSoilBlock(){
     <div class="qtable-note">参考热阻 2.5 K·m/W (Cs=1.00)。仅适用于 D1/D2 埋地敷设方式。</div></div>`;
 }
 
+// 渲染中压 IEC 60502-2 附录B 数据（独立区域）
+function renderMvBlocks(fEnv, fCond){
+  const showEnv=e=>!fEnv||fEnv==='all'||fEnv===e;
+  const showCond=c=>!fCond||fCond==='all'||fCond===c;
+  const COL_SINGLE={
+    direct_trefoil:'直埋·三叶形',direct_flat_spaced:'直埋·平面间距',
+    duct_trefoil:'管道·三叶形',duct_flat_touch:'管道·平面接触',
+    air_trefoil:'空气·三叶形',air_flat_touch:'空气·平面接触',air_flat_spaced:'空气·平面间距'
+  };
+  const COL_THREE={
+    direct_unarm:'直埋·非铠装',duct_unarm:'管道·非铠装',air_unarm:'空气·非铠装',
+    direct_arm:'直埋·铠装',duct_arm:'管道·铠装',air_arm:'空气·铠装'
+  };
+  const SECS_MV=[16,25,35,50,70,95,120,150,185,240,300,400];
+
+  function ampTable(cableType,cond,title,src){
+    const cols=cableType==='single'?COL_SINGLE:COL_THREE;
+    let colKeys=Object.keys(cols);
+    if(fEnv&&fEnv!=='all')colKeys=colKeys.filter(k=>k.startsWith(fEnv));
+    const data=MV_AMPACITY_TABLES[cableType].XLPE[cond];
+    let head='<th>截面 mm²</th>'+colKeys.map(k=>`<th>${cols[k]}</th>`).join('');
+    let rows='';
+    SECS_MV.forEach(s=>{
+      let tds=`<td class="rowhead">${s}</td>`;
+      colKeys.forEach(k=>{const v=data[k]?.[s];tds+=`<td>${v!==undefined?v:'—'}</td>`;});
+      rows+=`<tr>${tds}</tr>`;
+    });
+    return `<div class="qtable-block"><div class="qtable-caption"><span class="qtc-name">${title}</span><span class="qtc-src">${src}</span></div><div class="qtable-scroll"><table class="qtable"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div><div class="qtable-note">参考条件：导体90°C、空气30°C、土壤20°C、埋深0.8m、土壤热阻1.5 K·m/W。</div></div>`;
+  }
+  function tempTable(obj,title,src,note){
+    const temps=Object.keys(obj).map(Number).sort((a,b)=>a-b);
+    let head='<th>温度 °C</th>'+temps.map(t=>`<th>${t}</th>`).join('');
+    let vals=temps.map(t=>`<td>${obj[t].toFixed(2)}</td>`).join('');
+    return `<div class="qtable-block"><div class="qtable-caption"><span class="qtc-name">${title}</span><span class="qtc-src">${src}</span></div><div class="qtable-scroll"><table class="qtable"><thead><tr>${head}</tr></thead><tbody><tr><td class="rowhead">Ct</td>${vals}</tr></tbody></table></div><div class="qtable-note">${note}</div></div>`;
+  }
+  function depthTable(obj,title,src){
+    const depths=Object.keys(obj.single).map(Number).sort((a,b)=>a-b);
+    let head='<th>埋深 m</th>'+depths.map(d=>`<th>${d}</th>`).join('');
+    let rows='';
+    [['single','单芯'],['three','三芯']].forEach(([k,label])=>{
+      let tds=`<td class="rowhead">${label}</td>`;
+      depths.forEach(d=>{tds+=`<td>${obj[k][d].toFixed(2)}</td>`;});
+      rows+=`<tr>${tds}</tr>`;
+    });
+    return `<div class="qtable-block"><div class="qtable-caption"><span class="qtc-name">${title}</span><span class="qtc-src">${src}</span></div><div class="qtable-scroll"><table class="qtable"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div><div class="qtable-note">基准埋深 0.8 m。</div></div>`;
+  }
+  function soilTable(obj,title,src){
+    const rhos=Object.keys(obj[95]).map(Number).sort((a,b)=>a-b);
+    let head='<th>截面\\热阻</th>'+rhos.map(r=>`<th>${r}</th>`).join('');
+    let rows='';
+    SECS_MV.forEach(s=>{
+      let tds=`<td class="rowhead">${s}</td>`;
+      rhos.forEach(r=>{const v=obj[s][r];tds+=`<td>${v!==undefined?v.toFixed(2):'—'}</td>`;});
+      rows+=`<tr>${tds}</tr>`;
+    });
+    return `<div class="qtable-block"><div class="qtable-caption"><span class="qtc-name">${title}</span><span class="qtc-src">${src}</span></div><div class="qtable-scroll"><table class="qtable"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div><div class="qtable-note">基准土壤热阻 1.5 K·m/W (Cs=1.00)。</div></div>`;
+  }
+  function groupTable(obj,title,src,note){
+    const spOrder=['touching','d200','d400','d600','d800'];
+    const SP={touching:'触碰',d200:'200mm',d400:'400mm',d600:'600mm',d800:'800mm'};
+    let head='<th>回路数\\间距</th>'+spOrder.map(k=>`<th>${SP[k]}</th>`).join('');
+    let rows='';
+    Object.keys(obj).map(Number).sort((a,b)=>a-b).forEach(n=>{
+      let tds=`<td class="rowhead">${n}</td>`;
+      spOrder.forEach(k=>{const v=obj[n][k];tds+=`<td>${v!==undefined?v.toFixed(2):'—'}</td>`;});
+      rows+=`<tr>${tds}</tr>`;
+    });
+    return `<div class="qtable-block"><div class="qtable-caption"><span class="qtc-name">${title}</span><span class="qtc-src">${src}</span></div><div class="qtable-scroll"><table class="qtable"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div><div class="qtable-note">${note}</div></div>`;
+  }
+
+  let html='';
+  // ① 中压基础载流量（按导体过滤）
+  if(showCond('Cu')){
+    html+=ampTable('single','Cu','B.2 单芯 XLPE · 铜导体载流量','IEC 60502-2 表 B.2');
+    html+=ampTable('three','Cu','B.6 三芯 XLPE · 铜导体载流量','IEC 60502-2 表 B.6');
+  }
+  if(showCond('Al')){
+    html+=ampTable('single','Al','B.3 单芯 XLPE · 铝导体载流量','IEC 60502-2 表 B.3');
+    html+=ampTable('three','Al','B.7 三芯 XLPE · 铝导体载流量','IEC 60502-2 表 B.7');
+  }
+  // ② 温度修正（按环境）
+  if(showEnv('air'))html+=tempTable(MV_TEMP_AIR,'B.10 空气温度修正系数','IEC 60502-2 表 B.10','基准空气温度 30°C。');
+  if(showEnv('direct')||showEnv('duct'))html+=tempTable(MV_TEMP_GND,'B.11 土壤温度修正系数','IEC 60502-2 表 B.11','基准土壤温度 20°C。');
+  // ③ 埋深修正
+  if(showEnv('direct'))html+=depthTable(MV_DEPTH_DIRECT,'B.12 直埋埋深修正系数','IEC 60502-2 表 B.12');
+  if(showEnv('duct'))html+=depthTable(MV_DEPTH_DUCT,'B.13 管道埋深修正系数','IEC 60502-2 表 B.13');
+  // ④ 土壤热阻修正
+  if(showEnv('direct')){
+    html+=soilTable(MV_SOIL_SINGLE_DIRECT,'B.14 单芯直埋土壤热阻修正','IEC 60502-2 表 B.14');
+    html+=soilTable(MV_SOIL_THREE_DIRECT,'B.16 三芯直埋土壤热阻修正','IEC 60502-2 表 B.16');
+  }
+  if(showEnv('duct')){
+    html+=soilTable(MV_SOIL_SINGLE_DUCT,'B.15 单芯管道土壤热阻修正','IEC 60502-2 表 B.15');
+    html+=soilTable(MV_SOIL_THREE_DUCT,'B.17 三芯管道土壤热阻修正','IEC 60502-2 表 B.17');
+  }
+  // ⑤ 群敷(成组)修正
+  if(showEnv('direct')){
+    html+=groupTable(MV_GROUP_18,'B.18 三芯直埋成组修正系数','IEC 60502-2 表 B.18','三芯电缆水平排列直埋，按回路数与间距查取。');
+    html+=groupTable(MV_GROUP_19,'B.19 单芯直埋成组修正系数','IEC 60502-2 表 B.19','单芯电缆三相回路直埋，按回路数与间距查取。');
+  }
+  if(showEnv('duct')){
+    html+=groupTable(MV_GROUP_20,'B.20 三芯管道成组修正系数','IEC 60502-2 表 B.20','三芯电缆单孔管道水平排列，按回路数与间距查取。');
+    html+=groupTable(MV_GROUP_21,'B.21 单芯管道成组修正系数','IEC 60502-2 表 B.21','单芯电缆三相回路单孔管道，按回路数与间距查取。');
+  }
+
+  return html;
+}
+
+// 渲染：多芯电缆技术规范 · 补充载流量
+function renderSpecBlocks(fCond){
+  const showCond=c=>!fCond||fCond==='all'||fCond===c;
+  const conds=['Cu','Al'].filter(showCond);
+  function specTable(env,title,ref){
+    const g=SPEC_AMPACITY[env];
+    const secSet=new Set();
+    conds.forEach(c=>Object.keys(g[c]).forEach(s=>secSet.add(Number(s))));
+    const secs=[...secSet].sort((a,b)=>a-b);
+    let head='<th>截面<br>mm²</th>'+conds.map(c=>`<th>${c==='Cu'?'铜 Cu':'铝 Al'} (A)</th>`).join('');
+    let rows='';
+    secs.forEach(s=>{
+      let tds=`<td class="rowhead">${s}</td>`;
+      conds.forEach(c=>{const v=g[c][s];tds+=`<td>${v!==undefined?v:'—'}</td>`;});
+      rows+=`<tr>${tds}</tr>`;
+    });
+    return `<div class="qtable-block">
+      <div class="qtable-caption"><span class="qtc-name">${title}<span class="qsrc-badge vd">规范补充</span></span><span class="qtc-src">多芯电缆技术规范</span></div>
+      <div class="qtable-scroll"><table class="qtable"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="qtable-note">单位: 安培(A)。${ref}。此数据引用自多芯电缆技术规范，作为 IEC 60364-5-52 标准表未覆盖大截面(多芯·三根载流导体)的补充，选型时自动并入对应敷设方式。</div>
+    </div>`;
+  }
+  let html='';
+  html+=specTable('air','多芯电缆 · 空气中敷设载流量','参考条件: 空气 30°C · 三根载流导体');
+  html+=specTable('direct','多芯电缆 · 直埋敷设载流量','参考条件: 土壤 20°C · 热阻 1.5 K·m/W · 三根载流导体');
+  return html;
+}
+
 // 主渲染
 function renderQuery(){
+  const fStandard=document.getElementById('qf-standard').value;
   const fMethod=document.getElementById('qf-method').value;
   const fIns=document.getElementById('qf-ins').value;
   const fCond=document.getElementById('qf-cond').value;
@@ -2014,7 +2936,9 @@ function renderQuery(){
   const kw=document.getElementById('qf-keyword').value;
   const host=document.getElementById('query-content');
   if(!host) return;
-  host.innerHTML =
+  let html='';
+  if(fStandard==='all'||fStandard==='lv'){
+    html +=
     `<div class="qsec" id="qsec-amp"><div class="qsec-head"><h2>① 基础载流量</h2><span class="qsec-src">IEC 60364-5-52 表 B.52.2~B.52.13 / GB/T 16895.6-2014</span></div>
        <div class="qsec-desc">标准参考条件下各敷设方式的额定持续载流量。可用上方筛选器按敷设方式/绝缘/导体缩小范围，或输入截面高亮定位。下图为各敷设方式的排布示意（示意图，最终以标准原图为准）。</div>
        ${renderMethodFigures(fMethod)}
@@ -2027,7 +2951,18 @@ function renderQuery(){
        ${renderGroupBlocks()}</div>`
     + `<div class="qsec" id="qsec-soil"><div class="qsec-head"><h2>④ 土壤热阻修正系数 Cs</h2><span class="qsec-src">IEC 60364-5-52 表 B.52.16</span></div>
        <div class="qsec-desc">埋地敷设时土壤热阻偏离参考值(2.5 K·m/W)的修正。仅 D1/D2 适用。</div>
-       ${renderSoilBlock()}</div>`;
+       ${renderSoilBlock()}</div>`
+    + `<div class="qsec" id="qsec-spec" style="border-left:3px solid #EF9F27"><div class="qsec-head"><h2>⑤ 多芯电缆技术规范 · 补充载流量</h2><span class="qsec-src">IEC 60364-5-52（补充）</span></div>
+       <div class="qsec-desc">标准表 B.52.x 多芯(列3)载流量上限 300mm²，以下 400/430mm² 大截面多芯电缆数据引用自多芯电缆技术规范，作为标准补充。选型计算时自动并入 E/F（空气）与 D2（直埋）敷设方式。</div>
+       ${renderSpecBlocks(fCond)}</div>`;
+  }
+  if(fStandard==='all'||fStandard==='mv'){
+    html += `<div class="qsec" id="qsec-mv" style="border-left:3px solid #BA7517">
+       <div class="qsec-head"><h2>⑥ 中压 · IEC 60502-2 附录 B</h2><span class="qsec-src">IEC 60502-2:2014 · 3.6/6 kV ~ 18/30 kV · XLPE</span></div>
+       <div class="qsec-desc">中压电缆载流量与修正系数（区别于上方低压 GB/T 16895.6）。参考条件：导体 90°C、空气 30°C、土壤 20°C、埋深 0.8 m、土壤热阻 1.5 K·m/W。EPR 绝缘（B.4/B.5/B.8/B.9）与空气群敷（B.22/B.23）后续补充。</div>
+       ${renderMvBlocks(fMethod, fCond)}</div>`;
+  }
+  host.innerHTML=html;
 }
 
 // ============================================================
@@ -2377,9 +3312,45 @@ function applyStep2Render(){
   }
 }
 
+// 中压：并联组数 → 并列回路数联动（与低压 ugCircuitCount 联动同构）
+// 并联组数即并列回路数（成束敷设互热，群敷系数须按 N 取）
+function syncMvGroupCount(groups){
+  groups=Math.max(parseInt(groups)||1,1);
+  const env=document.querySelector('input[name="mvEnv"]:checked');
+  const envVal=env?env.value:'direct';
+  if(envVal==='air'){
+    const pl=document.getElementById('mvPerLayer');
+    if(pl){
+      const v=Math.min(groups,9);
+      if(!pl.querySelector('option[value="'+v+'"]')){
+        const opt=document.createElement('option');
+        opt.value=v;opt.textContent=v+' (插值)';
+        pl.appendChild(opt);
+      }
+      pl.value=v;
+    }
+  }else{
+    const mc=document.getElementById('mvCircuits');
+    if(mc){
+      if(groups>12){
+        const exists=mc.querySelector('option[value="'+groups+'"]');
+        if(!exists){
+          const opt=document.createElement('option');
+          opt.value=groups;opt.textContent=groups+' 回路 (超出标准)';
+          mc.appendChild(opt);
+        }
+      }
+      mc.value=groups;
+    }
+  }
+}
 // Step3 change → sync Step2 immediately (underground only), no recalc here
 function syncStep3ToStep2(){
   const groups=parseInt(document.getElementById('parallelGroups').value)||1;
+  if(getStandard()==='mv'){
+    syncMvGroupCount(groups); // 中压：并联组数联动并列回路数，Cg 由 mvDoCalc 重算
+    return;
+  }
   setStep2GroupCount(groups);
   // Immediately update Cg display value without triggering full recalc loop
   recalcGroupDisplay();
@@ -2502,8 +3473,10 @@ function calculateAll(){doCalc();}
 
 // Store latest calculation context for row switching
 let lastCalcCtx=null;
+let mvLastCalcCtx=null;
 
 function doCalc(){
+  if(getStandard()==='mv'){ mvDoCalc(); return; }
   const m=document.querySelector('input[name="installMethod"]:checked').value;
   const ins=document.getElementById('insulation').value;
   const cond=document.getElementById('conductor').value;
@@ -2894,6 +3867,9 @@ function doCalc(){
   }else{
     document.getElementById('cable-info').style.display='none';
   }
+
+  // 补充数据备注：被引用截面来自多芯电缆技术规范时提示
+  updateSpecNote(rec.s, tableRef, ins, cond, colKey);
 }
 
 // ============================================================
@@ -3066,7 +4042,7 @@ function renderPriceEditor(alts){
 // ============================================================
 function selectSection(section){
   if(!lastCalcCtx)return;
-  const{alts,shown,recs,recommended,Ct,Cg,Cs,total,IB,IbEff,groups,tempDesc,groupDesc,soilDesc,isUnderground,cond,ins,cores}=lastCalcCtx;
+  const{alts,shown,recs,recommended,Ct,Cg,Cs,total,IB,IbEff,groups,tempDesc,groupDesc,soilDesc,isUnderground,cond,ins,cores,tableRef,colKey}=lastCalcCtx;
   const a=alts.find(x=>x.s===section);
   if(!a)return;
 
@@ -3148,6 +4124,8 @@ function selectSection(section){
   calcVoltageDrop();
   calcShortCircuit();
   calcProtection();
+  // 补充数据备注联动
+  updateSpecNote(section, tableRef, ins, cond, colKey);
 }
 
 // ============================================================
@@ -3334,57 +4312,130 @@ function resetAll(){
 // EXPORT EXCEL
 // ============================================================
 function exportExcel(){
-  if(!lastCalcCtx||!lastCalcCtx.recommended){showToast('请先完成载流量计算','warn');return;}
-  const ctx=lastCalcCtx;
-  const m=document.querySelector('input[name="installMethod"]:checked').value;
-  const ins=ctx.ins;
-  const cond=ctx.cond;
-  const cores=ctx.cores;
-  const IB=ctx.IB;
-  const cableType=document.getElementById('cableType').value;
+  const isMV=getStandard()==='mv';
+  const ctx=isMV?mvLastCalcCtx:lastCalcCtx;
+  if(!ctx||!ctx.recommended){showToast('请先完成载流量计算','warn');return;}
   const rec=ctx.recommended;
+  const cond=ctx.cond, ins=ctx.ins;
 
   const wb=XLSX.utils.book_new();
 
-  // Sheet 1: 计算结果
-  const ws1Data=[
-    ['电缆选型计算报告'],
-    ['生成日期: '+new Date().toLocaleString('zh-CN')],
-    [],
-    ['=== 输入参数 ==='],
-    ['敷设方式', METHOD_NAMES[m]+' ('+m+')'],
-    ['绝缘类型', ins],
-    ['导体材料', cond==='Cu'?'铜 (Cu)':'铝 (Al)'],
-    ['电缆芯数', cableType==='multi'?'多芯':'单芯'],
-    ['载流导体数', cores+'根'],
-    ['并联组数', ctx.groups||1],
-    ['设计电流 IB', IB+' A'],
-    [],
-    ['=== 修正系数 ==='],
-    ['温度修正 Kt', ctx.Ct.toFixed(3), ctx.tempDesc],
-    ['群敷修正 Kg', ctx.Cg.toFixed(3), ctx.groupDesc],
-    ['土壤修正 Ks', ctx.Cs.toFixed(3), ctx.soilDesc||'--'],
-    ['综合系数', ctx.total.toFixed(3)],
-    [],
-    ['=== 选型结果 ==='],
-    ['推荐截面', rec.s+' mm²'],
-    ['基准载流量 I₀', rec.base+' A'],
-    ['修正后载流量 Iz', rec.corr+' A'],
-    ['载荷率', rec.loadRatio+'%']
-  ];
-
-  // Add voltage drop if calculated
-  const vdPct=document.getElementById('vd-pct')?document.getElementById('vd-pct').textContent:'--';
-  const vdLen=document.getElementById('vd-length')?document.getElementById('vd-length').value:'';
-  if(vdLen){
-    ws1Data.push([]);
-    ws1Data.push(['=== 电压降校验 ===']);
-    ws1Data.push(['电缆长度', vdLen+' m']);
-    ws1Data.push(['电压降 ΔU%', vdPct]);
+  // 区块构建：记录每行标签类别用于着色
+  const ws1Data=[['电缆选型计算报告'],['生成日期: '+new Date().toLocaleString('zh-CN')],[]];
+  const labelFills=[null,null,null];
+  const C_INPUT='DDEBF7', C_CALC='E2EFDA', C_CABLE='FCE4D6';
+  function addBlock(title,color,rows){
+    ws1Data.push([title]); labelFills.push(null);
+    for(const r of rows){ ws1Data.push(r); labelFills.push(color); }
+    ws1Data.push([]); labelFills.push(null);
   }
 
+  // 1) 输入参数
+  let inputRows;
+  if(isMV){
+    const envName={direct:'直埋',duct:'管道',air:'空气'}[ctx.env]||'';
+    inputRows=[
+      ['参考标准','IEC 60502-2'],
+      ['敷设环境',envName],
+      ['绝缘类型',ins],
+      ['导体材料',cond==='Cu'?'铜 (Cu)':'铝 (Al)'],
+      ['电缆类型',ctx.cableType==='three'?'三芯':'单芯'],
+      ['铠装',ctx.armoured==='arm'?'铠装':'非铠装'],
+      ['载流导体',ctx.cableType==='three'?'3根':(ctx.arrangement==='trefoil'?'单芯三叶形':'单芯平面')],
+      ['并联组数',ctx.groups||1],
+      ['设计电流 IB',ctx.IB+' A']
+    ];
+    if(ctx.env==='air'){
+      inputRows.push(['空气温度',(document.getElementById('mvAirTemp')?document.getElementById('mvAirTemp').value:'30')+' °C']);
+      inputRows.push(['托盘/梯架数',document.getElementById('mvTrays')?document.getElementById('mvTrays').value:'1']);
+      inputRows.push(['每层回路数',document.getElementById('mvPerLayer')?document.getElementById('mvPerLayer').value:'1']);
+      inputRows.push(['排列',(document.getElementById('mvAirSpacing')?document.getElementById('mvAirSpacing').value:'touching')==='spaced'?'有间距':'相互触碰']);
+    }else{
+      inputRows.push(['土壤温度',(document.getElementById('mvSoilTemp')?document.getElementById('mvSoilTemp').value:'20')+' °C']);
+      inputRows.push(['土壤热阻率',(document.getElementById('mvSoilRes')?document.getElementById('mvSoilRes').value:'1.5')+' K·m/W']);
+      inputRows.push(['埋深',(document.getElementById('mvDepth')?document.getElementById('mvDepth').value:'0.8')+' m']);
+      inputRows.push(['并列回路数',document.getElementById('mvCircuits')?document.getElementById('mvCircuits').value:'1']);
+      inputRows.push(['回路间距',(document.getElementById('mvSpacing')?document.getElementById('mvSpacing').value:'touching')==='touching'?'触碰':'间距']);
+    }
+  }else{
+    const m=document.querySelector('input[name="installMethod"]:checked').value;
+    const cableType=document.getElementById('cableType').value;
+    inputRows=[
+      ['参考标准','IEC 60364-5-52 / GB/T 16895.6-2014'],
+      ['敷设方式',METHOD_NAMES[m]+' ('+m+')'],
+      ['绝缘类型',ins],
+      ['导体材料',cond==='Cu'?'铜 (Cu)':'铝 (Al)'],
+      ['电缆芯数',cableType==='multi'?'多芯':'单芯'],
+      ['载流导体数',ctx.cores+'根'],
+      ['并联组数',ctx.groups||1],
+      ['设计电流 IB',ctx.IB+' A']
+    ];
+  }
+  addBlock('=== 输入参数 ===',C_INPUT,inputRows);
+
+  // 2) 修正系数（中文说明）
+  let factorRows;
+  if(isMV){
+    if(ctx.env==='air'){
+      factorRows=[
+        ['温度修正系数 Ct',ctx.Ct.toFixed(3),ctx.tempDesc,'空气温度偏离参考温度(30°C)时的载流量修正'],
+        ['群敷修正系数 Cg',ctx.Cg.toFixed(3),ctx.groupDesc,'多回路并列敷设的降低系数']
+      ];
+    }else{
+      factorRows=[
+        ['温度修正系数 Ct',ctx.Ct.toFixed(3),ctx.tempDesc,'土壤温度偏离参考温度(20°C)时的载流量修正'],
+        ['埋深修正系数 Cd',ctx.Cd.toFixed(3),'埋深修正','埋深偏离基准(0.8m)时的载流量修正'],
+        ['土壤热阻修正系数 Cs',ctx.Cs.toFixed(3),'土壤热阻修正','土壤热阻偏离基准(1.5 K·m/W)时的载流量修正'],
+        ['群敷修正系数 Cg',ctx.Cg.toFixed(3),ctx.groupDesc,'多回路并列敷设的降低系数']
+      ];
+    }
+  }else{
+    factorRows=[
+      ['温度修正系数 Ct',ctx.Ct.toFixed(3),ctx.tempDesc,'环境温度偏离参考温度(空气30°C/土壤20°C)时的载流量修正'],
+      ['群敷修正系数 Cg',ctx.Cg.toFixed(3),ctx.groupDesc,'多回路并列敷设的降低系数'],
+      ['土壤热阻修正系数 Cs',ctx.Cs.toFixed(3),ctx.soilDesc||'--','土壤热阻偏离参考值(2.5 K·m/W)时的载流量修正']
+    ];
+  }
+  factorRows.push(['综合降额系数',ctx.total.toFixed(3),'','各修正系数的乘积']);
+
+  // 3) 选型结果
+  const resultRows=[
+    ['推荐截面',rec.s+' mm²'],
+    ['基准载流量 I₀',rec.base+' A'],
+    ['修正后载流量 Iz',rec.corr+' A'],
+    ['载荷率',rec.loadRatio+'%']
+  ];
+  if(!isMV){
+    const vdLen=document.getElementById('vd-length')?document.getElementById('vd-length').value:'';
+    if(vdLen){
+      const vdPct=document.getElementById('vd-pct')?document.getElementById('vd-pct').textContent:'--';
+      resultRows.push(['电压降 ΔU%',vdPct]);
+    }
+  }
+  addBlock('=== 计算过程与结果 ===',C_CALC,[...factorRows,...resultRows]);
+
+  // 4) 电缆信息
+  const ci=CABLE_DATA[cond]?.[ins]?.[rec.s];
+  const price=getPrice(cond,ins,rec.s);
+  const prefix=cond==='Cu'?'YJV':'YJLV';
+  let coreStr;
+  if(isMV) coreStr=(ctx.cableType==='three'?'3×'+rec.s:'1×'+rec.s);
+  else coreStr=(document.getElementById('loadedCores').value==='3'?'3×'+rec.s:'4×'+rec.s);
+  addBlock('=== 电缆信息 ===',C_CABLE,[
+    ['电缆型号',prefix+' '+coreStr+' 0.6/1kV'],
+    ['参考外径',ci?('≈'+ci.od+' mm'):'--'],
+    ['参考重量',ci?('≈'+ci.wt+' kg/km'):'--'],
+    ['参考价格',price!==null?('¥'+price.toFixed(1)+'/m'):'--']
+  ]);
+
   const ws1=XLSX.utils.aoa_to_sheet(ws1Data);
-  ws1['!cols']=[{wch:16},{wch:20},{wch:16}];
+  ws1['!cols']=[{wch:20},{wch:22},{wch:20},{wch:40}];
+  labelFills.forEach((color,i)=>{
+    if(color){
+      const ref=XLSX.utils.encode_cell({r:i,c:0});
+      if(ws1[ref])ws1[ref].s={fill:{patternType:'solid',fgColor:{rgb:color}},font:{bold:true}};
+    }
+  });
   XLSX.utils.book_append_sheet(wb,ws1,'计算结果');
 
   // Sheet 2: 方案对比
@@ -3397,10 +4448,12 @@ function exportExcel(){
     const isRec=ctx.recs.some(r=>r.s===a.s&&r.styleClass==='best');
     const isMin=ctx.recs.some(r=>r.s===a.s&&r.styleClass==='min');
     const isEco=ctx.recs.some(r=>r.s===a.s&&r.styleClass==='eco');
+    const isNg=ctx.recs.some(r=>r.s===a.s&&r.styleClass==='ng');
     let label='';
     if(isRec)label='★ 推荐';
     else if(isMin)label='最小';
     else if(isEco)label='经济';
+    else if(isNg)label='不足';
     const statusText=a.loadRatio<=90?'充足':a.loadRatio<=100?'偏高':'不足';
     compData.push([label, a.s, a.base, a.corr, a.loadRatio, statusText]);
   }
@@ -3409,7 +4462,10 @@ function exportExcel(){
   XLSX.utils.book_append_sheet(wb,ws2,'方案对比');
 
   // Export
-  const fileName='电缆选型_'+METHOD_NAMES[m]+'_'+rec.s+'mm2_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  let fileNamePrefix;
+  if(isMV)fileNamePrefix='中压'+({direct:'直埋',duct:'管道',air:'空气'}[ctx.env]||'');
+  else fileNamePrefix=METHOD_NAMES[document.querySelector('input[name="installMethod"]:checked').value];
+  const fileName='电缆选型_'+fileNamePrefix+'_'+rec.s+'mm2_'+new Date().toISOString().slice(0,10)+'.xlsx';
   XLSX.writeFile(wb,fileName);
   showToast('Excel已导出');
 }
@@ -3441,48 +4497,39 @@ function saveHistory(records){
 }
 
 function saveCurrentRecord(){
-  if(!lastCalcCtx||!lastCalcCtx.recommended){
+  const isMV=getStandard()==='mv';
+  const ctx=isMV?mvLastCalcCtx:lastCalcCtx;
+  if(!ctx){
     showToast('请先完成载流量计算','warn');
     return;
   }
   // 弹出输入框让用户自定义方案名称
-  const defaultName=METHOD_NAMES[document.querySelector('input[name="installMethod"]:checked').value]+' '+lastCalcCtx.recommended.s+'mm²';
+  let defaultName;
+  if(isMV){
+    const envName={direct:'直埋',duct:'管道',air:'空气'}[ctx.env]||'中压';
+    defaultName='中压'+envName+' '+(ctx.recommended?ctx.recommended.s+'mm²':'');
+  }else{
+    const m=document.querySelector('input[name="installMethod"]:checked').value;
+    defaultName=METHOD_NAMES[m]+' '+(ctx.recommended?ctx.recommended.s+'mm²':'');
+  }
   const name=prompt('请输入方案名称：',defaultName);
   if(name===null)return; // 用户取消
-  const ctx=lastCalcCtx;
-  const m=document.querySelector('input[name="installMethod"]:checked').value;
-  const cableType=document.getElementById('cableType').value;
-  const cores=document.getElementById('loadedCores').value;
-  const singleArr=document.getElementById('singleArrangement')?document.getElementById('singleArrangement').value:'';
-  
-  // Get selected section
+
+  // 选中截面
   const selectedRow=document.querySelector('#comp-body tr.selected');
-  const section=selectedRow?parseInt(selectedRow.dataset.section):ctx.recommended.s;
-  const selAlt=ctx.alts.find(a=>a.s===section);
-  
-  // Get voltage drop info
+  const section=selectedRow?parseInt(selectedRow.dataset.section):(ctx.recommended?ctx.recommended.s:null);
+  const selAlt=ctx.alts?ctx.alts.find(a=>a.s===section):null;
+
+  // 电压降信息
   const vdPct=document.getElementById('vd-pct')?document.getElementById('vd-pct').textContent:'--';
-  
+
   const record={
     id:Date.now(),
     name:name.trim()||defaultName,
     date:new Date().toLocaleString('zh-CN'),
-    // Inputs
-    method:m,
-    methodName:METHOD_NAMES[m],
-    insulation:ctx.ins,
-    conductor:ctx.cond,
-    cableType:cableType,
-    cores:cores,
-    singleArr:singleArr,
+    standard:isMV?'mv':'lv',
     designCurrent:ctx.IB,
     parallelGroups:ctx.groups||1,
-    trayLayers:document.getElementById('trayLayers')?document.getElementById('trayLayers').value:'1',
-    cablesPerLayer:document.getElementById('cablesPerLayer')?document.getElementById('cablesPerLayer').value:'1',
-    arrangement:document.getElementById('arrangement')?document.getElementById('arrangement').value:'touching',
-    circuitCount:document.getElementById('cablesPerLayer')?document.getElementById('cablesPerLayer').value:'1',
-    ambientTemp:document.getElementById('ambientTemp')?document.getElementById('ambientTemp').value:'--',
-    // Results
     section:section,
     baseAmpacity:selAlt?selAlt.base:'--',
     correctedAmpacity:selAlt?selAlt.corr:'--',
@@ -3492,11 +4539,44 @@ function saveCurrentRecord(){
     Cg:ctx.Cg?ctx.Cg.toFixed(3):'--',
     Cs:ctx.Cs?ctx.Cs.toFixed(3):'--',
     voltageDrop:vdPct,
-    // Cable length for voltage drop
     cableLength:document.getElementById('vd-length')?document.getElementById('vd-length').value:'',
     note:''
   };
-  
+
+  if(isMV){
+    const envName={direct:'直埋',duct:'管道',air:'空气'}[ctx.env]||'中压';
+    record.methodName=envName;
+    record.env=ctx.env;
+    record.cableType=ctx.cableType;
+    record.insulation=ctx.ins;
+    record.conductor=ctx.cond;
+    record.armoured=ctx.armoured;
+    record.arrangement=ctx.arrangement;
+    record.Cd=ctx.Cd?ctx.Cd.toFixed(3):'--';
+    record.soilTemp=document.getElementById('mvSoilTemp')?document.getElementById('mvSoilTemp').value:'20';
+    record.soilRes=document.getElementById('mvSoilRes')?document.getElementById('mvSoilRes').value:'1.5';
+    record.depth=document.getElementById('mvDepth')?document.getElementById('mvDepth').value:'0.8';
+    record.circuits=document.getElementById('mvCircuits')?document.getElementById('mvCircuits').value:'1';
+    record.spacing=document.getElementById('mvSpacing')?document.getElementById('mvSpacing').value:'touching';
+    record.airTemp=document.getElementById('mvAirTemp')?document.getElementById('mvAirTemp').value:'30';
+    record.trays=document.getElementById('mvTrays')?document.getElementById('mvTrays').value:'1';
+    record.perLayer=document.getElementById('mvPerLayer')?document.getElementById('mvPerLayer').value:'1';
+    record.airSpacing=document.getElementById('mvAirSpacing')?document.getElementById('mvAirSpacing').value:'touching';
+  }else{
+    record.method=document.querySelector('input[name="installMethod"]:checked').value;
+    record.methodName=METHOD_NAMES[record.method];
+    record.insulation=ctx.ins;
+    record.conductor=ctx.cond;
+    record.cableType=document.getElementById('cableType').value;
+    record.cores=document.getElementById('loadedCores').value;
+    record.singleArr=document.getElementById('singleArrangement')?document.getElementById('singleArrangement').value:'';
+    record.trayLayers=document.getElementById('trayLayers')?document.getElementById('trayLayers').value:'1';
+    record.cablesPerLayer=document.getElementById('cablesPerLayer')?document.getElementById('cablesPerLayer').value:'1';
+    record.arrangement=document.getElementById('arrangement')?document.getElementById('arrangement').value:'touching';
+    record.circuitCount=document.getElementById('cablesPerLayer')?document.getElementById('cablesPerLayer').value:'1';
+    record.ambientTemp=document.getElementById('ambientTemp')?document.getElementById('ambientTemp').value:'--';
+  }
+
   const history=getHistory();
   history.unshift(record);
   saveHistory(history);
@@ -3509,44 +4589,102 @@ function renderHistory(){
   const container=document.getElementById('history-list');
   if(history.length===0){
     container.innerHTML='<div style="font-size:10px;color:var(--text-muted);text-align:center;padding:24px">暂无保存的选型记录</div>';
+    const btnSel=document.getElementById('btn-export-selected');if(btnSel)btnSel.textContent='导出选中(0)';
+    const chkAll=document.getElementById('chk-all');if(chkAll)chkAll.checked=false;
     return;
   }
   let html='<table class="history-table">';
-  html+='<tr><th>方案名称</th><th>日期</th><th>敷设</th><th>截面</th><th>载荷率</th><th>操作</th></tr>';
+  html+='<tr><th style="width:22px"></th><th>方案名称</th><th>日期</th><th>标准</th><th>敷设</th><th>截面</th><th>载荷率</th><th>操作</th></tr>';
   for(const r of history){
+    const isMV=r.standard==='mv';
     html+='<tr>';
-    html+='<td style="font-size:10px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" title="点击编辑名称" onclick="renameRecord('+r.id+')">'+(r.name||'--')+'</td>';
+    html+='<td style="text-align:center"><input type="checkbox" class="chk-record" data-id="'+r.id+'" onchange="updateExportSelectedCount()"></td>';
+    html+='<td style="font-size:10px;font-weight:600;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" title="点击编辑名称" onclick="renameRecord('+r.id+')">'+(r.name||'--')+'</td>';
     html+='<td style="font-size:9px;color:var(--text-muted)">'+r.date.replace(/\d{4}\//, '')+'</td>';
-    html+='<td>'+r.methodName+'</td>';
-    html+='<td style="font-weight:600;font-family:var(--font-mono)">'+r.section+'</td>';
-    html+='<td>'+r.loadRatio+'%</td>';
+    html+='<td><span style="font-size:9px;padding:1px 5px;border-radius:3px;'+(isMV?'background:#FEF5E7;color:#BA7517':'background:#E8F0FA;color:#185FA5')+'">'+(isMV?'中压':'低压')+'</span></td>';
+    html+='<td>'+(r.methodName||'--')+'</td>';
+    html+='<td style="font-weight:600;font-family:var(--font-mono)">'+(r.section||'--')+'</td>';
+    html+='<td>'+(r.loadRatio||'--')+'%</td>';
     html+='<td><button class="btn-sm" onclick="loadRecord('+r.id+')" title="加载">加载</button> <button class="btn-sm btn-del" onclick="deleteRecord('+r.id+')" title="删除">×</button></td>';
     html+='</tr>';
   }
   html+='</table>';
   container.innerHTML=html;
+  updateExportSelectedCount();
+}
+
+function updateExportSelectedCount(){
+  const total=document.querySelectorAll('.chk-record').length;
+  const n=document.querySelectorAll('.chk-record:checked').length;
+  const btn=document.getElementById('btn-export-selected');
+  if(btn)btn.textContent='导出选中('+n+')';
+  const chkAll=document.getElementById('chk-all');
+  if(chkAll)chkAll.checked = total>0 && n===total;
+}
+
+function toggleAllRecords(chk){
+  document.querySelectorAll('.chk-record').forEach(c=>{c.checked=chk.checked;});
+  updateExportSelectedCount();
+}
+
+function exportSelectedExcel(){
+  const ids=[...document.querySelectorAll('.chk-record:checked')].map(c=>parseInt(c.dataset.id));
+  if(ids.length===0){showToast('请先勾选要导出的方案','warn');return;}
+  exportHistoryExcel(ids);
 }
 
 function loadRecord(id){
   const history=getHistory();
   const r=history.find(h=>h.id===id);
   if(!r)return;
-  
-  // Restore inputs
-  const radio=document.querySelector('input[name="installMethod"][value="'+r.method+'"]');
-  if(radio)radio.checked=true;
-  document.getElementById('insulation').value=r.insulation;
-  document.getElementById('conductor').value=r.conductor;
-  document.getElementById('cableType').value=r.cableType;
-  document.getElementById('loadedCores').value=r.cores;
-  if(r.singleArr&&document.getElementById('singleArrangement'))document.getElementById('singleArrangement').value=r.singleArr;
-  document.getElementById('designCurrent').value=r.designCurrent;
-  if(r.parallelGroups)document.getElementById('parallelGroups').value=r.parallelGroups;
-  else document.getElementById('parallelGroups').value='1';
-  if(r.ambientTemp&&document.getElementById('ambientTemp'))document.getElementById('ambientTemp').value=r.ambientTemp;
-  if(r.circuitCount&&document.getElementById('cablesPerLayer'))document.getElementById('cablesPerLayer').value=r.circuitCount;
-  if(r.cableLength&&document.getElementById('vd-length'))document.getElementById('vd-length').value=r.cableLength;
-  
+
+  // 切换到记录对应的标准（低压/中压）
+  const stdSel=document.getElementById('refStandard');
+  if(stdSel && r.standard && stdSel.value!==r.standard){
+    stdSel.value=r.standard;
+    onStandardChange();
+  }
+
+  if(r.standard==='mv'){
+    // 中压恢复
+    if(r.env){const radio=document.querySelector('input[name="mvEnv"][value="'+r.env+'"]');if(radio)radio.checked=true;}
+    if(r.cableType&&document.getElementById('mvCableType'))document.getElementById('mvCableType').value=r.cableType;
+    if(r.insulation&&document.getElementById('mvInsulation'))document.getElementById('mvInsulation').value=r.insulation;
+    if(r.conductor&&document.getElementById('mvConductor'))document.getElementById('mvConductor').value=r.conductor;
+    if(r.armoured&&document.getElementById('mvArmoured'))document.getElementById('mvArmoured').value=r.armoured;
+    if(r.arrangement&&document.getElementById('mvArrangement'))document.getElementById('mvArrangement').value=r.arrangement;
+    if(r.designCurrent)document.getElementById('designCurrent').value=r.designCurrent;
+    if(r.parallelGroups)document.getElementById('parallelGroups').value=r.parallelGroups;
+    else document.getElementById('parallelGroups').value='1';
+    if(r.soilTemp&&document.getElementById('mvSoilTemp'))document.getElementById('mvSoilTemp').value=r.soilTemp;
+    if(r.soilRes&&document.getElementById('mvSoilRes'))document.getElementById('mvSoilRes').value=r.soilRes;
+    if(r.depth&&document.getElementById('mvDepth'))document.getElementById('mvDepth').value=r.depth;
+    if(r.circuits&&document.getElementById('mvCircuits'))document.getElementById('mvCircuits').value=r.circuits;
+    if(r.spacing&&document.getElementById('mvSpacing'))document.getElementById('mvSpacing').value=r.spacing;
+    if(r.airTemp&&document.getElementById('mvAirTemp'))document.getElementById('mvAirTemp').value=r.airTemp;
+    if(r.trays&&document.getElementById('mvTrays'))document.getElementById('mvTrays').value=r.trays;
+    if(r.perLayer&&document.getElementById('mvPerLayer'))document.getElementById('mvPerLayer').value=r.perLayer;
+    if(r.airSpacing&&document.getElementById('mvAirSpacing'))document.getElementById('mvAirSpacing').value=r.airSpacing;
+    if(r.cableLength&&document.getElementById('vd-length'))document.getElementById('vd-length').value=r.cableLength;
+    mvEnvChanged();
+    mvCableTypeChanged();
+  }else{
+    // 低压恢复
+    const radio=document.querySelector('input[name="installMethod"][value="'+r.method+'"]');
+    if(radio)radio.checked=true;
+    document.getElementById('insulation').value=r.insulation;
+    document.getElementById('conductor').value=r.conductor;
+    document.getElementById('cableType').value=r.cableType;
+    document.getElementById('loadedCores').value=r.cores;
+    if(r.singleArr&&document.getElementById('singleArrangement'))document.getElementById('singleArrangement').value=r.singleArr;
+    document.getElementById('designCurrent').value=r.designCurrent;
+    if(r.parallelGroups)document.getElementById('parallelGroups').value=r.parallelGroups;
+    else document.getElementById('parallelGroups').value='1';
+    if(r.ambientTemp&&document.getElementById('ambientTemp'))document.getElementById('ambientTemp').value=r.ambientTemp;
+    if(r.circuitCount&&document.getElementById('cablesPerLayer'))document.getElementById('cablesPerLayer').value=r.circuitCount;
+    if(r.cableLength&&document.getElementById('vd-length'))document.getElementById('vd-length').value=r.cableLength;
+  }
+
   updateUI();
   showToast('已加载选型记录');
 }
@@ -3576,22 +4714,37 @@ function clearHistory(){
   showToast('记录已清空');
 }
 
-function exportHistoryExcel(){
+function exportHistoryExcel(ids){
   const history=getHistory();
-  if(history.length===0){showToast('没有可导出的记录','warn');return;}
-  
-  const header=['序号','日期','敷设方式','绝缘','导体','芯数','载流导体','组数','设计电流(A)','推荐截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','综合系数','Ct','Cg','Cs','电压降(%)','电缆长度(m)'];
+  let list=history;
+  if(ids&&ids.length)list=history.filter(r=>ids.includes(r.id));
+  if(list.length===0){showToast('没有可导出的记录','warn');return;}
+
+  const header=['序号','日期','标准','敷设方式','绝缘','导体','电缆类型','载流导体','铠装','组数','设计电流(A)','截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','综合系数','Ct\n温度修正','Cg\n群敷修正','Cs\n土壤热阻修正','Cd\n埋深修正','电压降(%)','电缆长度(m)'];
   const rows=[['电缆选型计算 — 批量报告'],[],header];
-  
-  history.forEach((r,i)=>{
+
+  list.forEach((r,i)=>{
+    const isMV=r.standard==='mv';
+    let cableType,coresDesc,armoured;
+    if(isMV){
+      cableType=r.cableType==='three'?'三芯':'单芯';
+      coresDesc=r.cableType==='three'?'3根':(r.arrangement==='trefoil'?'单芯三叶形':'单芯平面');
+      armoured=r.armoured==='arm'?'铠装':'非铠装';
+    }else{
+      cableType=(r.cableType==='multi'?'多芯':'单芯');
+      coresDesc=(r.cores||'')+'根';
+      armoured='--';
+    }
     rows.push([
       i+1,
       r.date,
-      r.methodName,
-      r.insulation,
+      isMV?'中压':'低压',
+      r.methodName||'--',
+      r.insulation||'--',
       r.conductor==='Cu'?'铜':'铝',
-      r.cableType==='multi'?'多芯':'单芯',
-      r.cores+'根',
+      cableType,
+      coresDesc,
+      armoured,
       r.parallelGroups||1,
       r.designCurrent,
       r.section,
@@ -3602,17 +4755,38 @@ function exportHistoryExcel(){
       r.Ct,
       r.Cg,
       r.Cs,
+      (r.Cd||'--'),
       r.voltageDrop,
       r.cableLength||'--'
     ]);
   });
-  
+
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:5},{wch:16},{wch:10},{wch:6},{wch:4},{wch:5},{wch:7},{wch:10},{wch:12},{wch:12},{wch:12},{wch:8},{wch:8},{wch:6},{wch:6},{wch:6},{wch:8},{wch:10}];
+  ws['!cols']=[{wch:5},{wch:16},{wch:6},{wch:10},{wch:6},{wch:4},{wch:8},{wch:9},{wch:8},{wch:5},{wch:12},{wch:10},{wch:12},{wch:12},{wch:8},{wch:8},{wch:6},{wch:6},{wch:6},{wch:6},{wch:8},{wch:10}];
+
+  // 按列分底色：输入参数列浅蓝、修正系数列浅绿、结果列浅橙，系数说明列浅绿，表头加粗浅灰
+  const C_INPUT='DDEBF7', C_CALC='E2EFDA', C_RESULT='FCE4D6', C_HEAD='F2F2F2';
+  const inputCols=[2,3,4,5,6,7,8,9];          // 标准/敷设/绝缘/导体/类型/载流导体/铠装/组数
+  const calcCols=[15,16,17,18,19];              // 综合/Ct/Cg/Cs/Cd
+  const resultCols=[10,11,12,13,14,20,21];     // 设计电流/截面/基准/修正后/载荷/电压降/电缆长度
+  const headerRow=2;                            // 0-based
+  const dataStart=3;
+  const dataEnd=dataStart+list.length-1;
+
+  for(let c=0;c<header.length;c++){
+    const ref=XLSX.utils.encode_cell({r:headerRow,c});
+    if(ws[ref])ws[ref].s={font:{bold:true},fill:{patternType:'solid',fgColor:{rgb:C_HEAD}},alignment:{wrapText:true,vertical:'center',horizontal:'center'}};
+  }
+  for(let r=dataStart;r<=dataEnd;r++){
+    inputCols.forEach(c=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s={fill:{patternType:'solid',fgColor:{rgb:C_INPUT}}};});
+    calcCols.forEach(c=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s={fill:{patternType:'solid',fgColor:{rgb:C_CALC}}};});
+    resultCols.forEach(c=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s={fill:{patternType:'solid',fgColor:{rgb:C_RESULT}}};});
+  }
+
   XLSX.utils.book_append_sheet(wb,ws,'选型记录');
   XLSX.writeFile(wb,'电缆选型记录_'+new Date().toISOString().slice(0,10)+'.xlsx');
-  showToast('已导出'+history.length+'条记录');
+  showToast('已导出'+list.length+'条记录');
 }
 
 // ============================================================
@@ -4826,6 +6000,18 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- TAB: 版本记录 -->
     <div class="help-content" id="hc-changelog" style="display:none">
       <h3>版本更新记录</h3>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.6.1</span><span class="ver-date">2026-08-20</span>
+        <ul>
+          <li><strong>多芯电缆技术规范补充载流量</strong>：标准数据查询新增「⑤ 多芯电缆技术规范 · 补充载流量」，补齐标准表多芯(列3)未覆盖的 400/430mm² 大截面数据（空气 + 直埋）</li>
+          <li><strong>自动并入选型</strong>：多芯三芯 XLPE 时补充值自动并入 E/F（空气）与 D2（直埋），400/430mm² 直接进入选型结果；直埋值按 D2 基准（2.5 K·m/W）归一化，土壤修正后还原</li>
+          <li><strong>结果页备注</strong>：被引用截面来自补充数据时，载流量结果页显示「此数据引用自多芯电缆技术规范」备注，数据来源同步标注</li>
+          <li><strong>中压群敷系数修复</strong>：中压补齐「并联组数 → 并列回路数」联动（与低压一致），选 N 组并联即按 N 回路取群敷系数，修复并联多组时 Cg 误取 1.00 导致载流量高估的问题</li>
+          <li><strong>选型记录与 Excel 导出增强</strong>：中压方案可直接保存/加载；选型记录勾选批量导出；导出 Excel 增加系数中文说明、电缆信息区块，标签列按输入/计算/电缆三类着色；批量导出按列分底色（输入列浅蓝/系数列浅绿/结果列浅橙）</li>
+          <li><strong>修复 Excel 底色不显示</strong>：SheetJS 社区版不支持写入样式，替换为 API 兼容的 xlsx-js-style，fill/粗体正确写入导出文件</li>
+        </ul>
+      </div>
 
       <div class="ver-block">
         <span class="ver-tag">v0.6</span><span class="ver-date">2026-08-19</span>
