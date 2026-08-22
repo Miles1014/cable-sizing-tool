@@ -4720,7 +4720,7 @@ function exportHistoryExcel(ids){
   if(ids&&ids.length)list=history.filter(r=>ids.includes(r.id));
   if(list.length===0){showToast('没有可导出的记录','warn');return;}
 
-  const header=['序号','日期','标准','敷设方式','绝缘','导体','电缆类型','载流导体','铠装','组数','设计电流(A)','截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','综合系数','Ct\n温度修正','Cg\n群敷修正','Cs\n土壤热阻修正','Cd\n埋深修正','电压降(%)','电缆长度(m)'];
+  const header=['序号','日期','标准','敷设方式','绝缘','导体','电缆类型','载流导体','铠装','组数','设计电流(A)','截面(mm²)','基准载流量(A)','修正后载流量(A)','载荷率(%)','综合系数','Ct\n温度修正','Cg\n群敷修正','Cs\n土壤热阻修正','Cd\n埋深修正','电压降(%)','电缆长度(m)','电缆型号','参考外径','参考重量','参考价格'];
   const rows=[['电缆选型计算 — 批量报告'],[],header];
 
   list.forEach((r,i)=>{
@@ -4735,6 +4735,21 @@ function exportHistoryExcel(ids){
       coresDesc=(r.cores||'')+'根';
       armoured='--';
     }
+    const prefix=r.conductor==='Cu'?'YJV':'YJLV';
+    let coreSpec;
+    if(isMV){
+      if(r.cableType==='three')coreSpec='3×'+r.section;
+      else if(r.cableType==='single')coreSpec='1×'+r.section;
+      else coreSpec='--';
+    } else {
+      coreSpec=(r.cores==='3'?'3×':'4×')+r.section;
+    }
+    const cableModel=prefix+' '+coreSpec+' 0.6/1kV';
+    const ci=CABLE_DATA[r.conductor]&&CABLE_DATA[r.conductor][r.insulation]&&CABLE_DATA[r.conductor][r.insulation][r.section];
+    const cableOd=ci?('≈'+ci.od+' mm'):'--';
+    const cableWt=ci?('≈'+ci.wt+' kg/km'):'--';
+    const cablePrice=getPrice(r.conductor,r.insulation,r.section);
+    const cablePriceStr=cablePrice!==null?('¥'+cablePrice.toFixed(1)+'/m'):'--';
     rows.push([
       i+1,
       r.date,
@@ -4757,19 +4772,24 @@ function exportHistoryExcel(ids){
       r.Cs,
       (r.Cd||'--'),
       r.voltageDrop,
-      r.cableLength||'--'
+      r.cableLength||'--',
+      cableModel,
+      cableOd,
+      cableWt,
+      cablePriceStr
     ]);
   });
 
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:5},{wch:16},{wch:6},{wch:10},{wch:6},{wch:4},{wch:8},{wch:9},{wch:8},{wch:5},{wch:12},{wch:10},{wch:12},{wch:12},{wch:8},{wch:8},{wch:6},{wch:6},{wch:6},{wch:6},{wch:8},{wch:10}];
+  ws['!cols']=[{wch:5},{wch:16},{wch:6},{wch:10},{wch:6},{wch:4},{wch:8},{wch:9},{wch:8},{wch:5},{wch:12},{wch:10},{wch:12},{wch:12},{wch:8},{wch:8},{wch:6},{wch:6},{wch:6},{wch:6},{wch:8},{wch:10},{wch:22},{wch:12},{wch:14},{wch:12}];
 
-  // 按列分底色：输入参数列浅蓝、修正系数列浅绿、结果列浅橙，系数说明列浅绿，表头加粗浅灰
-  const C_INPUT='DDEBF7', C_CALC='E2EFDA', C_RESULT='FCE4D6', C_HEAD='F2F2F2';
+  // 按列分底色：输入参数列浅蓝、修正系数列浅绿、结果列浅橙、电缆信息列浅橙，表头加粗浅灰换行居中
+  const C_INPUT='DDEBF7', C_CALC='E2EFDA', C_RESULT='FCE4D6', C_CABLE='FCE4D6', C_HEAD='F2F2F2';
   const inputCols=[2,3,4,5,6,7,8,9];          // 标准/敷设/绝缘/导体/类型/载流导体/铠装/组数
   const calcCols=[15,16,17,18,19];              // 综合/Ct/Cg/Cs/Cd
   const resultCols=[10,11,12,13,14,20,21];     // 设计电流/截面/基准/修正后/载荷/电压降/电缆长度
+  const cableCols=[22,23,24,25];               // 电缆型号/外径/重量/价格
   const headerRow=2;                            // 0-based
   const dataStart=3;
   const dataEnd=dataStart+list.length-1;
@@ -4782,6 +4802,7 @@ function exportHistoryExcel(ids){
     inputCols.forEach(c=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s={fill:{patternType:'solid',fgColor:{rgb:C_INPUT}}};});
     calcCols.forEach(c=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s={fill:{patternType:'solid',fgColor:{rgb:C_CALC}}};});
     resultCols.forEach(c=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s={fill:{patternType:'solid',fgColor:{rgb:C_RESULT}}};});
+    cableCols.forEach(c=>{const ref=XLSX.utils.encode_cell({r,c});if(ws[ref])ws[ref].s={fill:{patternType:'solid',fgColor:{rgb:C_CABLE}}};});
   }
 
   XLSX.utils.book_append_sheet(wb,ws,'选型记录');
