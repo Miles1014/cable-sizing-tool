@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>电缆选型计算系统 v0.6.4</title>
+<title>电缆选型计算系统 v0.6.5</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3153,12 +3153,23 @@ function updateGroupSlider(){
   let cg=1, groupLimitMsg='';
   
   if(!isUnderground){
-    // 空气中: 触碰+单层→B52_17；有间距或多层→B52_20/21
+    const arr=document.getElementById('arrangement').value;
     const nLayer=parseInt(document.getElementById('trayLayers').value)||1;
     const nPer=parseInt(document.getElementById('cablesPerLayer').value)||1;
-    const arr=document.getElementById('arrangement').value;
-    const isTouching=(arr==='touching'||arr==='pt-horiz-touch'||arr==='pt-vert-touch');
-    const useB5217=isTouching&&nLayer===1;
+    // IEC 60364-5-52 表 B.52.17 注 2：
+    //   相邻电缆水平间距 ≥ 2 倍电缆外径时，不需要降低系数 (Cg = 1.00)。
+    //   适用 UI 明确承诺「间距 ≥ 2De」的单芯水平排列选项：
+    //     PT    → pt-horiz-spaced（水平排列，有间距 ≥2De）
+    //     LD/TR → spaced（水平排列，有间距 ≥2De）
+    //   注：pt-trefoil 为垂直三角形品字形（未承诺水平 2De 间距）、
+    //       多芯 spaced 为 ≥1d，均不适用本注，继续按 B52_20/21 查表。
+    if(cableType==='single' && (arr==='pt-horiz-spaced'||arr==='spaced')){
+      cg=1;
+      groupLimitMsg='按 IEC B.52.17 注 2，相邻电缆水平间距 ≥ 2De 时不需降级（Cg=1.00）';
+    }else{
+      // 空气中: 触碰+单层→B52_17；有间距或多层→B52_20/21
+      const isTouching=(arr==='touching'||arr==='pt-horiz-touch'||arr==='pt-vert-touch');
+      const useB5217=isTouching&&nLayer===1;
 
     if(useB5217){
       const b17Key=(m==='LD'||m==='TR')?'ladder':(m==='PT'?'perfTray':'solidTray');
@@ -3222,8 +3233,9 @@ function updateGroupSlider(){
         cg=val;
       }
     }
-    }
-  }else if(m==='D2'){
+    }  // end else: useB5217=false → B52_20/B52_21 查表分支
+    }  // end else: 非 spaced2De 分支
+  }else if(m==='D2'){  // 关闭 if(!isUnderground)
     // D2 直埋 → B52.18 (标准仅定义 2~20 回路)
     const n=parseInt(document.getElementById('ugCircuitCount').value)||1;
     if(n<=1){
@@ -3546,6 +3558,13 @@ function doCalc(){
     const nLayer=parseInt(document.getElementById('trayLayers').value)||1;
     const nPer=parseInt(document.getElementById('cablesPerLayer').value)||1;
     const arr=document.getElementById('arrangement').value;
+    // IEC B.52.17 注 2：单芯水平排列 UI 承诺「间距 ≥2De」→ Cg=1.00
+    // （pt-trefoil 品字形未承诺水平 2De、多芯 spaced 为 ≥1d，均不适用）
+    const spaced2De=(cableType==='single' && (arr==='pt-horiz-spaced'||arr==='spaced'));
+    if(spaced2De){
+      Cg=1;
+      cgTableRef='B.52.17 注2';
+    }else{
     const isTouching=(arr==='touching'||arr==='pt-horiz-touch'||arr==='pt-vert-touch');
     const useB5217=isTouching&&nLayer===1; // 触碰+单层 → B52_17
 
@@ -3603,8 +3622,10 @@ function doCalc(){
         }
       }
     }
+    }  // end else: 非 spaced2De（B52_17/B52_20/B52_21 查表）
     groupDesc=nLayer+'层, 每层'+nPer+'根'+
-      (arr==='spaced'?'(有间距)':
+      (spaced2De?'(水平间距≥2De)':
+       arr==='spaced'?'(有间距)':
        arr==='pt-horiz-touch'?'(水平触碰)':
        arr==='pt-horiz-spaced'?'(水平有间距)':
        arr==='pt-vert-touch'?'(垂直触碰)':
@@ -6038,6 +6059,16 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- TAB: 版本记录 -->
     <div class="help-content" id="hc-changelog" style="display:none">
       <h3>版本更新记录</h3>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.6.5</span><span class="ver-date">2026-09-02</span>
+        <ul>
+          <li><strong>群敷系数 Cg — 应用 IEC B.52.17 注 2（间距 ≥2De 不降级）</strong>：单芯电缆 + 水平排列 UI 明确承诺「间距 ≥2De」（PT 图④ 有孔托盘 / LD·TR 图⑥ 梯架）时，相邻电缆水平间距 ≥ 2 倍外径 → <code>Cg=1.00</code>（任意层数/回路数），不再按 B.52.21 降级或回退 B.52.17</li>
+          <li><strong>修复前问题</strong>：图④/图⑥ 选 2~3 回路时曾取 0.98/0.96，多层时甚至回退 B.52.17 取 0.8x，与注 2「间距超 2 倍外径无需降级」相矛盾</li>
+          <li><strong>适用范围界定</strong>：品字形（图⑤，未承诺水平 2De 间距）、多芯「有间距(≥1d)」不满足 ≥2De 条件，继续按原表降级</li>
+          <li><strong>显示同步</strong>：结果页群敷说明显示「(水平间距≥2De) [B.52.17 注2]」，输入区 Cg 提示同步更新</li>
+        </ul>
+      </div>
 
       <div class="ver-block">
         <span class="ver-tag">v0.6.4</span><span class="ver-date">2026-09-02</span>
