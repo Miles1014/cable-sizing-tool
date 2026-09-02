@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>电缆选型计算系统 v0.6.3</title>
+<title>电缆选型计算系统 v0.6.4</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1873,9 +1873,9 @@ const VENDOR_AMPACITY={
     refTemp:40,                 // 厂家标称参考环温 40°C
     refMethodLabel:"单芯电缆, 二根载流(相互接触)",
     ampacity:{
-      EF:{ "4": {70:330,95:402,120:470,150:558} }
+      EF:{ "4": {70:307,95:374,120:438,150:520} }
     },
-    note:"AWM3817-XLPE · 导体最高温度105°C · 参考环温40°C · 单芯电缆/二根载流/相互接触 · 厂家实测载流量汇总 · 表中为归一至30℃后的折算值(归一系数1.074)"
+    note:"AWM3817-XLPE · 导体最高温度105°C · 参考环温40°C · 单芯电缆/二根载流/相互接触 · 厂家实测载流量(原始参考40°C,选用30℃时由统一温度修正自动归一,系数1.074)"
   },
   "awm3817-xlpe-125":{
     vendor:"—",
@@ -1885,7 +1885,7 @@ const VENDOR_AMPACITY={
     refTemp:40,                 // 厂家标称参考环温 40°C
     refMethodLabel:"单芯电缆, 二根载流(相互接触)",
     ampacity:{
-      EF:{ "4": {50:288,70:356,95:445,120:520,150:605,185:650,240:775} }
+      EF:{ "4": {50:272,70:337,95:421,120:492,150:572,185:615,240:733} }
     },
     note:"AWM3817-XLPE · 导体最高温度125°C · 参考环温40°C · 单芯电缆/二根载流/相互接触"
   }
@@ -6038,6 +6038,15 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- TAB: 版本记录 -->
     <div class="help-content" id="hc-changelog" style="display:none">
       <h3>版本更新记录</h3>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.6.4</span><span class="ver-date">2026-09-02</span>
+        <ul>
+          <li><strong>Bug 修复 — 厂家载流量录入口径</strong>：AWM3817-XLPE (105°C / 125°C) 11 个截面载流量从「30°C 归一展示值」改回「40°C 原始标称值」，与 <code>getBaseAmpacityTable</code> 中「原始标称值，不做归一化」的设计意图对齐</li>
+          <li><strong>温度修正 Ct 计算正确</strong>：30°C 选 AWM3817 时 Ct=1.000（v0.6.3 时错误显示 1.074 导致重复归一，载流量高估 ≈15%）；其他环温按 <code>Ct = √((tmax−T_amb)/(tmax−40))</code> 一步完成归一</li>
+          <li><strong>note 字段同步更新</strong>：从「表中为归一至30℃后的折算值」改为「厂家实测载流量(原始参考40°C,选用30℃时由统一温度修正自动归一,系数1.074)」，口径与代码一致</li>
+        </ul>
+      </div>
 
       <div class="ver-block">
         <span class="ver-tag">v0.6.3</span><span class="ver-date">2026-09-02</span>
