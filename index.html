@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>电缆选型计算系统 v0.6.1</title>
+<title>电缆选型计算系统 v0.6.3</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1873,9 +1873,9 @@ const VENDOR_AMPACITY={
     refTemp:40,                 // 厂家标称参考环温 40°C
     refMethodLabel:"单芯电缆, 二根载流(相互接触)",
     ampacity:{
-      EF:{ "4": {70:330,95:402,120:470} }
+      EF:{ "4": {70:330,95:402,120:470,150:558} }
     },
-    note:"AWM3817-XLPE · 导体最高温度105°C · 参考环温40°C · 单芯电缆/二根载流/相互接触"
+    note:"AWM3817-XLPE · 导体最高温度105°C · 参考环温40°C · 单芯电缆/二根载流/相互接触 · 厂家实测载流量汇总 · 表中为归一至30℃后的折算值(归一系数1.074)"
   },
   "awm3817-xlpe-125":{
     vendor:"—",
@@ -2034,9 +2034,22 @@ function getBaseAmpacityTable(tableRef, ins, cond, colKey, isUnderground){
   // 厂家数据须与当前绝缘/导体一致（onAmpSourceChange 已锁定，此处兜底校验）
   if(vendor.insulation!==ins||vendor.conductor!==cond) return null;
   const vColMap=vendor.ampacity?.[tableRef];
-  const vTable=vColMap?.[colKey];
-  // 严格模式：厂家未覆盖的敷设方式/列 → 无数据（不回退标准）
+  let vTable=vColMap?.[colKey];
+  let fallbackNote=null;
+  // ===== 列2(多芯·二根) → 列4(单芯·接触·二根) 保守覆盖 =====
+  // 适用：用户选了「多芯·二根载流」(colKey='2')，厂家库在当前 tableRef 下仅记录了「单芯·接触·二根」(colKey='4')
+  // 物理依据：单芯电缆相互接触的散热条件，比单根多芯电缆二根载流更严；按 IEC 60364-5-52 表 B.52.17 标准值验证，
+  //          XLPE/Cu 70~150mm² 段 列4 比列2 高 6.6%~7.3%。故用列4 覆盖列2 是保守估算（载流量偏大偏安全）。
+  // 范围限制：仅当 colKey='2' 触发；其他列（5~8 单芯三角/扁平）不允许 fallback，避免误用。
+  if(!vTable && colKey==='2' && vColMap && vColMap['4']){
+    vTable=Object.assign({},vColMap['4']);
+    fallbackNote='已用「列4 单芯·接触·2根」保守覆盖「列2 多芯·2根」(列4 ≥ 列2 安全)';
+  }
+  // 严格模式：其他列未覆盖 → 无数据（不回退标准）
   if(!vTable) return null;
+  if(fallbackNote){
+    Object.defineProperty(vTable,'__fallback',{value:fallbackNote,enumerable:false,writable:false});
+  }
   // 返回厂家原始标称值（参考环温=vendor.refTemp），不做归一化
   return vTable;
 }
@@ -3651,6 +3664,10 @@ function doCalc(){
       }
     }
     showToast(msg,'fail');return;
+  }
+  // 列2 → 列4 保守覆盖提示（不阻断计算，仅 UI 警告）
+  if(table.__fallback){
+    showToast(table.__fallback+' · 当前列2 已按列4 估算（请核对）','warn');
   }
 
   const secs=Object.keys(table).map(Number).sort((a,b)=>a-b);
@@ -6021,6 +6038,14 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- TAB: 版本记录 -->
     <div class="help-content" id="hc-changelog" style="display:none">
       <h3>版本更新记录</h3>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.6.3</span><span class="ver-date">2026-09-02</span>
+        <ul>
+          <li><strong>厂家数据补充</strong>：AWM3817-XLPE (105°C) 新增 150mm² 载流量（40°C 原始 520A → 30°C 归一 558A），补齐 70/95/120/150 全系列</li>
+          <li><strong>厂家库保守覆盖</strong>：选厂家型号 + 多芯·二根载流(列2) 时，若厂家该敷设方式仅有「单芯·接触·二根」(列4) 数据，自动以列4 保守估算（列4 ≥ 列2 安全），并弹橙色提示；其他列（5~8）不回退</li>
+        </ul>
+      </div>
 
       <div class="ver-block">
         <span class="ver-tag">v0.6.1</span><span class="ver-date">2026-08-20</span>
