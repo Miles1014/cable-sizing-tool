@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>电缆选型计算系统 v0.6.5</title>
+<title>电缆选型计算系统 v0.7.0</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -64,6 +64,47 @@ body{font-family:var(--font-sans);font-size:13px;line-height:1.5;color:var(--tex
 .query-jumpnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .query-jumpnav a{font-size:11px;color:var(--accent);background:var(--accent-light);padding:4px 12px;border-radius:20px;text-decoration:none;transition:all 0.15s}
 .query-jumpnav a:hover{background:#D4E6F1}
+
+/* ===== 厂家数据维护 (v0.7.0) ===== */
+.vlib-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid #EF9F27;border-left:3px solid #EF9F27;border-radius:var(--radius);padding:9px 14px;margin-bottom:12px;flex-wrap:wrap}
+.vlib-bar-title{font-size:12px;font-weight:700;color:#BA7517}
+.vlib-count{font-size:10px;color:var(--text-muted);font-family:var(--font-mono);margin-left:8px}
+.vlib-bar-r{display:flex;gap:6px;flex-wrap:wrap}
+.btn-sm{font-size:10px;padding:4px 10px}
+.vlib-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;box-shadow:var(--shadow);overflow:hidden}
+.vlib-cols{display:grid;grid-template-columns:262px 1fr;min-height:340px}
+.vlib-side{border-right:1px solid var(--border);background:#FAFBFC;display:flex;flex-direction:column}
+.vlib-side-head{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-secondary)}
+.vlib-list{flex:1;overflow-y:auto;max-height:520px}
+.vlib-item{padding:8px 10px;border-bottom:1px solid #EFF1F4;cursor:pointer;transition:background 0.12s}
+.vlib-item:hover{background:#F0F4FA}
+.vlib-item.active{background:var(--accent-light);border-left:3px solid var(--accent)}
+.vlib-item .vi-model{font-size:11.5px;font-weight:600;color:var(--primary);display:block;line-height:1.4}
+.vlib-item .vi-meta{font-size:9.5px;color:var(--text-muted);font-family:var(--font-mono)}
+.vlib-tag{display:inline-block;font-size:8.5px;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle;font-weight:600}
+.vlib-tag.builtin{background:#EAF3FB;color:#2980B9}
+.vlib-tag.user{background:#FEF5E7;color:#BA7517}
+.vlib-tag.mod{background:#FDECEA;color:#C0392B}
+.vlib-side-foot{padding:8px 10px;border-top:1px solid var(--border)}
+.vlib-main{padding:12px 14px;overflow-y:auto;max-height:660px}
+.vlib-empty{padding:40px 0;text-align:center;color:var(--text-muted);font-size:12px;line-height:1.9}
+.vlib-form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 10px;margin-bottom:4px}
+.vlib-form-grid .fg{display:flex;flex-direction:column;gap:3px}
+.vlib-form-grid label{font-size:10px;color:var(--text-secondary);font-weight:600}
+.vlib-form-grid input,.vlib-form-grid select{font-size:11px;padding:5px 7px;border:1px solid var(--border);border-radius:4px;font-family:inherit;background:#fff}
+.vlib-sec-title{font-size:11px;font-weight:700;color:var(--primary);margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.vlib-group{border:1px solid var(--border);border-radius:5px;padding:8px 10px;margin-bottom:10px;background:#FCFDFE}
+.vlib-group-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.vlib-group-head select{font-size:11px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:#fff}
+.vlib-rows{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono)}
+.vlib-rows th{background:#F4F6F9;font-size:9.5px;color:var(--text-muted);padding:4px 6px;text-align:left;font-weight:600}
+.vlib-rows td{padding:2px 4px;border-bottom:1px solid #F0F2F5}
+.vlib-rows input{width:100%;font-size:11px;padding:3px 5px;border:1px solid #DDE2E8;border-radius:3px;font-family:var(--font-mono)}
+.vlib-rows .del{background:none;border:none;color:#C0392B;cursor:pointer;font-size:13px;padding:0 4px}
+.vlib-calc{margin-top:8px;padding:8px 10px;background:#F7FAFD;border-left:3px solid var(--accent);font-size:10.5px;color:var(--text-secondary);line-height:1.7;font-family:var(--font-mono);border-radius:3px}
+.vlib-actions{display:flex;gap:8px;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+.vlib-warn{font-size:10px;color:#BA7517;margin-top:6px;line-height:1.5}
+@media(max-width:768px){.vlib-cols{grid-template-columns:1fr}.vlib-side{border-right:none;border-bottom:1px solid var(--border)}.vlib-form-grid{grid-template-columns:1fr 1fr}}
 
 .qsec{margin-bottom:24px;scroll-margin-top:130px}
 .qsec-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--border)}
@@ -1522,6 +1563,32 @@ body.page-jbt-active .ha-calc-only{display:none}
       </div>
     </div>
 
+    <!-- ===== 厂家数据维护（v0.7.0 使用者自定义） ===== -->
+    <div class="vlib-bar" id="vlib-bar">
+      <div>
+        <span class="vlib-bar-title">厂家数据库</span>
+        <span class="vlib-count" id="vlib-count">加载中…</span>
+      </div>
+      <div class="vlib-bar-r">
+        <button class="btn btn-sm" id="vlib-toggle-btn" onclick="vlibToggle()">管理厂家数据</button>
+        <button class="btn btn-sm" onclick="vlibExport()">导出 JSON</button>
+        <button class="btn btn-sm" onclick="document.getElementById('vlib-file').click()">导入 JSON</button>
+        <input type="file" id="vlib-file" accept=".json,application/json" style="display:none" onchange="vlibImportFile(this)">
+      </div>
+    </div>
+    <div class="vlib-panel" id="vlib-panel" style="display:none">
+      <div class="vlib-cols">
+        <div class="vlib-side">
+          <div class="vlib-side-head"><span>库条目</span><button class="btn btn-sm" onclick="vlibNew()">+ 新建</button></div>
+          <div class="vlib-list" id="vlib-list"></div>
+          <div class="vlib-side-foot"><button class="btn btn-sm" onclick="vlibRestoreBuiltin()" style="width:100%">载入出厂数据</button></div>
+        </div>
+        <div class="vlib-main" id="vlib-editor">
+          <div class="vlib-empty">选择左侧条目，或点击「+ 新建」<br>添加自定义厂家载流量数据</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Section jump nav -->
     <div class="query-jumpnav">
       <a href="#qsec-amp" onclick="qJump(event,'qsec-amp')">① 基础载流量</a>
@@ -1855,16 +1922,27 @@ const MV_GROUP_23={
 };
 
 // ============================================================
-// BUILT-IN VENDOR AMPACITY (内置厂家库)
+// VENDOR AMPACITY LIBRARY (厂家载流量库 · 双层结构)
 // ============================================================
-// 结构说明（按需求字段维度）：
+// 【v0.7.0 改造】厂家数据由"代码硬编码 + 发版管控"改为"使用者本地维护"：
+//   BUILTIN_VENDOR_AMPACITY —— 出厂种子数据（仅用于首次初始化 / 恢复出厂），只读常量
+//   VENDOR_AMPACITY         —— 运行期库（localStorage 持久化），全站统一读取此处
+//
+// 关键规则：
+//   1. localStorage 已存在库数据时，版本升级【绝不覆盖】——厂家数据不再随版本走
+//   2. 出厂条目同样可编辑/删除，但保留 builtinKey 血缘，可「按出厂值重置本条」
+//   3. 首次访问（无存储）时自动写入出厂种子；用户增删改均实时落盘
+//
+// 结构说明（单条记录）：
 //   vendor 厂家名称 / model 型号 / insulation 绝缘 / conductor 导体
 //   conductorMaxTemp  导体最高工作温度(°C)——标准XLPE仅90°C，部分厂家电缆(105/125°C)可承载更高电流
 //   refTemp  厂家标称载流量的参考环境温度(°C)——可能≠标准30°C，须记录以便温度归一化
 //   ampacity 按 IEC 查表法(tableRef: B1/B2/C/D1/D2/EF/G) → 芯数列("2"/"3"/单芯"4"~"8") → 截面 → 载流量(A)
-//   未填的敷设方式/列/截面 → 计算时自动回退标准值
+//   origin  'builtin' 出厂种子 / 'user' 使用者自定义
+//   builtinKey  源自哪条出厂数据（用于台账追溯与按出厂值重置）
 // ⚠ 数据按型号独立维护；计算时的温度归一化使用型号的 conductorMaxTemp。
-const VENDOR_AMPACITY={
+// ⚠ 录入口径：ampacity 存的是 datasheet 在 refTemp 下的【原始标称值】，不做任何归一化！
+const BUILTIN_VENDOR_AMPACITY={
   "awm3817-xlpe-105":{
     vendor:"—",
     model:"AWM3817-XLPE (105°C)",
@@ -1875,7 +1953,8 @@ const VENDOR_AMPACITY={
     ampacity:{
       EF:{ "4": {70:307,95:374,120:438,150:520} }
     },
-    note:"AWM3817-XLPE · 导体最高温度105°C · 参考环温40°C · 单芯电缆/二根载流/相互接触 · 厂家实测载流量(原始参考40°C,选用30℃时由统一温度修正自动归一,系数1.074)"
+    note:"AWM3817-XLPE · 导体最高温度105°C · 参考环温40°C · 单芯电缆/二根载流/相互接触 · 厂家实测载流量(原始参考40°C,选用30℃时由统一温度修正自动归一,系数1.074)",
+    origin:"builtin", builtinKey:"awm3817-xlpe-105"
   },
   "awm3817-xlpe-125":{
     vendor:"—",
@@ -1887,9 +1966,71 @@ const VENDOR_AMPACITY={
     ampacity:{
       EF:{ "4": {50:272,70:337,95:421,120:492,150:572,185:615,240:733} }
     },
-    note:"AWM3817-XLPE · 导体最高温度125°C · 参考环温40°C · 单芯电缆/二根载流/相互接触"
+    note:"AWM3817-XLPE · 导体最高温度125°C · 参考环温40°C · 单芯电缆/二根载流/相互接触",
+    origin:"builtin", builtinKey:"awm3817-xlpe-125"
   }
 };
+
+const VENDOR_LIB_KEY='cablesizer.vendorLib.v1';
+const VENDOR_LIB_SCHEMA=1;
+// 运行期厂家库（初始化后由 localStorage 填充）
+let VENDOR_AMPACITY={};
+let VENDOR_LIB_META={schemaVersion:VENDOR_LIB_SCHEMA,updatedAt:null,seeded:false};
+
+// 初始化：本地已有库则直接使用（升级不覆盖），否则写入出厂种子
+function loadVendorLibrary(){
+  let raw=null;
+  try{ raw=localStorage.getItem(VENDOR_LIB_KEY); }catch(e){ raw=null; }
+  if(raw){
+    try{
+      const obj=JSON.parse(raw);
+      if(obj&&obj.vendors&&typeof obj.vendors==='object'&&Object.keys(obj.vendors).length>=0){
+        VENDOR_AMPACITY=obj.vendors;
+        VENDOR_LIB_META={schemaVersion:obj.schemaVersion||1,updatedAt:obj.updatedAt||null,seeded:false};
+        return;
+      }
+    }catch(e){
+      // 数据损坏：备份原始内容后重新种子，避免用户数据被静默丢弃
+      try{ localStorage.setItem(VENDOR_LIB_KEY+'.corrupt.'+Date.now(),raw); }catch(_){}
+    }
+  }
+  VENDOR_AMPACITY=JSON.parse(JSON.stringify(BUILTIN_VENDOR_AMPACITY));
+  VENDOR_LIB_META={schemaVersion:VENDOR_LIB_SCHEMA,updatedAt:null,seeded:true};
+  saveVendorLibrary(true);
+}
+// 落盘
+function saveVendorLibrary(silent){
+  const payload={schemaVersion:VENDOR_LIB_SCHEMA,updatedAt:new Date().toISOString(),vendors:VENDOR_AMPACITY};
+  try{
+    localStorage.setItem(VENDOR_LIB_KEY,JSON.stringify(payload));
+  }catch(e){
+    if(!silent&&typeof showToast==='function') showToast('保存失败：浏览器存储被禁用或空间不足','fail');
+    return false;
+  }
+  VENDOR_LIB_META={schemaVersion:VENDOR_LIB_SCHEMA,updatedAt:payload.updatedAt,seeded:false};
+  return true;
+}
+// 统一取数入口（替代对 VENDOR_AMPACITY 的直接下标访问）
+function getVendor(key){
+  if(!key||key==='standard') return null;
+  return VENDOR_AMPACITY[key]||null;
+}
+function getAllVendors(){ return VENDOR_AMPACITY; }
+// 条目显示名：厂家名有效时带上厂家
+function vendorLabel(v){
+  if(!v) return '—';
+  return (v.vendor&&v.vendor!=='—') ? (v.model+' · '+v.vendor) : v.model;
+}
+// 库变更后刷新运行时：重建计算页下拉 + 重算 + 刷新查询页
+function refreshVendorRuntime(){
+  initAmpSourceOptions();
+  if(typeof onAmpSourceChange==='function') onAmpSourceChange();
+  const pq=document.getElementById('page-query');
+  if(pq&&pq.classList.contains('active')&&typeof renderQuery==='function') renderQuery();
+  if(typeof vlibRenderBar==='function') vlibRenderBar();
+  const panel=document.getElementById('vlib-panel');
+  if(panel&&panel.style.display!=='none'&&typeof vlibRenderList==='function') vlibRenderList();
+}
 
 // 敷设方式剖面示意图(内联SVG, 保持单文件)。可后续替换为标准原图。
 // 用法: METHOD_FIGURES['B1'] → svg 字符串
@@ -1932,17 +2073,40 @@ function getAmpSource(){
   const el=document.getElementById('ampSource');
   return el?el.value:'standard';
 }
-// 页面加载后填充厂家库下拉项
+// 页面加载后 & 厂家库变更后重建下拉项（分组：标准 / 出厂数据 / 自定义）
 function initAmpSourceOptions(){
   const sel=document.getElementById('ampSource');
   if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="standard">标准 IEC（默认）</option>';
+  const builtin=[],custom=[];
   Object.keys(VENDOR_AMPACITY).forEach(k=>{
     const v=VENDOR_AMPACITY[k];
-    const opt=document.createElement('option');
-    opt.value=k;
-    opt.textContent='厂家库 · '+v.vendor+' '+v.model;
-    sel.appendChild(opt);
+    if(!v)return;
+    (v.origin==='builtin'?builtin:custom).push([k,v]);
   });
+  const addGroup=(list,label)=>{
+    if(!list.length)return;
+    const og=document.createElement('optgroup');
+    og.label=label;
+    list.forEach(([k,v])=>{
+      const opt=document.createElement('option');
+      opt.value=k;
+      // 型号名已自带温度时不重复追加
+      const hasTemp=v.conductorMaxTemp&&v.model&&v.model.indexOf(v.conductorMaxTemp+'°C')>=0;
+      opt.textContent=vendorLabel(v)+((v.conductorMaxTemp&&!hasTemp)?' ('+v.conductorMaxTemp+'°C)':'');
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  };
+  addGroup(builtin,'厂家库 · 出厂数据');
+  addGroup(custom,'厂家库 · 自定义');
+  // 保留原选择；若条目已被删除则回落标准值
+  if(cur&&cur!=='standard'&&sel.querySelector('option[value="'+cur+'"]')){
+    sel.value=cur;
+  }else{
+    sel.value='standard';
+  }
 }
 // 切换数据源：选厂家时锁定绝缘/导体为该厂家规格并给出提示
 function onAmpSourceChange(){
@@ -1951,16 +2115,23 @@ function onAmpSourceChange(){
   const condEl=document.getElementById('conductor');
   const hint=document.getElementById('hint-ampsource');
   if(key==='standard'){
-    insEl.disabled=false; condEl.disabled=false;
-    hint.style.display='none';
+    if(insEl)insEl.disabled=false; if(condEl)condEl.disabled=false;
+    if(hint)hint.style.display='none';
   }else{
-    const v=VENDOR_AMPACITY[key];
+    const v=getVendor(key);
     if(v){
       // 锁定绝缘/导体为厂家规格
-      insEl.value=v.insulation; condEl.value=v.conductor;
-      insEl.disabled=true; condEl.disabled=true;
-      hint.textContent='已锁定 '+v.vendor+' '+v.model+' ('+v.insulation+'/'+(v.conductor==='Cu'?'铜':'铝')+(v.conductorMaxTemp?', 导体最高'+v.conductorMaxTemp+'°C':'')+', 参考环温'+v.refTemp+'°C)；仅使用厂家数据，未覆盖的敷设方式/截面不可用。';
-      hint.style.display='';
+      if(insEl){insEl.value=v.insulation; insEl.disabled=true;}
+      if(condEl){condEl.value=v.conductor; condEl.disabled=true;}
+      if(hint){
+        hint.textContent='已锁定 '+vendorLabel(v)+' ('+v.insulation+'/'+(v.conductor==='Cu'?'铜':'铝')+(v.conductorMaxTemp?', 导体最高'+v.conductorMaxTemp+'°C':'')+', 参考环温'+v.refTemp+'°C)；仅使用厂家数据，未覆盖的敷设方式/截面不可用。';
+        hint.style.display='';
+      }
+    }else{
+      // 条目已不存在：回落标准值，避免静默使用失效数据源
+      document.getElementById('ampSource').value='standard';
+      if(insEl)insEl.disabled=false; if(condEl)condEl.disabled=false;
+      if(hint)hint.style.display='none';
     }
   }
   if(typeof updateUI==='function')updateUI();
@@ -1986,7 +2157,7 @@ function vendorNormalizeFactor(vendor, isUnderground){
 function getTempCorrectionParams(isUnderground){
   const key=getAmpSource();
   if(key!=='standard'){
-    const v=VENDOR_AMPACITY[key];
+    const v=getVendor(key);
     if(v){
       return {
         tmax: v.conductorMaxTemp || (v.insulation==='PVC'?70:90),
@@ -2029,7 +2200,7 @@ function getBaseAmpacityTable(tableRef, ins, cond, colKey, isUnderground){
     }
     return stdTable;
   }
-  const vendor=VENDOR_AMPACITY[key];
+  const vendor=getVendor(key);
   if(!vendor) return null;
   // 厂家数据须与当前绝缘/导体一致（onAmpSourceChange 已锁定，此处兜底校验）
   if(vendor.insulation!==ins||vendor.conductor!==cond) return null;
@@ -2487,7 +2658,7 @@ function switchPage(page){
   document.querySelector('.page-tab[data-page="'+page+'"]').classList.add('active');
   document.body.classList.toggle('page-query-active', page==='query');
   document.body.classList.toggle('page-jbt-active', page==='jbt');
-  if(page==='query'){ renderQuery(); }
+  if(page==='query'){ renderQuery(); if(typeof vlibRenderBar==='function')vlibRenderBar(); if(typeof vlibRenderList==='function'&&document.getElementById('vlib-panel').style.display!=='none')vlibRenderList(); }
   if(page==='jbt'){ jbtInitPresets(); }
 }
 function qJump(e,id){ e.preventDefault(); const el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
@@ -2531,6 +2702,437 @@ const QUERY_AMP_META={
 // EF 表列含义（单芯排列）
 const QUERY_EF_COLS={'2':'多芯·二根载流','3':'多芯·三根载流','4':'单芯·二根接触','5':'单芯·三角接触','6':'单芯·扁平接触','7':'单芯·扁平水平间距','8':'单芯·扁平垂直间距'};
 
+// ============================================================
+// VENDOR LIBRARY MANAGER (厂家数据维护 · v0.7.0)
+// 使用者在此增删改厂家载流量数据，无需改代码或升级版本。
+// 保存后立即同步到计算页「基准载流量来源」下拉。
+// ============================================================
+const VLIB_METHODS=[
+  {k:'B1',n:'B1 穿管暗敷(绝热墙内)'},
+  {k:'B2',n:'B2 穿管明敷'},
+  {k:'C', n:'C 明敷(直接固定)'},
+  {k:'D1',n:'D1 埋地管道'},
+  {k:'D2',n:'D2 直埋'},
+  {k:'EF',n:'E/F 桥架·托盘·梯架'},
+  {k:'G', n:'G 槽盒'}
+];
+// 各敷设方式允许的芯数列（仅 EF 有单芯多排列）
+const VLIB_COLS={B1:['2','3'],B2:['2','3'],C:['2','3'],D1:['2','3'],D2:['2','3'],G:['2','3'],EF:['2','3','4','5','6','7','8']};
+
+let vlibEditing=null;    // 当前编辑条目 key；null 表示新建中
+let vlibDraft=null;      // 编辑草稿（groups 为行数组，保存时转为 ampacity 对象）
+
+function vlibEsc(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function vlibColLabel(m,c){
+  if(m==='EF') return QUERY_EF_COLS[c]||('列'+c);
+  return c==='2'?'多芯·二根载流':(c==='3'?'多芯·三根载流':'列'+c);
+}
+// 条目 → 草稿
+function vlibToDraft(v){
+  const groups=[];
+  VLIB_METHODS.forEach(mm=>{
+    const m=mm.k;
+    const node=v.ampacity?.[m];
+    if(!node)return;
+    Object.keys(node).forEach(c=>{
+      const obj=node[c]||{};
+      const rows=Object.keys(obj).map(Number).sort((a,b)=>a-b).map(s=>({s:String(s),i:String(obj[s])}));
+      groups.push({method:m,col:c,rows});
+    });
+  });
+  if(!groups.length) groups.push({method:'EF',col:'4',rows:[{s:'',i:''}]});
+  return {
+    vendor:v.vendor||'', model:v.model||'', insulation:v.insulation||'XLPE', conductor:v.conductor||'Cu',
+    conductorMaxTemp:v.conductorMaxTemp!=null?v.conductorMaxTemp:90, refTemp:v.refTemp!=null?v.refTemp:40,
+    refMethodLabel:v.refMethodLabel||'', note:v.note||'',
+    origin:v.origin||'user', builtinKey:v.builtinKey||null, modified:!!v.modified,
+    groups
+  };
+}
+// 草稿 → 存储记录
+function vlibDraftToRecord(d){
+  const ampacity={};
+  (d.groups||[]).forEach(g=>{
+    const t={};
+    (g.rows||[]).forEach(r=>{
+      const s=Number(r.s), i=Number(r.i);
+      if(isFinite(s)&&s>0&&isFinite(i)&&i>0) t[s]=i;
+    });
+    if(!Object.keys(t).length)return;
+    ampacity[g.method]=ampacity[g.method]||{};
+    ampacity[g.method][g.col]=t;
+  });
+  const old=vlibEditing?getVendor(vlibEditing):null;
+  const rec={
+    vendor:(d.vendor||'').trim()||'—',
+    model:(d.model||'').trim(),
+    insulation:d.insulation, conductor:d.conductor,
+    conductorMaxTemp:Number(d.conductorMaxTemp),
+    refTemp:Number(d.refTemp),
+    refMethodLabel:d.refMethodLabel||'',
+    note:d.note||'',
+    ampacity,
+    origin: old?(old.origin||'user'):'user',
+    builtinKey: old?(old.builtinKey||null):null
+  };
+  if(rec.origin==='builtin') rec.modified=true;
+  return rec;
+}
+
+// ---------- 顶栏摘要 ----------
+function vlibRenderBar(){
+  const el=document.getElementById('vlib-count'); if(!el)return;
+  const all=getAllVendors();
+  const keys=Object.keys(all);
+  const nb=keys.filter(k=>all[k]&&all[k].origin==='builtin').length;
+  const nu=keys.length-nb;
+  el.textContent=keys.length+' 条（出厂 '+nb+' / 自定义 '+nu+'）'+(VENDOR_LIB_META.updatedAt?' · 更新于 '+VENDOR_LIB_META.updatedAt.slice(0,10):'');
+}
+function vlibToggle(){
+  const p=document.getElementById('vlib-panel'); if(!p)return;
+  const show=p.style.display==='none';
+  p.style.display=show?'':'none';
+  const btn=document.getElementById('vlib-toggle-btn');
+  if(btn)btn.textContent=show?'收起管理':'管理厂家数据';
+  if(show){ vlibRenderBar(); vlibRenderList(); }
+}
+
+// ---------- 列表 ----------
+function vlibRenderList(){
+  const box=document.getElementById('vlib-list'); if(!box)return;
+  const all=getAllVendors();
+  const keys=Object.keys(all);
+  if(!keys.length){ box.innerHTML='<div class="vlib-empty" style="padding:24px 10px;font-size:11px">库为空<br>点击「+ 新建」或「载入出厂数据」</div>'; return; }
+  box.innerHTML=keys.map(k=>{
+    const v=all[k]||{};
+    const tag=v.origin==='builtin'
+      ? '<span class="vlib-tag builtin">出厂</span>'+(v.modified?'<span class="vlib-tag mod">已改</span>':'')
+      : '<span class="vlib-tag user">自定义</span>';
+    const methods=Object.keys(v.ampacity||{});
+    const secs=new Set();
+    methods.forEach(m=>Object.keys(v.ampacity[m]||{}).forEach(c=>Object.keys(v.ampacity[m][c]||{}).forEach(s=>secs.add(s))));
+    return '<div class="vlib-item'+(k===vlibEditing?' active':'')+'" onclick="vlibEdit(\''+k.replace(/'/g,"\\'")+'\')">'
+      +'<span class="vi-model">'+vlibEsc(v.model||'(未命名)')+tag+'</span>'
+      +'<span class="vi-meta">'+(v.insulation||'?')+'/'+(v.conductor||'?')+' · '+(v.conductorMaxTemp||'?')+'°C · 参考'+(v.refTemp!=null?v.refTemp:'?')+'°C · '+methods.length+'种敷设/'+secs.size+'截面</span>'
+      +'</div>';
+  }).join('');
+}
+
+// ---------- 编辑器 ----------
+function vlibEdit(key){
+  const v=getVendor(key); if(!v)return;
+  vlibEditing=key;
+  vlibDraft=vlibToDraft(v);
+  vlibRenderList();
+  vlibRenderEditor();
+}
+function vlibNew(){
+  vlibEditing=null;
+  vlibDraft={
+    vendor:'',model:'',insulation:'XLPE',conductor:'Cu',
+    conductorMaxTemp:90,refTemp:'',refMethodLabel:'',note:'',
+    origin:'user',builtinKey:null,modified:false,
+    groups:[{method:'EF',col:'4',rows:[{s:'',i:''}]}]
+  };
+  vlibRenderList();
+  vlibRenderEditor();
+}
+function vlibCancel(){
+  vlibEditing=null; vlibDraft=null;
+  vlibRenderList();
+  document.getElementById('vlib-editor').innerHTML='<div class="vlib-empty">选择左侧条目，或点击「+ 新建」<br>添加自定义厂家载流量数据</div>';
+}
+// 字段更新（不重渲染，避免输入失焦）
+function vlibSet(f,val){
+  if(!vlibDraft)return;
+  // 切换绝缘时，若 tmax 仍是原绝缘的默认值，则联动为新绝缘默认值
+  if(f==='insulation'){
+    const prevDefault=(vlibDraft.insulation==='PVC')?70:90;
+    if(Number(vlibDraft.conductorMaxTemp)===prevDefault) vlibDraft.conductorMaxTemp=(val==='PVC')?70:90;
+    vlibDraft[f]=val;
+    vlibRenderEditor();
+    return;
+  }
+  vlibDraft[f]=val;
+  if(f==='conductorMaxTemp'||f==='refTemp'){
+    const c=document.getElementById('vlib-calc');
+    if(c)c.innerHTML=vlibCalcPreview();
+  }
+}
+function vlibSetRow(gi,ri,f,val){
+  if(!vlibDraft||!vlibDraft.groups[gi])return;
+  vlibDraft.groups[gi].rows[ri][f]=val;
+  const c=document.getElementById('vlib-calc');
+  if(c)c.innerHTML=vlibCalcPreview();
+}
+function vlibSetGroupMethod(gi,val){
+  const g=vlibDraft.groups[gi]; if(!g)return;
+  g.method=val;
+  const cols=VLIB_COLS[val]||['2','3'];
+  if(cols.indexOf(g.col)<0) g.col=cols[0];
+  vlibRenderEditor();
+}
+function vlibSetGroupCol(gi,val){
+  const g=vlibDraft.groups[gi]; if(!g)return;
+  g.col=val; vlibRenderEditor();
+}
+function vlibAddGroup(){
+  if(!vlibDraft)return;
+  vlibDraft.groups.push({method:'EF',col:'4',rows:[{s:'',i:''}]});
+  vlibRenderEditor();
+}
+function vlibDelGroup(gi){
+  if(!vlibDraft)return;
+  vlibDraft.groups.splice(gi,1);
+  if(!vlibDraft.groups.length) vlibDraft.groups.push({method:'EF',col:'4',rows:[{s:'',i:''}]});
+  vlibRenderEditor();
+}
+function vlibAddRow(gi){
+  const g=vlibDraft.groups[gi]; if(!g)return;
+  g.rows.push({s:'',i:''});
+  vlibRenderEditor();
+}
+function vlibDelRow(gi,ri){
+  const g=vlibDraft.groups[gi]; if(!g)return;
+  g.rows.splice(ri,1);
+  if(!g.rows.length) g.rows.push({s:'',i:''});
+  vlibRenderEditor();
+}
+// 温度归一化反算预览（口径自检）
+function vlibCalcPreview(){
+  const d=vlibDraft; if(!d)return '';
+  const tmax=Number(d.conductorMaxTemp)||(d.insulation==='PVC'?70:90);
+  const tref=Number(d.refTemp);
+  if(!isFinite(tref)||d.refTemp===''){
+    return '填写「参考环温」后，此处显示温度归一化反算校验。';
+  }
+  if(isFinite(tmax)&&tref>=tmax){
+    return '<span style="color:#C0392B">参考环温（'+tref+'°C）必须低于导体最高温度（'+tmax+'°C），当前无法做温度归一化。</span>';
+  }
+  // 找一个示例截面
+  let sampleSec=null,sampleAmp=null;
+  (d.groups||[]).some(g=>(g.rows||[]).some(r=>{
+    const s=Number(r.s), i=Number(r.i);
+    if(isFinite(s)&&s>0&&isFinite(i)&&i>0){sampleSec=s;sampleAmp=i;return true;}
+    return false;
+  }));
+  let txt='温度归一化校验&nbsp; Ct = √((tmax − T_amb) / (tmax − refTemp))<br>';
+  txt+='tmax='+tmax+'°C · refTemp='+tref+'°C<br>';
+  [['空气（标准参考 30°C）',30],['埋地（标准参考 20°C）',20]].forEach(pair=>{
+    const f=Math.sqrt((tmax-pair[1])/(tmax-tref));
+    txt+='· '+pair[0]+'：'+(f).toFixed(3);
+    if(sampleAmp) txt+=' &nbsp;（示例 '+sampleSec+'mm²：'+sampleAmp+'A → '+Math.round(sampleAmp*f*10)/10+'A）';
+    txt+='<br>';
+  });
+  if(tref===30&&tmax>90){
+    txt+='<span style="color:#BA7517">⚠ 参考环温填 30°C 且导体温度 &gt;90°C：请确认 datasheet 确以 30°C 为实测参考环温。多数 105/125°C 电缆的厂家标称值为 40°C 基准，填错将导致载流量高估约 15%。</span>';
+  }
+  return txt;
+}
+function vlibRenderEditor(){
+  const box=document.getElementById('vlib-editor'); if(!box)return;
+  const d=vlibDraft;
+  if(!d){ box.innerHTML='<div class="vlib-empty">选择左侧条目，或点击「+ 新建」<br>添加自定义厂家载流量数据</div>'; return; }
+  const groupsHtml=(d.groups||[]).map((g,gi)=>{
+    const cols=VLIB_COLS[g.method]||['2','3'];
+    const colOpts=cols.map(c=>'<option value="'+c+'"'+(c===g.col?' selected':'')+'>列'+c+' · '+vlibColLabel(g.method,c)+'</option>').join('');
+    const methodOpts=VLIB_METHODS.map(m=>'<option value="'+m.k+'"'+(m.k===g.method?' selected':'')+'>'+m.n+'</option>').join('');
+    const rows=(g.rows||[]).map((r,ri)=>'<tr>'
+      +'<td><input inputmode="decimal" value="'+vlibEsc(r.s)+'" placeholder="如 95" oninput="vlibSetRow('+gi+','+ri+',\'s\',this.value)"></td>'
+      +'<td><input inputmode="decimal" value="'+vlibEsc(r.i)+'" placeholder="如 374" oninput="vlibSetRow('+gi+','+ri+',\'i\',this.value)"></td>'
+      +'<td style="width:26px"><button class="del" onclick="vlibDelRow('+gi+','+ri+')" title="删除该行">&times;</button></td>'
+      +'</tr>').join('');
+    return '<div class="vlib-group">'
+      +'<div class="vlib-group-head">'
+      +'<select onchange="vlibSetGroupMethod('+gi+',this.value)">'+methodOpts+'</select>'
+      +'<select onchange="vlibSetGroupCol('+gi+',this.value)">'+colOpts+'</select>'
+      +'<span style="font-size:10px;color:var(--text-muted)">'+(g.rows||[]).length+' 个截面</span>'
+      +'<span style="margin-left:auto"><button class="btn btn-sm" onclick="vlibAddRow('+gi+')">+ 行</button> '
+      +'<button class="btn btn-sm" onclick="vlibDelGroup('+gi+')" style="color:#C0392B">删除组</button></span>'
+      +'</div>'
+      +'<table class="vlib-rows"><thead><tr><th style="width:42%">截面 mm²</th><th>载流量 A（参考环温下原始标称值）</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
+      +'</div>';
+  }).join('');
+
+  box.innerHTML=
+    '<div class="vlib-form-grid">'
+    +'<div class="fg"><label>厂家名称</label><input value="'+vlibEsc(d.vendor)+'" placeholder="选填，如 远东电缆" oninput="vlibSet(\'vendor\',this.value)"></div>'
+    +'<div class="fg"><label>型号名称 *</label><input value="'+vlibEsc(d.model)+'" placeholder="如 YJV-0.6/1kV" oninput="vlibSet(\'model\',this.value)"></div>'
+    +'<div class="fg"><label>绝缘类型</label><select onchange="vlibSet(\'insulation\',this.value)">'
+      +'<option value="XLPE"'+(d.insulation==='XLPE'?' selected':'')+'>XLPE</option>'
+      +'<option value="PVC"'+(d.insulation==='PVC'?' selected':'')+'>PVC</option></select></div>'
+    +'<div class="fg"><label>导体</label><select onchange="vlibSet(\'conductor\',this.value)">'
+      +'<option value="Cu"'+(d.conductor==='Cu'?' selected':'')+'>铜 Cu</option>'
+      +'<option value="Al"'+(d.conductor==='Al'?' selected':'')+'>铝 Al</option></select></div>'
+    +'<div class="fg"><label>导体最高温度 tmax (°C) *</label><input type="number" min="60" max="250" value="'+vlibEsc(d.conductorMaxTemp)+'" oninput="vlibSet(\'conductorMaxTemp\',this.value)"></div>'
+    +'<div class="fg"><label>参考环温 refTemp (°C) *</label><input type="number" min="0" max="80" value="'+vlibEsc(d.refTemp)+'" oninput="vlibSet(\'refTemp\',this.value)"></div>'
+    +'</div>'
+    +'<div class="vlib-form-grid" style="grid-template-columns:1fr 1fr">'
+    +'<div class="fg"><label>参考敷设描述（选填）</label><input value="'+vlibEsc(d.refMethodLabel)+'" placeholder="如 单芯电缆, 二根载流(相互接触)" oninput="vlibSet(\'refMethodLabel\',this.value)"></div>'
+    +'<div class="fg"><label>备注（选填）</label><input value="'+vlibEsc(d.note)+'" placeholder="如 datasheet 版本/页码" oninput="vlibSet(\'note\',this.value)"></div>'
+    +'</div>'
+    +'<div class="vlib-warn">⚠ 参考环温必须填 datasheet 的<b>实测基准环温</b>，不是标准 30°C；载流量填该环温下的<b>原始标称值</b>，不要预先折算。折算由计算页统一温度修正自动完成。</div>'
+    +'<div class="vlib-sec-title"><span>载流量数据组（敷设方式 × 芯数列 × 截面）</span><button class="btn btn-sm" onclick="vlibAddGroup()">+ 添加数据组</button></div>'
+    +groupsHtml
+    +'<div class="vlib-calc" id="vlib-calc">'+vlibCalcPreview()+'</div>'
+    +'<div class="vlib-actions">'
+    +'<button class="btn btn-primary btn-sm" onclick="vlibSave()">保存</button>'
+    +(vlibEditing?'<button class="btn btn-sm" onclick="vlibDelete()">删除条目</button>':'')
+    +((d.origin==='builtin'&&d.builtinKey)?'<button class="btn btn-sm" onclick="vlibResetBuiltin()">按出厂值重置</button>':'')
+    +'<button class="btn btn-sm" onclick="vlibCancel()">取消</button>'
+    +'</div>';
+}
+
+// ---------- 校验与保存 ----------
+function vlibValidate(d){
+  const errs=[],warns=[];
+  if(!(d.model||'').trim()) errs.push('型号名称必填');
+  const tmax=Number(d.conductorMaxTemp);
+  if(!isFinite(tmax)||tmax<60||tmax>250) errs.push('导体最高温度应在 60~250°C 之间');
+  const tref=Number(d.refTemp);
+  if(d.refTemp===''||!isFinite(tref)) errs.push('参考环温必填');
+  else if(tref<0||tref>80) errs.push('参考环温应在 0~80°C 之间');
+  else if(isFinite(tmax)&&tref>=tmax) errs.push('参考环温必须低于导体最高温度');
+
+  // 型号唯一性（型号+导体）
+  const mName=(d.model||'').trim();
+  Object.keys(getAllVendors()).forEach(k=>{
+    if(k===vlibEditing)return;
+    const v=getAllVendors()[k];
+    if(v&&(v.model||'').trim()===mName&&v.conductor===d.conductor) errs.push('已存在同型号同导体的条目：「'+mName+'」；请改用不同型号名或区分导体');
+  });
+
+  let validGroups=0;
+  const groupKeys={};
+  (d.groups||[]).forEach((g,gi)=>{
+    const gk=g.method+'/'+g.col;
+    if(groupKeys[gk]) errs.push('数据组'+(gi+1)+'：与数据组'+groupKeys[gk]+' 的「敷设方式+芯数列」重复');
+    else groupKeys[gk]=gi+1;
+    const seen={};
+    let cnt=0;
+    (g.rows||[]).forEach(r=>{
+      const s=Number(r.s), i=Number(r.i);
+      if(r.s===''&&r.i==='')return;
+      if(!isFinite(s)||s<=0){ errs.push('数据组'+(gi+1)+'：截面需为正数'); return; }
+      if(!isFinite(i)||i<=0){ errs.push('数据组'+(gi+1)+'：载流量需为正数'); return; }
+      if(seen[s]) errs.push('数据组'+(gi+1)+'：截面 '+s+' 重复');
+      seen[s]=true; cnt++;
+    });
+    if(cnt>0) validGroups++;
+    // 单调性软校验
+    const arr=(g.rows||[]).map(r=>({s:Number(r.s),i:Number(r.i)})).filter(o=>isFinite(o.s)&&isFinite(o.i)&&o.s>0&&o.i>0).sort((a,b)=>a.s-b.s);
+    for(let x=1;x<arr.length;x++){
+      if(arr[x].i<arr[x-1].i){
+        warns.push('数据组'+(gi+1)+'：截面 '+arr[x].s+' 的载流量低于更小截面，请核对');
+        break;
+      }
+    }
+  });
+  if(!validGroups) errs.push('至少需要一个已填写的截面载流量');
+  return {errs,warns};
+}
+function vlibSave(){
+  const d=vlibDraft; if(!d)return;
+  const v=vlibValidate(d);
+  if(v.errs.length){ showToast(v.errs[0],'fail'); return; }
+  if(v.warns.length){ if(!confirm('发现可疑数据：\n· '+v.warns.join('\n· ')+'\n\n仍要保存吗？')) return; }
+  // refTemp=30 且 tmax>90 的口径二次确认（防 v0.6.4 双归一事故重演）
+  if(Number(d.refTemp)===30&&Number(d.conductorMaxTemp)>90){
+    if(!confirm('参考环温填的是 30°C，而导体最高温度 >90°C。\n\n多数 105/125°C 电缆的厂家标称载流量以 40°C 为参考环温。若填错，会导致载流量高估约 15%。\n\n确认 datasheet 确以 30°C 为实测基准？')) return;
+  }
+  const rec=vlibDraftToRecord(d);
+  const key=vlibEditing||('u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6));
+  VENDOR_AMPACITY[key]=rec;
+  if(!saveVendorLibrary()) return;
+  vlibEditing=key;
+  vlibDraft=vlibToDraft(rec);
+  vlibRenderList();
+  vlibRenderEditor();
+  refreshVendorRuntime();
+  showToast('已保存「'+rec.model+'」· 计算页数据源已同步可选','ok');
+}
+function vlibDelete(){
+  const k=vlibEditing; if(!k)return;
+  const v=getVendor(k); if(!v)return;
+  if(!confirm('确认删除「'+v.model+'」？\n\n删除后计算页将无法再选用该数据源，已保存的选型记录不受影响。')) return;
+  delete VENDOR_AMPACITY[k];
+  saveVendorLibrary();
+  vlibEditing=null; vlibDraft=null;
+  vlibRenderList();
+  document.getElementById('vlib-editor').innerHTML='<div class="vlib-empty">已删除。选择其他条目，或点击「+ 新建」</div>';
+  refreshVendorRuntime();
+  showToast('已删除条目','ok');
+}
+function vlibResetBuiltin(){
+  const v=vlibEditing?getVendor(vlibEditing):null;
+  const src=v&&v.builtinKey?BUILTIN_VENDOR_AMPACITY[v.builtinKey]:null;
+  if(!src){ showToast('该条目无出厂基准数据','warn'); return; }
+  if(!confirm('用出厂值覆盖「'+v.model+'」的当前内容？本地修改将丢失。')) return;
+  VENDOR_AMPACITY[vlibEditing]=JSON.parse(JSON.stringify(src));
+  saveVendorLibrary();
+  vlibDraft=vlibToDraft(VENDOR_AMPACITY[vlibEditing]);
+  vlibRenderList(); vlibRenderEditor(); refreshVendorRuntime();
+  showToast('已按出厂值重置','ok');
+}
+function vlibRestoreBuiltin(){
+  if(!confirm('载入出厂数据？\n\n· 库中已有的同名出厂条目会被重置为出厂值\n· 你自建的条目不会被删除')) return;
+  Object.keys(BUILTIN_VENDOR_AMPACITY).forEach(k=>{
+    VENDOR_AMPACITY[k]=JSON.parse(JSON.stringify(BUILTIN_VENDOR_AMPACITY[k]));
+  });
+  saveVendorLibrary();
+  vlibEditing=null; vlibDraft=null;
+  vlibRenderList(); vlibRenderBar(); vlibRenderEditor(); refreshVendorRuntime();
+  showToast('已载入出厂数据','ok');
+}
+
+// ---------- 导入 / 导出 ----------
+function vlibExport(){
+  const payload={
+    app:'CableSizer Pro',
+    schemaVersion:VENDOR_LIB_SCHEMA,
+    exportedAt:new Date().toISOString(),
+    vendors:VENDOR_AMPACITY
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='cablesizer-vendor-lib-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+  showToast('已导出 '+Object.keys(VENDOR_AMPACITY).length+' 条厂家数据','ok');
+}
+function vlibImportFile(input){
+  const f=input.files&&input.files[0]; if(!f)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const obj=JSON.parse(reader.result);
+      const vendors=(obj&&obj.vendors)?obj.vendors:obj;
+      if(!vendors||typeof vendors!=='object') throw new Error('文件结构不含 vendors 对象');
+      const keys=Object.keys(vendors).filter(k=>vendors[k]&&vendors[k].model&&vendors[k].ampacity);
+      if(!keys.length) throw new Error('未找到有效的厂家条目');
+      const merge=confirm('导入 '+keys.length+' 条厂家数据。\n\n确定 = 合并（与库中同键条目会被覆盖）\n取消 = 仅新增，已有条目跳过');
+      let added=0,updated=0,skipped=0;
+      keys.forEach(k=>{
+        if(VENDOR_AMPACITY[k]){
+          if(merge){ VENDOR_AMPACITY[k]=vendors[k]; updated++; } else skipped++;
+        }else{ VENDOR_AMPACITY[k]=vendors[k]; added++; }
+      });
+      if(!saveVendorLibrary()) return;
+      refreshVendorRuntime();
+      vlibRenderList(); vlibRenderBar();
+      showToast('导入完成：新增 '+added+' / 覆盖 '+updated+' / 跳过 '+skipped,'ok');
+    }catch(e){
+      showToast('导入失败：'+e.message,'fail');
+    }finally{
+      input.value='';
+    }
+  };
+  reader.readAsText(f);
+}
+
 function qMatch(v,filter){ return filter==='all'||filter===v; }
 
 // 渲染：敷设方式图示条（示意SVG，可替换为标准原图）
@@ -2570,12 +3172,12 @@ function renderAmpBlocks(fMethod,fIns,fCond,fSource,kw){
   // 收集"绝缘/导体匹配"的厂家型号
   function vendorFor(m,ins,cond){
     const list=[];
-    Object.keys(VENDOR_AMPACITY).forEach(vk=>{
+    Object.keys(getAllVendors()).forEach(vk=>{
       const v=VENDOR_AMPACITY[vk];
-      if(v.insulation!==ins||v.conductor!==cond)return;
+      if(!v||v.insulation!==ins||v.conductor!==cond)return;
       const data=v.ampacity?.[m];
       if(!data)return;
-      list.push({vendor:v.vendor,model:v.model,refTemp:v.refTemp,conductorMaxTemp:v.conductorMaxTemp,note:v.note,data,isUnderground:(m==='D1'||m==='D2'),v});
+      list.push({vendor:v.vendor,model:v.model,refTemp:v.refTemp,conductorMaxTemp:v.conductorMaxTemp,note:v.note,data,isUnderground:(m==='D1'||m==='D2'),v,origin:v.origin||'user'});
     });
     return list;
   }
@@ -2620,7 +3222,7 @@ function renderAmpBlocks(fMethod,fIns,fCond,fSource,kw){
     return `<div class="qtable-block vendor-card">
       <div class="qtable-caption">
         <span class="qtc-name">${meta.name} · 厂家库载流量<span class="qsrc-badge vd">厂家</span></span>
-        <span class="qtc-src vendor">${vendors.map(v=>v.vendor+' '+v.model).join(' / ')}</span>
+        <span class="qtc-src vendor">${vendors.map(v=>((v.vendor&&v.vendor!=='—')?v.vendor+' ':'')+v.model+(v.origin==='user'?' [自定义]':'')).join(' / ')}</span>
       </div>
       <div class="qtable-scroll"><table class="qtable"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
       <div class="qtable-note">单位: 安培(A)。厂家标称值（原始参考条件）。${descs}。未列出处计算时回退标准。</div>
@@ -3522,7 +4124,7 @@ function doCalc(){
     const srcEl=document.getElementById('ps-source'); if(!srcEl)return;
     const key=getAmpSource();
     if(key==='standard'){ srcEl.textContent='标准 IEC'; srcEl.style.color='var(--accent)'; }
-    else{ const v=VENDOR_AMPACITY[key]; srcEl.textContent=v?('厂家库 · '+v.vendor+' '+v.model):'标准 IEC'; srcEl.style.color='var(--warn)'; }
+    else{ const v=getVendor(key); srcEl.textContent=v?('厂家库 · '+vendorLabel(v)+(v.origin==='user'?' [自定义]':' [出厂]')):'标准 IEC'; srcEl.style.color='var(--warn)'; }
   })();
   document.getElementById('ps-cable').textContent=ins+' / '+(cond==='Cu'?'铜':'铝')+' / '+(cableType==='multi'?'多芯':'单芯');
   document.getElementById('ps-cores').textContent=cores+'根载流导体';
@@ -3676,7 +4278,7 @@ function doCalc(){
     const src=getAmpSource();
     let msg='当前参数组合暂无数据';
     if(src!=='standard'){
-      const v=VENDOR_AMPACITY[src];
+      const v=getVendor(src);
       if(v){
         const hasMethod=!!(v.ampacity?.[tableRef]);
         const coveredCols=hasMethod?Object.keys(v.ampacity[tableRef]):[];
@@ -5078,7 +5680,9 @@ window.addEventListener('resize',()=>{if(_tourActive)_renderTourStep();});
 })();
 
 // Init
-initAmpSourceOptions();
+loadVendorLibrary();          // 厂家库：本地已有则沿用，版本升级不覆盖
+initAmpSourceOptions();       // 依据当前库构建计算页数据源下拉
+if(typeof vlibRenderBar==='function')vlibRenderBar();
 updateUI();
 renderHistory();
 initAutoHelp();
@@ -6059,6 +6663,18 @@ document.addEventListener('DOMContentLoaded', () => {
     <!-- TAB: 版本记录 -->
     <div class="help-content" id="hc-changelog" style="display:none">
       <h3>版本更新记录</h3>
+
+      <div class="ver-block">
+        <span class="ver-tag">v0.7.0</span><span class="ver-date">2026-11-13</span>
+        <ul>
+          <li><strong>厂家数据改为使用者自定义维护</strong>：标准数据查询页新增「厂家数据库」管理面板，可直接新增/编辑/删除厂家型号，录入「敷设方式 × 芯数列 × 截面 → 载流量」，不再依赖版本升级（数据存浏览器 localStorage，重开浏览器仍在）</li>
+          <li><strong>计算页数据源实时同步</strong>：保存后「基准载流量来源」下拉立即出现该条目（分组：厂家库·出厂数据 / 厂家库·自定义），选中后自动锁定绝缘与导体，未覆盖的敷设方式/截面严格不可用</li>
+          <li><strong>出厂数据可编辑</strong>：AWM3817 两条由代码常量转为「出厂种子」，同样可改可删；保留血缘标记，支持「按出厂值重置本条」与「载入出厂数据」，避免误改无法回退</li>
+          <li><strong>版本升级不再覆盖厂家库</strong>：localStorage 已存在数据时跳过初始化，后续版本对内置数据的调整不会冲掉使用者维护的内容</li>
+          <li><strong>JSON 导入 / 导出</strong>：整库导出备份、跨电脑/同事间导入（合并或仅新增），解决纯前端 localStorage 换机丢失问题</li>
+          <li><strong>录入口径防错</strong>：参考环温必填并注明「datasheet 实测基准，非 30°C」；实时显示温度归一化反算（空气 30°C / 埋地 20°C 双口径）；refTemp=30 且 tmax&gt;90°C 时二次确认，防止重演 v0.6.4 双归一高估</li>
+        </ul>
+      </div>
 
       <div class="ver-block">
         <span class="ver-tag">v0.6.5</span><span class="ver-date">2026-09-02</span>
